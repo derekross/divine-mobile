@@ -16,7 +16,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'home_feed_provider.g.dart';
 
 /// Home feed provider - shows videos only from people you follow
-@riverpod
+@Riverpod(keepAlive: false)
 class HomeFeed extends _$HomeFeed {
   Timer? _profileFetchTimer;
 

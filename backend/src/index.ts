@@ -6,7 +6,7 @@
  */
 
 import { handleNIP96Info } from './handlers/nip96-info';
-import { handleNIP96Upload, handleUploadOptions, handleJobStatus, handleMediaServing, handleReleaseDownload, handleVineUrlCompat } from './handlers/nip96-upload';
+import { handleNIP96Upload, handleUploadOptions, handleJobStatus, handleMediaServing, handleThumbnailServing, handleVideoServing, handleReleaseDownload, handleVineUrlCompat } from './handlers/nip96-upload';
 import { handleCloudinarySignedUpload, handleCloudinaryUploadOptions } from './handlers/cloudinary-upload';
 import { handleCloudinaryWebhook, handleCloudinaryWebhookOptions } from './handlers/cloudinary-webhook';
 import { handleVideoMetadata, handleVideoList, handleVideoMetadataOptions } from './handlers/video-metadata';
@@ -1769,6 +1769,18 @@ export default {
 			if (pathname.startsWith('/media/') && method === 'GET') {
 				const fileId = pathname.split('/media/')[1];
 				return handleMediaServing(fileId, request, env);
+			}
+
+			// Thumbnail serving endpoint - ALWAYS serves images
+			if (pathname.startsWith('/thumbnail/') && method === 'GET') {
+				const fileId = pathname.split('/thumbnail/')[1].split('?')[0]; // Remove query params
+				return handleThumbnailServing(fileId, request, env);
+			}
+
+			// Video serving endpoint - ALWAYS serves videos
+			if (pathname.startsWith('/video/') && method === 'GET') {
+				const fileId = pathname.split('/video/')[1];
+				return handleVideoServing(fileId, request, env);
 			}
 
 			// Moderation API endpoints

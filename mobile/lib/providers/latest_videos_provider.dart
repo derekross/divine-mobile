@@ -11,7 +11,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'latest_videos_provider.g.dart';
 
 /// Provider for the latest videos from the network
-@riverpod
+@Riverpod(keepAlive: false)
 class LatestVideos extends _$LatestVideos {
   Timer? _refreshTimer;
   StreamSubscription? _subscription;
@@ -21,6 +21,15 @@ class LatestVideos extends _$LatestVideos {
   
   @override
   Future<List<VideoEvent>> build() async {
+    final isExploreActive = ref.watch(isExploreTabActiveProvider);
+    if (!isExploreActive) {
+      // Not on Explore; do not start timers or subscriptions
+      ref.onDispose(() {
+        _refreshTimer?.cancel();
+        _subscription?.cancel();
+      });
+      return [];
+    }
     // Set up auto-refresh every 30 seconds
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (state.hasValue && !_isLoadingMore) {

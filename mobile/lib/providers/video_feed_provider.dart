@@ -35,7 +35,11 @@ class VideoFeed extends _$VideoFeed {
 
     // Get all videos from Nostr
     final videoEventService = ref.watch(videoEventServiceProvider);
-    ref.read(videoEventsProvider); // Trigger subscription
+    final isExploreActive = ref.watch(isExploreTabActiveProvider);
+    if (isExploreActive) {
+      // Only trigger discovery stream when Explore tab is visible
+      ref.read(videoEventsProvider);
+    }
     
     final sourceVideos = List<VideoEvent>.from(videoEventService.discoveryVideos);
     

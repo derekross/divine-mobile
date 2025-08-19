@@ -669,6 +669,189 @@ function validateFileContent(fileData: ArrayBuffer, contentType: string): boolea
 }
 
 /**
+ * Handle thumbnail serving - ALWAYS returns image/jpeg
+ */
+export async function handleThumbnailServing(
+  fileId: string,
+  request: Request,
+  env: Env
+): Promise<Response> {
+  try {
+    console.log('🖼️ Thumbnail serving request for fileId:', fileId);
+    
+    if (!fileId) {
+      return new Response('File ID required', {
+        status: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    if (!env.MEDIA_BUCKET) {
+      return new Response('Storage not configured', {
+        status: 503,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    // Find the file in R2
+    const searchPrefix = `uploads/${fileId}`;
+    console.log('🔍 Searching for thumbnail with prefix:', searchPrefix);
+    
+    const listResult = await env.MEDIA_BUCKET.list({
+      prefix: searchPrefix
+    });
+
+    if (!listResult.objects || listResult.objects.length === 0) {
+      return new Response(JSON.stringify({ 
+        error: 'Thumbnail not found',
+        fileId: fileId
+      }), {
+        status: 404,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*' 
+        }
+      });
+    }
+
+    const r2Object = await env.MEDIA_BUCKET.get(listResult.objects[0].key);
+
+    if (!r2Object) {
+      return new Response('Thumbnail not found', {
+        status: 404,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    // ALWAYS return as image/jpeg for thumbnails
+    return new Response(r2Object.body, {
+      headers: {
+        'Content-Type': 'image/jpeg', // ALWAYS JPEG for thumbnails
+        'Content-Length': r2Object.size.toString(),
+        'Cache-Control': 'public, max-age=31536000',
+        'Access-Control-Allow-Origin': '*',
+        'ETag': r2Object.etag,
+        'Last-Modified': r2Object.uploaded?.toUTCString() || new Date().toUTCString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Thumbnail serving error:', error);
+    return new Response('Internal server error', {
+      status: 500,
+      headers: { 'Access-Control-Allow-Origin': '*' }
+    });
+  }
+}
+
+/**
+ * Handle video serving - ALWAYS returns video/mp4
+ */
+export async function handleVideoServing(
+  fileId: string,
+  request: Request,
+  env: Env
+): Promise<Response> {
+  try {
+    console.log('🎥 Video serving request for fileId:', fileId);
+    
+    if (!fileId) {
+      return new Response('File ID required', {
+        status: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    if (!env.MEDIA_BUCKET) {
+      return new Response('Storage not configured', {
+        status: 503,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    // Find the file in R2
+    const searchPrefix = `uploads/${fileId}`;
+    console.log('🔍 Searching for video with prefix:', searchPrefix);
+    
+    const listResult = await env.MEDIA_BUCKET.list({
+      prefix: searchPrefix
+    });
+
+    if (!listResult.objects || listResult.objects.length === 0) {
+      return new Response(JSON.stringify({ 
+        error: 'Video not found',
+        fileId: fileId
+      }), {
+        status: 404,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*' 
+        }
+      });
+    }
+
+    const r2Object = await env.MEDIA_BUCKET.get(listResult.objects[0].key);
+
+    if (!r2Object) {
+      return new Response('Video not found', {
+        status: 404,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    const size = r2Object.size;
+
+    // Handle range requests for video streaming
+    const range = request.headers.get('range');
+    if (range) {
+      const ranges = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(ranges[0], 10);
+      const end = ranges[1] ? parseInt(ranges[1], 10) : size - 1;
+      const chunksize = (end - start) + 1;
+
+      const partialObject = await env.MEDIA_BUCKET.get(listResult.objects[0].key, {
+        range: { offset: start, length: chunksize }
+      });
+
+      if (!partialObject) {
+        return new Response('Range not satisfiable', { status: 416 });
+      }
+
+      return new Response(partialObject.body, {
+        status: 206,
+        headers: {
+          'Content-Range': `bytes ${start}-${end}/${size}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunksize.toString(),
+          'Content-Type': 'video/mp4', // ALWAYS MP4 for videos
+          'Cache-Control': 'public, max-age=31536000',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+
+    // Standard response for complete file
+    return new Response(r2Object.body, {
+      headers: {
+        'Content-Type': 'video/mp4', // ALWAYS MP4 for videos
+        'Content-Length': size.toString(),
+        'Cache-Control': 'public, max-age=31536000',
+        'Access-Control-Allow-Origin': '*',
+        'ETag': r2Object.etag,
+        'Last-Modified': r2Object.uploaded?.toUTCString() || new Date().toUTCString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Video serving error:', error);
+    return new Response('Internal server error', {
+      status: 500,
+      headers: { 'Access-Control-Allow-Origin': '*' }
+    });
+  }
+}
+
+/**
  * Handle media serving from R2 storage
  */
 export async function handleMediaServing(
@@ -734,7 +917,29 @@ export async function handleMediaServing(
     }
 
     // Extract metadata
-    const contentType = r2Object.httpMetadata?.contentType || 'application/octet-stream';
+    let contentType = r2Object.httpMetadata?.contentType || '';
+    
+    // If no content type in metadata, detect from file extension
+    if (!contentType || contentType === 'application/octet-stream') {
+      const key = listResult.objects[0].key;
+      const extension = key.split('.').pop()?.toLowerCase();
+      
+      const mimeTypes: Record<string, string> = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'mp4': 'video/mp4',
+        'webm': 'video/webm',
+        'mov': 'video/quicktime',
+        'avi': 'video/x-msvideo'
+      };
+      
+      contentType = mimeTypes[extension || ''] || 'application/octet-stream';
+      console.log(`📸 Detected content type from extension .${extension}: ${contentType}`);
+    }
+    
     const originalName = r2Object.customMetadata?.originalName || 'unknown';
     const size = r2Object.size;
 

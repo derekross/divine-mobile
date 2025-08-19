@@ -30,7 +30,7 @@ SubscriptionManager videoEventsSubscriptionManager(
 }
 
 /// Stream provider for video events from Nostr
-@riverpod
+@Riverpod(keepAlive: false)
 class VideoEvents extends _$VideoEvents {
   StreamController<List<VideoEvent>>? _controller;
 
@@ -38,6 +38,7 @@ class VideoEvents extends _$VideoEvents {
   Stream<List<VideoEvent>> build() {
     // Use existing VideoEventService for discovery mode
     final videoEventService = ref.watch(videoEventServiceProvider);
+    final isExploreActive = ref.watch(isExploreTabActiveProvider);
 
     Log.info(
       'VideoEvents: Provider built with reactive listening (${videoEventService.discoveryVideos.length} cached events)',
@@ -45,9 +46,17 @@ class VideoEvents extends _$VideoEvents {
       category: LogCategory.video,
     );
 
-    // Subscribe to discovery videos for Explore screen
-    // This loads latest videos from relay3.openvine.co
-    // NostrService now handles deduplication automatically
+    // Only subscribe when Explore tab is active
+    if (!isExploreActive) {
+      Log.debug('VideoEvents: Explore tab inactive; not subscribing',
+          name: 'VideoEventsProvider', category: LogCategory.video);
+      // Return an empty broadcast stream to satisfy listeners without background work
+      final controller = StreamController<List<VideoEvent>>.broadcast();
+      ref.onDispose(() => controller.close());
+      return controller.stream;
+    }
+
+    // Subscribe to discovery videos for Explore screen (active)
     videoEventService.subscribeToDiscovery(limit: 100);
 
     // Create a new stream controller
@@ -75,6 +84,8 @@ class VideoEvents extends _$VideoEvents {
     ref.onDispose(() {
       videoEventService.removeListener(onVideoEventServiceChange);
       _controller?.close();
+      // Ensure discovery subscription is torn down when provider is disposed
+      videoEventService.unsubscribeFromVideoFeed();
     });
 
     return _controller!.stream;
