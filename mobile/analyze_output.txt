@@ -1,0 +1,396 @@
+Analyzing mobile...                                             
+
+   info • The private field _trendingHashtagLimit could be 'final' • lib/screens/explore_screen.dart:53:7 • prefer_final_fields
+warning • The '!' will have no effect because the receiver can't be null • lib/screens/profile_screen.dart:310:33 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/screens/profile_screen.dart:312:42 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/screens/profile_screen.dart:313:31 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/screens/profile_screen.dart:313:44 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/screens/profile_screen.dart:444:34 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/screens/profile_screen.dart:446:40 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/screens/profile_screen.dart:447:32 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/screens/profile_screen.dart:447:45 • unnecessary_non_null_assertion
+   info • The private field _relayStatuses could be 'final' • lib/services/connection_status_service.dart:16:21 • prefer_final_fields
+warning • The value of the field '_keyService' isn't used • lib/services/proofmode_camera_integration.dart:27:29 • unused_field
+warning • The value of the field '_attestationService' isn't used • lib/services/proofmode_camera_integration.dart:28:37 • unused_field
+warning • The value of the field '_sessionService' isn't used • lib/services/proofmode_camera_integration.dart:29:33 • unused_field
+warning • Unused import: 'package:nostr_sdk/filter.dart' • lib/services/video_event_publisher.dart:7:8 • unused_import
+warning • The value of the local variable 'group' isn't used • lib/services/video_event_service.dart:1206:11 • unused_local_variable
+warning • The value of the field '_controller' isn't used • lib/services/vine_recording_controller.dart:243:32 • unused_field
+   info • 'dart:html' is deprecated and shouldn't be used. Use package:web and dart:js_interop instead • lib/services/web_camera_service.dart:6:1 • deprecated_member_use
+warning • The declaration 'onInitialized' isn't referenced • lib/widgets/video_feed_item.dart:212:16 • unused_element
+warning • The declaration 'onInitialized' isn't referenced • lib/widgets/video_feed_item.dart:348:16 • unused_element
+warning • The declaration '_buildVideoInfoBelow' isn't referenced • lib/widgets/video_feed_item.dart:1375:10 • unused_element
+warning • The declaration '_buildEventTags' isn't referenced • lib/widgets/video_feed_item.dart:1772:22 • unused_element
+   info • Unnecessary use of 'toList' in a spread • lib/widgets/video_feed_item.dart:2697:18 • unnecessary_to_list_in_spreads
+warning • The declaration '_onPlaybackStateChange' isn't referenced • lib/widgets/video_playback_widget.dart:167:8 • unused_element
+warning • The declaration '_onControllerUpdate' isn't referenced • lib/widgets/video_player_widget.dart:120:8 • unused_element
+warning • The value of the local variable 'jsonHashtags' isn't used • test/hashtag_functionality_test.dart:64:13 • unused_local_variable
+warning • The value of the local variable 'localHashtags' isn't used • test/hashtag_functionality_test.dart:70:13 • unused_local_variable
+warning • The value of the local variable 'videoService' isn't used • test/hashtag_functionality_test.dart:87:28 • unused_local_variable
+warning • The value of the local variable 'mockVideoService' isn't used • test/hashtag_functionality_test.dart:88:32 • unused_local_variable
+   info • Unnecessary braces in a string interpolation • test/hashtag_functionality_test.dart:132:24 • unnecessary_brace_in_string_interps
+warning • Unused import: 'package:openvine/config/app_config.dart' • test/helpers/real_integration_test_helper.dart:6:8 • unused_import
+   info • The import of 'dart:async' is unnecessary because all of the used elements are also provided by the import of 'package:flutter_test/flutter_test.dart' • test/helpers/service_init_helper.dart:4:8 • unnecessary_import
+warning • Unused import: 'package:nostr_sdk/event.dart' • test/helpers/service_test_factory.dart:5:8 • unused_import
+warning • Unused import: 'dart:io' • test/helpers/test_helpers.dart:4:8 • unused_import
+warning • The method doesn't override an inherited method • test/helpers/test_nostr_service.dart:123:32 • override_on_non_overriding_member
+  error • 'TestNostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/helpers/test_nostr_service.dart:155:17 • invalid_override
+   info • The import of 'dart:async' is unnecessary because all of the used elements are also provided by the import of 'package:flutter_test/flutter_test.dart' • test/helpers/widget_test_helper.dart:4:8 • unnecessary_import
+   info • The imported package 'matcher' isn't a dependency of the importing package • test/helpers/widget_test_helper.dart:11:8 • depend_on_referenced_packages
+warning • Unused import: 'package:matcher/matcher.dart' • test/helpers/widget_test_helper.dart:11:8 • unused_import
+warning • Unused import: 'package:openvine/providers/video_manager_providers.dart' • test/helpers/widget_test_helper.dart:15:8 • unused_import
+warning • Unused import: 'package:video_player/video_player.dart' • test/helpers/widget_test_helper.dart:21:8 • unused_import
+warning • Unused import: 'package:openvine/utils/unified_logger.dart' • test/infrastructure/mass_test_generation_test.dart:2:8 • unused_import
+warning • Unused import: 'dart:math' • test/integration/auth_and_kind22_vine_relay_test.dart:5:8 • unused_import
+warning • Unused import: 'package:openvine/services/auth_service.dart' • test/integration/auth_and_kind22_vine_relay_test.dart:9:8 • unused_import
+warning • Unused import: 'package:nostr_sdk/event.dart' • test/integration/auth_and_kind22_vine_relay_test.dart:15:8 • unused_import
+warning • Unused import: 'package:nostr_sdk/filter.dart' • test/integration/auth_and_kind22_vine_relay_test.dart:16:8 • unused_import
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • test/integration/auth_and_kind22_vine_relay_test.dart:144:24 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • test/integration/auth_and_kind22_vine_relay_test.dart:228:29 • invalid_null_aware_operator
+warning • Unused import: 'dart:math' • test/integration/curated_list_relay_integration_test.dart:5:8 • unused_import
+warning • Unused import: 'package:openvine/services/secure_key_storage_service.dart' • test/integration/curated_list_relay_integration_test.dart:14:8 • unused_import
+warning • Unused import: 'package:nostr_sdk/event.dart' • test/integration/curated_list_relay_integration_test.dart:16:8 • unused_import
+   info • The import of 'dart:async' is unnecessary because all of the used elements are also provided by the import of 'package:flutter_test/flutter_test.dart' • test/integration/embedded_relay_performance_test.dart:4:8 • unnecessary_import
+warning • The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used • test/integration/embedded_relay_subscription_test.dart:56:125 • invalid_null_aware_operator
+warning • The method doesn't override an inherited method • test/integration/hashtag_filtering_integration_test.dart:45:8 • override_on_non_overriding_member
+warning • The method doesn't override an inherited method • test/integration/hashtag_filtering_integration_test.dart:48:8 • override_on_non_overriding_member
+warning • The getter doesn't override an inherited getter • test/integration/hashtag_filtering_integration_test.dart:54:12 • override_on_non_overriding_member
+warning • The method doesn't override an inherited method • test/integration/hashtag_filtering_integration_test.dart:57:8 • override_on_non_overriding_member
+  error • 'MinimalMockNostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/integration/hashtag_filtering_integration_test.dart:64:17 • invalid_override
+warning • Unused import: 'dart:developer' • test/integration/nostr_pagination_relay_test.dart:7:8 • unused_import
+warning • Unused import: 'dart:async' • test/integration/nsec_bunker_client_test.dart:4:8 • unused_import
+warning • Unused import: 'dart:convert' • test/integration/nsec_bunker_client_test.dart:5:8 • unused_import
+warning • The value of the local variable 'mockResponse' isn't used • test/integration/nsec_bunker_client_test.dart:34:15 • unused_local_variable
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/integration/reactive_pagination_test.mocks.dart:176:25 • invalid_override
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • test/integration/real_video_subscription_test.dart:170:26 • invalid_null_aware_operator
+warning • Unused import: 'package:openvine/models/video_event.dart' • test/integration/relay_pagination_integration_test.dart:10:8 • unused_import
+warning • Unused import: 'package:openvine/models/video_event.dart' • test/integration/riverpod_migration_integration_test.dart:14:8 • unused_import
+warning • Unused import: '../helpers/test_helpers.dart' • test/integration/video_duplicate_preload_test.dart:16:8 • unused_import
+warning • Unused import: 'package:flutter/services.dart' • test/integration/video_event_service_managed_test.dart:5:8 • unused_import
+warning • Unused import: 'package:nostr_sdk/filter.dart' • test/integration/video_event_service_managed_test.dart:9:8 • unused_import
+warning • Unused import: 'package:openvine/services/nostr_service_interface.dart' • test/integration/video_event_service_managed_test.dart:10:8 • unused_import
+warning • Unused import: 'package:openvine/services/seen_videos_service.dart' • test/integration/video_event_service_simple_test.dart:12:8 • unused_import
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/integration/video_event_service_simple_test.mocks.dart:176:25 • invalid_override
+warning • Unused import: 'package:flutter/services.dart' • test/integration/video_pipeline_debug_test.dart:5:8 • unused_import
+warning • Unused import: 'package:nostr_sdk/filter.dart' • test/integration/video_pipeline_debug_test.dart:9:8 • unused_import
+warning • Unused import: 'package:openvine/services/nostr_service_interface.dart' • test/integration/video_pipeline_debug_test.dart:12:8 • unused_import
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • test/integration/video_pipeline_debug_test.dart:195:26 • invalid_null_aware_operator
+warning • The value of the field '_config' isn't used • test/mocks/mock_video_manager.dart:113:29 • unused_field
+warning • Unused import: 'package:nostr_sdk/nostr_sdk.dart' • test/providers/home_feed_provider_test.dart:8:8 • unused_import
+warning • Unused import: 'package:openvine/state/video_feed_state.dart' • test/providers/home_feed_provider_test.dart:17:8 • unused_import
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/providers/home_feed_provider_test.mocks.dart:840:25 • invalid_override
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/providers/profile_videos_provider_test.mocks.dart:179:25 • invalid_override
+  error • The name 'socialProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_events_provider_test.dart:88:24 • undefined_prefixed_name
+  error • The name 'socialProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_events_provider_test.dart:117:29 • undefined_prefixed_name
+  error • Undefined name 'feedModeNotifierProvider' • test/providers/video_events_provider_test.dart:187:17 • undefined_identifier
+  error • Undefined name 'feedModeNotifierProvider' • test/providers/video_events_provider_test.dart:214:17 • undefined_identifier
+  error • Undefined name 'eventCount' • test/providers/video_events_provider_test.dart:287:13 • undefined_identifier
+  error • Target of URI doesn't exist: 'package:openvine/providers/feed_mode_providers.dart' • test/providers/video_feed_provider_test.dart:14:8 • uri_does_not_exist
+  error • The named parameter 'featured' isn't defined • test/providers/video_feed_provider_test.dart:57:9 • undefined_named_parameter
+  error • Undefined name 'curationServiceProvider' • test/providers/video_feed_provider_test.dart:125:11 • undefined_identifier
+  error • Undefined name 'nostrServiceProvider' • test/providers/video_feed_provider_test.dart:127:11 • undefined_identifier
+  error • Undefined name 'subscriptionManagerProvider' • test/providers/video_feed_provider_test.dart:128:11 • undefined_identifier
+  error • The name 'nostrServiceProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_feed_provider_test.dart:133:18 • undefined_prefixed_name
+  error • The name 'subscriptionManagerProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_feed_provider_test.dart:134:18 • undefined_prefixed_name
+  error • The getter 'feedMode' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:169:24 • undefined_getter
+  error • Undefined name 'FeedMode' • test/providers/video_feed_provider_test.dart:169:41 • undefined_identifier
+  error • The getter 'isFollowingFeed' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:170:24 • undefined_getter
+  error • The name 'socialProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_feed_provider_test.dart:191:29 • undefined_prefixed_name
+  error • The getter 'primaryVideoCount' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:198:24 • undefined_getter
+  error • The name 'socialProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_feed_provider_test.dart:204:24 • undefined_prefixed_name
+  error • The getter 'primaryVideoCount' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:213:24 • undefined_getter
+  error • The name 'socialProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_feed_provider_test.dart:219:24 • undefined_prefixed_name
+  error • The name 'socialProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_feed_provider_test.dart:227:24 • undefined_prefixed_name
+  error • Undefined name 'feedModeNotifierProvider' • test/providers/video_feed_provider_test.dart:273:17 • undefined_identifier
+  error • The getter 'feedMode' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:279:24 • undefined_getter
+  error • Undefined name 'FeedMode' • test/providers/video_feed_provider_test.dart:279:41 • undefined_identifier
+  error • Undefined name 'feedModeNotifierProvider' • test/providers/video_feed_provider_test.dart:288:17 • undefined_identifier
+  error • The getter 'feedMode' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:294:24 • undefined_getter
+  error • Undefined name 'FeedMode' • test/providers/video_feed_provider_test.dart:294:41 • undefined_identifier
+  error • The name 'socialProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_feed_provider_test.dart:301:29 • undefined_prefixed_name
+  error • The name 'socialProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_feed_provider_test.dart:330:24 • undefined_prefixed_name
+  error • Undefined name 'feedModeNotifierProvider' • test/providers/video_feed_provider_test.dart:365:17 • undefined_identifier
+  error • Undefined name 'FeedMode' • test/providers/video_feed_provider_test.dart:366:20 • undefined_identifier
+  error • The getter 'feedMode' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:371:24 • undefined_getter
+  error • Undefined name 'FeedMode' • test/providers/video_feed_provider_test.dart:371:41 • undefined_identifier
+  error • Undefined name 'feedModeNotifierProvider' • test/providers/video_feed_provider_test.dart:380:17 • undefined_identifier
+  error • Undefined name 'FeedMode' • test/providers/video_feed_provider_test.dart:381:20 • undefined_identifier
+  error • The getter 'feedMode' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:386:24 • undefined_getter
+  error • Undefined name 'FeedMode' • test/providers/video_feed_provider_test.dart:386:41 • undefined_identifier
+  error • The getter 'primaryVideoCount' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:388:24 • undefined_getter
+  error • The getter 'feedMode' isn't defined for the type 'VideoFeedState' • test/providers/video_feed_provider_test.dart:403:36 • undefined_getter
+  error • Undefined name 'FeedMode' • test/providers/video_feed_provider_test.dart:403:53 • undefined_identifier
+  error • The named parameter 'feedMode' isn't defined • test/providers/video_manager_provider_test.dart:40:9 • undefined_named_parameter
+  error • Undefined name 'FeedMode' • test/providers/video_manager_provider_test.dart:40:19 • undefined_identifier
+  error • The named parameter 'isFollowingFeed' isn't defined • test/providers/video_manager_provider_test.dart:41:9 • undefined_named_parameter
+  error • The named parameter 'primaryVideoCount' isn't defined • test/providers/video_manager_provider_test.dart:43:9 • undefined_named_parameter
+  error • The named parameter 'feedContext' isn't defined • test/providers/video_manager_provider_test.dart:45:9 • undefined_named_parameter
+  error • Undefined name 'curationServiceProvider' • test/providers/video_manager_provider_test.dart:93:11 • undefined_identifier
+  error • Undefined name 'nostrServiceProvider' • test/providers/video_manager_provider_test.dart:94:11 • undefined_identifier
+  error • Undefined name 'subscriptionManagerProvider' • test/providers/video_manager_provider_test.dart:95:11 • undefined_identifier
+  error • The name 'nostrServiceProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_manager_provider_test.dart:97:18 • undefined_prefixed_name
+  error • The name 'subscriptionManagerProvider' is being referenced through the prefix 'social', but it isn't defined in any of the libraries imported using that prefix • test/providers/video_manager_provider_test.dart:98:18 • undefined_prefixed_name
+  error • Target of URI doesn't exist: 'package:openvine/screens/camera_settings_screen.dart' • test/screens/camera_settings_screen_test.dart:6:8 • uri_does_not_exist
+  error • Invalid constant value • test/screens/camera_settings_screen_test.dart:11:17 • invalid_constant
+  error • The function 'CameraSettingsScreen' isn't defined • test/screens/camera_settings_screen_test.dart:11:17 • undefined_function
+  error • Undefined name 'CameraSettingsScreen' • test/screens/camera_settings_screen_test.dart:20:26 • undefined_identifier
+warning • Unused import: 'package:openvine/utils/async_utils.dart' • test/screens/feed_screen_scroll_test.dart:7:8 • unused_import
+  error • Undefined name 'RelayStatus' • test/screens/relay_settings_screen_test.dart:29:33 • undefined_identifier
+  error • The argument type 'Provider<NostrService>' can't be assigned to the parameter type 'Widget?'.  • test/screens/relay_settings_screen_test.dart:34:17 • argument_type_not_assignable
+  error • The class 'Provider' doesn't have a constructor named 'value' • test/screens/relay_settings_screen_test.dart:34:40 • new_with_undefined_constructor
+  error • 'MockNostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'NostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/screens/relay_settings_screen_test.mocks.dart:183:25 • invalid_override
+  error • The method 'removeListener' isn't defined for the type 'MockUploadManager' • test/screens/universal_camera_screen_test.dart:127:38 • undefined_method
+  error • Undefined name 'kind' • test/services/auth_service_expiration_tag_test.dart:98:11 • undefined_identifier
+warning • Unused import: 'package:nostr_sdk/nostr_sdk.dart' • test/services/bookmark_persistence_test.dart:10:8 • unused_import
+  error • The argument type 'Null' can't be assigned to the parameter type 'List<Filter>'.  • test/services/bookmark_persistence_test.dart:44:48 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'Event'.  • test/services/bookmark_persistence_test.dart:48:44 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'List<Filter>'.  • test/services/bookmark_persistence_test.dart:96:48 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'List<Filter>'.  • test/services/bookmark_persistence_test.dart:124:18 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'List<Filter>'.  • test/services/bookmark_persistence_test.dart:133:48 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'List<Filter>'.  • test/services/bookmark_persistence_test.dart:160:48 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'List<Filter>'.  • test/services/bookmark_persistence_test.dart:207:48 • argument_type_not_assignable
+  error • Target of URI doesn't exist: 'package:openvine/services/camera/camera_provider.dart' • test/services/camera_provider_zoom_test.dart:5:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: 'package:openvine/services/camera/mobile_camera_provider.dart' • test/services/camera_provider_zoom_test.dart:6:8 • uri_does_not_exist
+  error • Undefined class 'CameraProvider' • test/services/camera_provider_zoom_test.dart:10:10 • undefined_class
+  error • The function 'MobileCameraProvider' isn't defined • test/services/camera_provider_zoom_test.dart:13:24 • undefined_function
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/curation_service_analytics_test.mocks.dart:180:25 • invalid_override
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/curation_service_editors_picks_test.mocks.dart:180:25 • invalid_override
+  error • There's no constant named 'featured' in 'CurationSetType' • test/services/curation_service_test.dart:80:63 • undefined_enum_constant
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/curation_service_test.mocks.dart:180:25 • invalid_override
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/curation_service_trending_fetch_test.mocks.dart:180:25 • invalid_override
+warning • Unused import: 'package:openvine/services/secure_key_storage_service.dart' • test/services/direct_upload_service_integration_test.dart:15:8 • unused_import
+warning • The value of the local variable 'completer' isn't used • test/services/direct_upload_service_test.dart:103:13 • unused_local_variable
+warning • The declaration 'onProgress' isn't referenced • test/services/direct_upload_service_thumbnail_test.dart:162:12 • unused_element
+warning • The value of the local variable 'event' isn't used • test/services/embedded_relay_service_test.dart:223:26 • unused_local_variable
+  error • The argument type 'MockIVideoManager' can't be assigned to the parameter type 'VideoManager'.  • test/services/explore_video_manager_trending_sync_test.dart:32:21 • argument_type_not_assignable
+warning • Unused import: 'dart:io' • test/services/macos_recording_callback_test.dart:4:8 • unused_import
+  error • Target of URI doesn't exist: 'package:openvine/services/nostr_service_v2.dart' • test/services/nip42_auth_test.dart:10:8 • uri_does_not_exist
+  error • Undefined class 'NostrServiceV2' • test/services/nip42_auth_test.dart:18:10 • undefined_class
+  error • The function 'NostrServiceV2' isn't defined • test/services/nip42_auth_test.dart:31:22 • undefined_function
+  error • The named parameter 'subscriptionManager' is required, but there's no corresponding argument • test/services/nip42_auth_test.dart:32:22 • missing_required_argument
+  error • The getter 'eventCount' isn't defined for the type 'VideoEventService' • test/services/nip42_auth_test.dart:91:54 • undefined_getter
+  error • The getter 'eventCount' isn't defined for the type 'VideoEventService' • test/services/nip42_auth_test.dart:98:24 • undefined_getter
+warning • The value of the local variable 'state' isn't used • test/services/nostr_service_connection_test.dart:127:11 • unused_local_variable
+warning • The declaration 'isRelayAuthenticated' isn't referenced • test/services/nostr_service_connection_test.dart:215:8 • unused_element
+  error • The argument type 'Null' can't be assigned to the parameter type 'bool'.  • test/services/nostr_service_deduplication_test.dart:21:58 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'String'.  • test/services/nostr_service_deduplication_test.dart:23:39 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'String'.  • test/services/nostr_service_deduplication_test.dart:24:42 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'List<Filter>'.  • test/services/nostr_service_deduplication_test.dart:30:18 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'NostrEvent'.  • test/services/nostr_service_deduplication_test.dart:36:30 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'List<Filter>'.  • test/services/nostr_service_deduplication_test.dart:37:34 • argument_type_not_assignable
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: Mock._givenName, Mock._givenHashCode, Mock._defaultResponse • test/services/nostr_service_deduplication_test.dart:172:7 • must_be_immutable
+  error • Target of URI doesn't exist: 'package:openvine/services/nostr_service_v2.dart' • test/services/nostr_service_v2_test.dart:6:8 • uri_does_not_exist
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/profile_editing_test.mocks.dart:190:25 • invalid_override
+warning • Unused import: 'package:flutter_secure_storage/flutter_secure_storage.dart' • test/services/proofmode_key_service_test.dart:5:8 • unused_import
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/social_service_test.mocks.dart:188:25 • invalid_override
+  error • The named parameter 'uploadService' is required, but there's no corresponding argument • test/services/upload_manager_test.dart:27:23 • missing_required_argument
+  error • The named parameter 'cloudinaryService' isn't defined • test/services/upload_manager_test.dart:27:37 • undefined_named_parameter
+  error • The method 'addListener' isn't defined for the type 'MockUploadManager' • test/services/video_event_publisher_test.dart:49:36 • undefined_method
+  error • The method 'removeListener' isn't defined for the type 'MockUploadManager' • test/services/video_event_publisher_test.dart:50:36 • undefined_method
+  error • The named parameter 'fetchReadyEvents' isn't defined • test/services/video_event_publisher_test.dart:73:9 • undefined_named_parameter
+  error • The named parameter 'cleanupRemoteEvent' isn't defined • test/services/video_event_publisher_test.dart:74:9 • undefined_named_parameter
+  error • The named parameter 'originalUploadId' isn't defined • test/services/video_event_publisher_test.dart:130:11 • undefined_named_parameter
+  error • The named parameter 'mimeType' isn't defined • test/services/video_event_publisher_test.dart:131:11 • undefined_named_parameter
+  error • The named parameter 'originalUploadId' isn't defined • test/services/video_event_publisher_test.dart:170:11 • undefined_named_parameter
+  error • The named parameter 'mimeType' isn't defined • test/services/video_event_publisher_test.dart:171:11 • undefined_named_parameter
+  error • The named parameter 'originalUploadId' isn't defined • test/services/video_event_publisher_test.dart:196:11 • undefined_named_parameter
+  error • The named parameter 'mimeType' isn't defined • test/services/video_event_publisher_test.dart:197:11 • undefined_named_parameter
+  error • The named parameter 'fileSize' isn't defined • test/services/video_event_publisher_test.dart:198:11 • undefined_named_parameter
+  error • The named parameter 'width' isn't defined • test/services/video_event_publisher_test.dart:199:11 • undefined_named_parameter
+  error • The named parameter 'height' isn't defined • test/services/video_event_publisher_test.dart:200:11 • undefined_named_parameter
+  error • The named parameter 'duration' isn't defined • test/services/video_event_publisher_test.dart:201:11 • undefined_named_parameter
+  error • The named parameter 'originalUploadId' isn't defined • test/services/video_event_publisher_test.dart:282:11 • undefined_named_parameter
+  error • The named parameter 'mimeType' isn't defined • test/services/video_event_publisher_test.dart:283:11 • undefined_named_parameter
+  error • The named parameter 'localVideoPath' is required, but there's no corresponding argument • test/services/video_event_publisher_test.dart:298:28 • missing_required_argument
+  error • The named parameter 'nostrPubkey' is required, but there's no corresponding argument • test/services/video_event_publisher_test.dart:298:28 • missing_required_argument
+  error • The named parameter 'fetchReadyEvents' isn't defined • test/services/video_event_publisher_test.dart:375:11 • undefined_named_parameter
+  error • The named parameter 'cleanupRemoteEvent' isn't defined • test/services/video_event_publisher_test.dart:376:11 • undefined_named_parameter
+  error • The method 'startPolling' isn't defined for the type 'VideoEventPublisher' • test/services/video_event_publisher_test.dart:430:19 • undefined_method
+  error • The named parameter 'originalUploadId' isn't defined • test/services/video_event_publisher_test.dart:457:9 • undefined_named_parameter
+  error • The named parameter 'mimeType' isn't defined • test/services/video_event_publisher_test.dart:458:9 • undefined_named_parameter
+  error • The named parameter 'originalUploadId' isn't defined • test/services/video_event_publisher_test.dart:471:9 • undefined_named_parameter
+  error • The named parameter 'mimeType' isn't defined • test/services/video_event_publisher_test.dart:472:9 • undefined_named_parameter
+  error • The named parameter 'originalUploadId' isn't defined • test/services/video_event_publisher_test.dart:490:9 • undefined_named_parameter
+  error • The named parameter 'mimeType' isn't defined • test/services/video_event_publisher_test.dart:491:9 • undefined_named_parameter
+  error • The named parameter 'fetchReadyEvents' isn't defined • test/services/video_event_publisher_thumbnail_test.dart:37:9 • undefined_named_parameter
+  error • The named parameter 'cleanupRemoteEvent' isn't defined • test/services/video_event_publisher_thumbnail_test.dart:38:9 • undefined_named_parameter
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/video_event_publisher_thumbnail_test.mocks.dart:498:26 • invalid_override
+warning • Unused import: 'package:nostr_sdk/filter.dart' • test/services/video_event_service_deduplication_test.dart:8:8 • unused_import
+  error • 'MockNostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'NostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/video_event_service_deduplication_test.mocks.dart:184:25 • invalid_override
+warning • Unused import: 'package:openvine/models/video_event.dart' • test/services/video_event_service_pagination_test.dart:10:8 • unused_import
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/video_event_service_pagination_test.mocks.dart:176:25 • invalid_override
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/video_event_service_repost_test.mocks.dart:176:25 • invalid_override
+warning • Unused import: '../helpers/test_nostr_service.dart' • test/services/video_network_service_test.dart:16:8 • unused_import
+  error • 'MockNostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/services/video_network_service_test.dart:28:17 • invalid_override
+  error • 'MockNostrService.dispose' ('void Function()') isn't a valid override of 'INostrService.dispose' ('Future<void> Function()') • test/services/video_network_service_test.dart:47:8 • invalid_override
+warning • The method doesn't override an inherited method • test/services/video_network_service_test.dart:107:16 • override_on_non_overriding_member
+  error • The method 'addListener' isn't defined for the type 'VideoPlaybackController' • test/services/video_playback_controller_mock_test.dart:76:18 • undefined_method
+  error • The method 'addListener' isn't defined for the type 'VideoPlaybackController' • test/services/video_playback_controller_mock_test.dart:212:18 • undefined_method
+warning • Unused import: 'dart:async' • test/services/video_playback_controller_test.dart:4:8 • unused_import
+warning • The value of the local variable 'filters' isn't used • test/services/video_subscription_service_test.dart:139:15 • unused_local_variable
+  error • The function 'TestNostrService' isn't defined • test/services/video_subscription_service_test.dart:142:55 • undefined_function
+  error • Too many positional arguments: 0 expected, but 1 found • test/services/video_subscription_service_test.dart:142:55 • extra_positional_arguments
+  error • A value of type 'double' can't be assigned to a variable of type 'int' • test/services/video_visibility_manager_test.dart:117:67 • invalid_assignment
+  error • The argument type 'int' can't be assigned to the parameter type 'double'.  • test/services/video_visibility_manager_test.dart:118:51 • argument_type_not_assignable
+  error • A value of type 'double' can't be assigned to a variable of type 'int' • test/services/video_visibility_manager_test.dart:122:67 • invalid_assignment
+  error • The argument type 'int' can't be assigned to the parameter type 'double'.  • test/services/video_visibility_manager_test.dart:123:51 • argument_type_not_assignable
+warning • The member 'completeInitialization' can only be used within instance members of subclasses of 'package:openvine/utils/async_utils.dart' • test/services/vine_recording_controller_async_test.dart:37:25 • invalid_use_of_protected_member
+warning • The member 'completeInitialization' can only be used within instance members of subclasses of 'package:openvine/utils/async_utils.dart' • test/services/vine_recording_controller_async_test.dart:51:27 • invalid_use_of_protected_member
+warning • The member 'failInitialization' can only be used within instance members of subclasses of 'package:openvine/utils/async_utils.dart' • test/services/vine_recording_controller_async_test.dart:75:27 • invalid_use_of_protected_member
+warning • The member 'completeInitialization' can only be used within instance members of subclasses of 'package:openvine/utils/async_utils.dart' • test/services/vine_recording_controller_async_test.dart:83:25 • invalid_use_of_protected_member
+warning • The member 'completeInitialization' can only be used within instance members of subclasses of 'package:openvine/utils/async_utils.dart' • test/services/vine_recording_controller_async_test.dart:94:25 • invalid_use_of_protected_member
+  error • The function 'skip' isn't defined • test/services/vine_recording_controller_platform_test.dart:91:11 • undefined_function
+  error • The function 'skip' isn't defined • test/services/vine_recording_controller_platform_test.dart:106:11 • undefined_function
+  error • The function 'skip' isn't defined • test/services/vine_recording_controller_platform_test.dart:121:11 • undefined_function
+  error • The function 'skip' isn't defined • test/services/vine_recording_controller_platform_test.dart:153:9 • undefined_function
+  error • The function 'skip' isn't defined • test/services/vine_recording_controller_platform_test.dart:220:9 • undefined_function
+  error • The function 'skip' isn't defined • test/services/vine_recording_controller_platform_test.dart:235:11 • undefined_function
+  error • The function 'skip' isn't defined • test/services/vine_recording_controller_platform_test.dart:238:9 • undefined_function
+warning • The value of the local variable 'kind' isn't used • test/services/vine_tag_requirement_test.dart:22:13 • unused_local_variable
+warning • The value of the local variable 'kind' isn't used • test/services/vine_tag_requirement_test.dart:32:13 • unused_local_variable
+   info • The local variable '_storage' starts with an underscore • test/test_setup.dart:26:29 • no_leading_underscores_for_local_identifiers
+warning • Unused import: 'package:openvine/utils/unified_logger.dart' • test/tools/future_delayed_detector_test.dart:2:8 • unused_import
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/unit/curated_list_relay_sync_test.mocks.dart:203:25 • invalid_override
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/unit/providers/comments_provider_test.mocks.dart:736:25 • invalid_override
+warning • The value of the local variable 'controllerState' isn't used • test/unit/providers/video_manager_dependency_fix_test.dart:144:13 • unused_local_variable
+warning • The value of the local variable 'videoManager' isn't used • test/unit/providers/video_manager_dependency_fix_test.dart:169:13 • unused_local_variable
+warning • Unused import: 'package:openvine/models/video_event.dart' • test/unit/providers/video_manager_simple_test.dart:6:8 • unused_import
+warning • Unused import: 'package:flutter/material.dart' • test/unit/screens/explore_screen_pagination_test.dart:4:8 • unused_import
+warning • Unused import: 'package:flutter_riverpod/flutter_riverpod.dart' • test/unit/screens/explore_screen_pagination_test.dart:6:8 • unused_import
+warning • Unused import: 'package:flutter/services.dart' • test/unit/services/auth_completion_validation_test.dart:6:8 • unused_import
+warning • Unused import: 'package:openvine/services/nostr_key_manager.dart' • test/unit/services/auth_completion_validation_test.dart:8:8 • unused_import
+warning • Unused import: 'package:openvine/services/nostr_service.dart' • test/unit/services/auth_completion_validation_test.dart:9:8 • unused_import
+warning • Unused import: 'package:openvine/services/subscription_manager.dart' • test/unit/services/auth_completion_validation_test.dart:10:8 • unused_import
+warning • Unused import: 'package:openvine/utils/unified_logger.dart' • test/unit/services/auth_completion_validation_test.dart:12:8 • unused_import
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:35:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:59:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:80:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:107:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:139:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:156:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:170:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:182:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:215:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:216:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/embedded_relay_performance_unit_test.dart:217:7 • undefined_identifier
+warning • Unused import: 'package:nostr_sdk/filter.dart' • test/unit/services/nostr_service_search_test.dart:7:8 • unused_import
+warning • Unused import: '../../helpers/service_init_helper.dart' • test/unit/services/nostr_video_bridge_future_delayed_tdd_test.dart:11:8 • unused_import
+warning • The value of the local variable 'operations' isn't used • test/unit/services/nostr_video_bridge_future_delayed_tdd_test.dart:79:13 • unused_local_variable
+warning • Unused import: '../../helpers/service_init_helper.dart' • test/unit/services/nostr_video_bridge_test.dart:15:8 • unused_import
+warning • The value of the local variable 'stopCompleter' isn't used • test/unit/services/nostr_video_bridge_test.dart:146:15 • unused_local_variable
+warning • The value of the local variable 'startCompleter' isn't used • test/unit/services/nostr_video_bridge_test.dart:147:15 • unused_local_variable
+warning • The value of the local variable 'operationSequence' isn't used • test/unit/services/nostr_video_bridge_test.dart:150:15 • unused_local_variable
+warning • The value of the local variable 'isStopComplete' isn't used • test/unit/services/nostr_video_bridge_test.dart:174:15 • unused_local_variable
+warning • The value of the local variable 'isStartComplete' isn't used • test/unit/services/nostr_video_bridge_test.dart:175:15 • unused_local_variable
+warning • The value of the local variable 'operationCompleter' isn't used • test/unit/services/nostr_video_bridge_test.dart:183:15 • unused_local_variable
+warning • The value of the local variable 'initialState' isn't used • test/unit/services/nostr_video_bridge_test.dart:203:15 • unused_local_variable
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/unit/services/social_service_comment_test.mocks.dart:188:25 • invalid_override
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/unit/services/subscription_manager_filter_test.mocks.dart:175:25 • invalid_override
+   info • The import of 'dart:async' is unnecessary because all of the used elements are also provided by the import of 'package:flutter_test/flutter_test.dart' • test/unit/services/upload_manager_get_by_path_test.dart:4:8 • unnecessary_import
+  error • Undefined name 'UnifiedLogger' • test/unit/services/video_event_hashtag_bug_test.dart:55:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/video_event_hashtag_bug_test.dart:57:9 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/video_event_hashtag_bug_test.dart:59:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/video_event_hashtag_bug_test.dart:60:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/video_event_service_hashtag_dedup_integration_test.dart:46:7 • undefined_identifier
+  error • Undefined name 'UnifiedLogger' • test/unit/services/video_event_service_hashtag_dedup_integration_test.dart:65:7 • undefined_identifier
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/unit/services/video_event_service_infinite_scroll_test.mocks.dart:176:25 • invalid_override
+warning • The declaration '_createMockNostrEvent' isn't referenced • test/unit/services/video_event_service_pagination_test.dart:293:7 • unused_element
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/unit/services/video_event_service_pagination_test.mocks.dart:176:25 • invalid_override
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/unit/services/video_event_service_search_test.mocks.dart:192:25 • invalid_override
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/unit/subscription_manager_tdd_test.mocks.dart:191:25 • invalid_override
+warning • The value of the local variable 'addressableRef' isn't used • test/unit/video_event_kind_32222_test.dart:203:13 • unused_local_variable
+  error • The argument type 'AuthService' can't be assigned to the parameter type 'Nip98AuthService?'.  • test/upload_initialization_test.dart:36:56 • argument_type_not_assignable
+  error • The argument type 'AuthService' can't be assigned to the parameter type 'Nip98AuthService?'.  • test/upload_initialization_test.dart:94:62 • argument_type_not_assignable
+warning • The value of the local variable 'attempts' isn't used • test/utils/async_utils_test.dart:179:13 • unused_local_variable
+warning • The value of the local variable 'testVideoEvent' isn't used • test/widget/tdd/error_handling_ui_test.dart:10:21 • unused_local_variable
+warning • The value of the local variable 'failingVideoEvent' isn't used • test/widget/tdd/error_handling_ui_test.dart:11:21 • unused_local_variable
+warning • The value of the local variable 'testVideoEvents' isn't used • test/widget/tdd/feed_screen_behavior_test.dart:10:27 • unused_local_variable
+warning • The value of the local variable 'testVideoEvent' isn't used • test/widget/tdd/video_feed_item_behavior_test.dart:10:21 • unused_local_variable
+warning • The value of the local variable 'testVideoEvent' isn't used • test/widget/tdd/video_state_transitions_test.dart:10:21 • unused_local_variable
+warning • The value of the local variable 'mockChewieController' isn't used • test/widget/widgets/video_player_widget_test.dart:24:31 • unused_local_variable
+warning • The value of the local variable 'onErrorCalled' isn't used • test/widget/widgets/video_player_widget_test.dart:407:13 • unused_local_variable
+warning • The value of the local variable 'onEndCalled' isn't used • test/widget/widgets/video_player_widget_test.dart:439:13 • unused_local_variable
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:79:42 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:80:43 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:81:38 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:114:42 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:115:43 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:116:38 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:146:42 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:147:43 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:148:38 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:191:42 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:192:43 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:193:38 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:221:42 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:222:43 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:223:38 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:258:42 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:259:43 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:260:38 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:291:40 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:326:40 • undefined_method
+  error • The method 'overrideWithValue' isn't defined for the type 'AutoDisposeFutureProvider' • test/widgets/share_video_menu_riverpod_test.dart:358:45 • undefined_method
+warning • The value of the local variable 'testVideo' isn't used • test/widgets/share_video_menu_riverpod_test.dart:398:11 • unused_local_variable
+warning • The value of the local variable 'testVideo' isn't used • test/widgets/share_video_menu_riverpod_test.dart:422:11 • unused_local_variable
+warning • The value of the local variable 'testVideo' isn't used • test/widgets/share_video_menu_riverpod_test.dart:446:11 • unused_local_variable
+  error • 'MockINostrService.subscribeToEvents' ('Stream<Event> Function({bool? bypassLimits, required List<Filter>? filters})') isn't a valid override of 'INostrService.subscribeToEvents' ('Stream<Event> Function({bool bypassLimits, required List<Filter> filters, void Function()? onEose})') • test/widgets/share_video_menu_riverpod_test.mocks.dart:215:25 • invalid_override
+warning • Unused import: 'package:openvine/providers/optimistic_follow_provider.dart' • test/widgets/user_profile_tile_follow_test.dart:6:8 • unused_import
+  error • The argument type 'Null' can't be assigned to the parameter type 'String'.  • test/widgets/user_profile_tile_follow_test.dart:27:35 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'String'.  • test/widgets/user_profile_tile_follow_test.dart:28:34 • argument_type_not_assignable
+  error • The argument type 'Null' can't be assigned to the parameter type 'String'.  • test/widgets/user_profile_tile_follow_test.dart:29:36 • argument_type_not_assignable
+warning • The declaration 'build' isn't referenced • test/widgets/user_profile_tile_follow_test.dart:32:12 • unused_element
+   info • 'setMockMethodCallHandler' is deprecated and shouldn't be used. Use tester.binding.defaultBinaryMessenger.setMockMethodCallHandler or TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler instead. Pass the channel as the first argument. This feature was deprecated after v3.9.0-19.0.pre • test/widgets/video_feed_item_like_test.dart:27:53 • deprecated_member_use
+warning • The value of the local variable 'doubleTapCalled' isn't used • test/widgets/video_playback_widget_test.dart:170:13 • unused_local_variable
+warning • The value of the local variable 'errorMessage' isn't used • test/widgets/video_playback_widget_test.dart:190:17 • unused_local_variable
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:12:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:15:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:20:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:23:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:26:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:29:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:31:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:34:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:35:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:38:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:42:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:49:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:52:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:53:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:55:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:59:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:74:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:77:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:79:7 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:82:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:86:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:92:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:104:7 • avoid_print
+   info • Unnecessary braces in a string interpolation • test_embedded_relay.dart:104:35 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:110:7 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:120:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:123:7 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:125:7 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:132:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:152:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:154:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:157:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:158:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:160:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:166:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:168:7 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:173:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:175:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:177:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:180:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:181:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:182:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:183:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:184:3 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:187:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:188:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:189:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:190:5 • avoid_print
+   info • Don't invoke 'print' in production code • test_embedded_relay.dart:191:5 • avoid_print
+warning • The value of the local variable 'snakeCase' isn't used • tools/generate_tests.dart:259:9 • unused_local_variable
+
