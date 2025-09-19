@@ -8,7 +8,7 @@ import 'package:openvine/services/vine_recording_controller.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   group('EnhancedMobileCameraInterface API Tests', () {
     late EnhancedMobileCameraInterface cameraInterface;
 
@@ -50,7 +50,8 @@ void main() {
   });
 
   group('EnhancedCameraPreview Widget Structure', () {
-    testWidgets('should build with required parameters', (WidgetTester tester) async {
+    testWidgets('should build with required parameters',
+        (WidgetTester tester) async {
       // Create a minimal test widget
       await tester.pumpWidget(
         MaterialApp(

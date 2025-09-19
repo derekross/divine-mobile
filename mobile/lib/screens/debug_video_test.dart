@@ -12,7 +12,8 @@ class DebugVideoTestScreen extends ConsumerStatefulWidget {
   const DebugVideoTestScreen({super.key});
 
   @override
-  ConsumerState<DebugVideoTestScreen> createState() => _DebugVideoTestScreenState();
+  ConsumerState<DebugVideoTestScreen> createState() =>
+      _DebugVideoTestScreenState();
 }
 
 class _DebugVideoTestScreenState extends ConsumerState<DebugVideoTestScreen> {
@@ -38,73 +39,73 @@ class _DebugVideoTestScreenState extends ConsumerState<DebugVideoTestScreen> {
     final testVideo = videos.isNotEmpty ? videos.first : null;
 
     return Scaffold(
-        backgroundColor: VineTheme.backgroundColor,
-        appBar: AppBar(
-          backgroundColor: VineTheme.vineGreen,
-          title: const Text('Debug Video Test'),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                testVideo != null 
-                    ? 'Video URL: ${testVideo.videoUrl}'
-                    : 'No videos available in feed',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
+      backgroundColor: VineTheme.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: VineTheme.vineGreen,
+        title: const Text('Debug Video Test'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              testVideo != null
+                  ? 'Video URL: ${testVideo.videoUrl}'
+                  : 'No videos available in feed',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
 
-              // Fixed size container for video
-              Container(
-                width: 300,
-                height: 400,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  border: Border.all(color: VineTheme.vineGreen, width: 2),
-                ),
-                child: (_isPlaying && testVideo != null)
-                    ? VideoFeedItem(
-                        video: testVideo,
-                        isActive: true,
-                      )
-                    : const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.play_circle_outline,
-                              size: 64,
-                              color: Colors.white54,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Tap Play to test video',
-                              style: TextStyle(color: Colors.white54),
-                            ),
-                          ],
-                        ),
+            // Fixed size container for video
+            Container(
+              width: 300,
+              height: 400,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                border: Border.all(color: VineTheme.vineGreen, width: 2),
+              ),
+              child: (_isPlaying && testVideo != null)
+                  ? VideoFeedItem(
+                      video: testVideo,
+                      isActive: true,
+                    )
+                  : const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.play_circle_outline,
+                            size: 64,
+                            color: Colors.white54,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Tap Play to test video',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        ],
                       ),
-              ),
+                    ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isPlaying = !_isPlaying;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: VineTheme.vineGreen,
-                  foregroundColor: Colors.white,
-                ),
-                child: Text(_isPlaying ? 'Stop' : 'Play'),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isPlaying = !_isPlaying;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: VineTheme.vineGreen,
+                foregroundColor: Colors.white,
               ),
-            ],
-          ),
+              child: Text(_isPlaying ? 'Stop' : 'Play'),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }

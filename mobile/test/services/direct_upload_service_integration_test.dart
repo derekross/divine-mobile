@@ -12,7 +12,6 @@ import 'package:nostr_sdk/event.dart';
 import 'package:openvine/config/app_config.dart';
 import 'package:openvine/services/auth_service.dart';
 import 'package:openvine/services/direct_upload_service.dart';
-import 'package:openvine/services/secure_key_storage_service.dart';
 import 'package:openvine/services/nip98_auth_service.dart';
 import 'package:openvine/utils/nostr_encoding.dart';
 import 'package:openvine/utils/unified_logger.dart';
@@ -266,7 +265,8 @@ class TestAuthService extends AuthService {
 
   // Return the private key for signing
   @override
-  Future<String?> getPrivateKeyForSigning({String? biometricPrompt}) async => keyPair.privateKeyHex;
+  Future<String?> getPrivateKeyForSigning({String? biometricPrompt}) async =>
+      keyPair.privateKeyHex;
 
   // Create and sign events for NIP-98 auth
   @override

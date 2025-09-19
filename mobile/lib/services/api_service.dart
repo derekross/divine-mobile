@@ -1,5 +1,5 @@
 // ABOUTME: HTTP API service for communicating with the divine backend
-import 'package:flutter/foundation.dart';// ABOUTME: Handles ready events polling, authentication, and error handling
+import 'package:flutter/foundation.dart'; // ABOUTME: Handles ready events polling, authentication, and error handling
 
 import 'dart:async';
 import 'dart:convert';
@@ -25,7 +25,7 @@ class ApiException implements Exception {
 
 /// Service for backend API communication
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class ApiService  {
+class ApiService {
   ApiService({
     http.Client? client,
     Nip98AuthService? authService,
@@ -39,8 +39,6 @@ class ApiService  {
   final http.Client _client;
   final Nip98AuthService? _authService;
   final RateLimiter? _rateLimiter;
-
-
 
   /// Request signed upload parameters (from previous implementation)
   Future<Map<String, dynamic>> requestSignedUpload({
@@ -229,6 +227,5 @@ class ApiService  {
   /// Close the HTTP client
   void dispose() {
     _client.close();
-    
   }
 }

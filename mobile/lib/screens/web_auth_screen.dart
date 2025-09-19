@@ -49,7 +49,7 @@ class _WebAuthScreenState extends ConsumerState<WebAuthScreen>
   void dispose() {
     _bunkerUriController.dispose();
     _fadeController.dispose();
-    
+
     super.dispose();
   }
 
@@ -191,136 +191,137 @@ class _WebAuthScreenState extends ConsumerState<WebAuthScreen>
           builder: (context, ref, child) {
             final webAuth = ref.watch(webAuthServiceProvider);
             return SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Center(
-                        child: SingleChildScrollView(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 400),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Logo and title
-                                const Icon(
-                                  Icons.security,
-                                  size: 80,
-                                  color: Colors.purple,
-                                ),
-                                const SizedBox(height: 24),
-                                const Text(
-                                  'Connect to divine',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'serif', // Fallback font
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: SingleChildScrollView(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 400),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Logo and title
+                                  const Icon(
+                                    Icons.security,
+                                    size: 80,
+                                    color: Colors.purple,
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Choose your preferred Nostr authentication method',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 16,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 48),
-
-                                // NIP-07 Authentication
-                                if (webAuth.isNip07Available) ...[
-                                  _buildAuthMethodCard(
-                                    title: 'Browser Extension',
-                                    subtitle: webAuth.getMethodDisplayName(
-                                        WebAuthMethod.nip07),
-                                    icon: Icons.extension,
-                                    color: Colors.blue,
-                                    onTap: _isAuthenticating
-                                        ? null
-                                        : _authenticateWithNip07,
-                                    isRecommended: true,
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-
-                                // Bunker Authentication
-                                _buildBunkerAuthCard(webAuth),
-
-                                // Error message
-                                if (_errorMessage != null) ...[
                                   const SizedBox(height: 24),
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                          color: Colors.red, width: 1),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.error_outline,
-                                            color: Colors.red),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            _errorMessage!,
-                                            style: const TextStyle(
-                                                color: Colors.red),
-                                          ),
-                                        ),
-                                      ],
+                                  const Text(
+                                    'Connect to divine',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'serif', // Fallback font
                                     ),
                                   ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Choose your preferred Nostr authentication method',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 16,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 48),
+
+                                  // NIP-07 Authentication
+                                  if (webAuth.isNip07Available) ...[
+                                    _buildAuthMethodCard(
+                                      title: 'Browser Extension',
+                                      subtitle: webAuth.getMethodDisplayName(
+                                          WebAuthMethod.nip07),
+                                      icon: Icons.extension,
+                                      color: Colors.blue,
+                                      onTap: _isAuthenticating
+                                          ? null
+                                          : _authenticateWithNip07,
+                                      isRecommended: true,
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+
+                                  // Bunker Authentication
+                                  _buildBunkerAuthCard(webAuth),
+
+                                  // Error message
+                                  if (_errorMessage != null) ...[
+                                    const SizedBox(height: 24),
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.red.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                            color: Colors.red, width: 1),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.error_outline,
+                                              color: Colors.red),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              _errorMessage!,
+                                              style: const TextStyle(
+                                                  color: Colors.red),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
 
-                    // Help text
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Column(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.info_outline,
-                                  color: Colors.blue, size: 20),
-                              SizedBox(width: 8),
-                              Text(
-                                'New to Nostr?',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                      // Help text
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Column(
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.info_outline,
+                                    color: Colors.blue, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'New to Nostr?',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Install a browser extension like Alby or nos2x for the easiest experience, or use nsec bunker for secure remote signing.',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 14),
-                          ),
-                        ],
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Install a browser extension like Alby or nos2x for the easiest experience, or use nsec bunker for secure remote signing.',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 14),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
             );
           },
         ),

@@ -14,6 +14,7 @@ import 'package:openvine/providers/video_manager_providers.dart';
 import 'package:openvine/services/video_manager_interface.dart';
 import 'package:openvine/theme/vine_theme.dart';
 import 'package:openvine/utils/unified_logger.dart';
+import 'package:openvine/utils/ios_upload_debug_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 
@@ -27,7 +28,8 @@ class VideoMetadataScreen extends ConsumerStatefulWidget {
   final Duration duration;
 
   @override
-  ConsumerState<VideoMetadataScreen> createState() => _VideoMetadataScreenState();
+  ConsumerState<VideoMetadataScreen> createState() =>
+      _VideoMetadataScreenState();
 }
 
 class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
@@ -57,7 +59,9 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
     if (_videoControllerId != null) {
       try {
         // VideoManager will handle cleanup and GlobalVideoRegistry coordination
-        ref.read(videoManagerProvider.notifier).disposeVideo(_videoControllerId!);
+        ref
+            .read(videoManagerProvider.notifier)
+            .disposeVideo(_videoControllerId!);
       } catch (e) {
         // If ref is already disposed, log and continue
         Log.warning('Could not dispose video controller (ref disposed): $e',
@@ -68,7 +72,7 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _hashtagController.dispose();
-    
+
     super.dispose();
   }
 
@@ -86,19 +90,21 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
       // Use VideoManager to create file controller securely
       final videoManager = ref.read(videoManagerProvider.notifier);
       final controllerId = 'metadata_${widget.videoFile.path.hashCode}';
-      
-      Log.debug('Creating video controller with ID: $controllerId for file: ${widget.videoFile.path}',
-          name: 'VideoMetadataScreen', category: LogCategory.ui);
-      
+
+      Log.debug(
+          'Creating video controller with ID: $controllerId for file: ${widget.videoFile.path}',
+          name: 'VideoMetadataScreen',
+          category: LogCategory.ui);
+
       final controller = await videoManager.createFileController(
         controllerId,
         widget.videoFile,
         priority: PreloadPriority.current,
       );
-      
+
       if (controller != null && mounted) {
         _videoControllerId = controllerId;
-        
+
         Log.info('Video initialized: ${controller.value.size}',
             name: 'VideoMetadataScreen', category: LogCategory.ui);
 
@@ -123,10 +129,10 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
 
   Widget _buildVideoPreview() {
     // Get controller from VideoManager
-    final controller = _videoControllerId != null 
+    final controller = _videoControllerId != null
         ? ref.watch(videoPlayerControllerProvider(_videoControllerId!))
         : null;
-        
+
     if (_isVideoInitialized && controller?.value.isInitialized == true) {
       return ClipRect(
         child: FittedBox(
@@ -685,7 +691,7 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
     try {
       Log.info('Starting background upload for video: ${widget.videoFile.path}',
           name: 'VideoMetadataScreen', category: LogCategory.ui);
-      
+
       final uploadManager = ref.read(uploadManagerProvider);
       final authService = ref.read(authServiceProvider);
 
@@ -696,7 +702,8 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
       int? videoWidth;
       int? videoHeight;
       if (_videoControllerId != null) {
-        final controller = ref.read(videoManagerProvider)
+        final controller = ref
+            .read(videoManagerProvider)
             .getPlayerController(_videoControllerId!);
         if (controller != null && controller.value.isInitialized) {
           videoWidth = controller.value.size.width.toInt();
@@ -731,7 +738,7 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
           name: 'VideoMetadataScreen', category: LogCategory.ui);
       Log.error('❌ Error: $e',
           name: 'VideoMetadataScreen', category: LogCategory.ui);
-      
+
       // Check if it's a file issue
       if (widget.videoFile.existsSync()) {
         Log.error('📁 File exists but upload failed anyway',
@@ -778,27 +785,28 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
         Log.info('Upload not started yet, starting now...',
             name: 'VideoMetadataScreen', category: LogCategory.ui);
         await _startBackgroundUpload();
-        
+
         // Check if it succeeded
         if (_currentUploadId == null) {
-          throw Exception('Failed to start upload. Please check your connection and try again.');
+          throw Exception(
+              'Failed to start upload. Please check your connection and try again.');
         }
       }
-      
+
       // Get the current upload
       final uploadManager = ref.read(uploadManagerProvider);
       var upload = uploadManager.getUpload(_currentUploadId!);
-      
+
       if (upload == null) {
         throw Exception('Upload not found');
       }
 
       // If still uploading, update metadata and wait for completion
-      if (upload.status == UploadStatus.uploading || 
+      if (upload.status == UploadStatus.uploading ||
           upload.status == UploadStatus.processing) {
         Log.info('Upload in progress, will publish when ready...',
             name: 'VideoMetadataScreen', category: LogCategory.ui);
-        
+
         // Update metadata while uploading
         await uploadManager.updateUploadMetadata(
           _currentUploadId!,
@@ -806,7 +814,7 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
           description: _descriptionController.text.trim(),
           hashtags: allHashtags,
         );
-        
+
         // Show progress indicator
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -829,19 +837,19 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
             duration: Duration(seconds: 10),
           ),
         );
-        
+
         // Wait for upload to complete
         int waitCount = 0;
-        while (upload?.status == UploadStatus.uploading || 
-               upload?.status == UploadStatus.processing) {
+        while (upload?.status == UploadStatus.uploading ||
+            upload?.status == UploadStatus.processing) {
           await Future.delayed(const Duration(seconds: 1));
           waitCount++;
-          
+
           // Timeout after 60 seconds
           if (waitCount > 60) {
             throw Exception('Upload timeout. Please try again.');
           }
-          
+
           // Refresh upload status
           final updatedUpload = uploadManager.getUpload(_currentUploadId!);
           if (updatedUpload == null) {
@@ -852,20 +860,31 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
       }
 
       if (upload?.status == UploadStatus.failed) {
-        throw Exception('Upload failed: ${upload?.errorMessage ?? "Unknown error"}');
+        final errorMsg = upload?.errorMessage ?? "Unknown error";
+
+        // Show detailed error on iOS
+        if (IOSUploadDebugHelper.shouldShowDebugInfo() && mounted) {
+          IOSUploadDebugHelper.showDetailedError(
+            context,
+            errorMessage: errorMsg,
+            upload: upload,
+          );
+        }
+
+        throw Exception('Upload failed: $errorMsg');
       }
 
-      if (upload?.status != UploadStatus.readyToPublish && 
+      if (upload?.status != UploadStatus.readyToPublish &&
           upload?.status != UploadStatus.published) {
         throw Exception('Upload not ready for publishing: ${upload?.status}');
       }
 
       // Get the video event publisher and publish
       final videoEventPublisher = ref.read(videoEventPublisherProvider);
-      
+
       Log.info('Publishing video event to Nostr...',
           name: 'VideoMetadataScreen', category: LogCategory.ui);
-      
+
       final success = await videoEventPublisher.publishVideoEvent(
         upload: upload!,
         title: title,
@@ -891,19 +910,20 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
             duration: Duration(seconds: 3),
           ),
         );
-        
+
         // Clear all profile caches to force complete refresh
         clearAllProfileVideosCache();
-        
+
         // Force refresh of all profile-related providers
         ref.invalidate(profileVideosNotifierProvider);
         ref.invalidate(profileStatsNotifierProvider);
         ref.invalidate(userProfileNotifierProvider);
-        
+
         // Navigate to profile tab (index 3) to show user their new video
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (context) => const MainNavigationScreen(initialTabIndex: 3),
+            builder: (context) =>
+                const MainNavigationScreen(initialTabIndex: 3),
           ),
           (route) => false,
         );
@@ -911,12 +931,31 @@ class _VideoMetadataScreenState extends ConsumerState<VideoMetadataScreen> {
     } catch (e) {
       Log.error('Failed to publish video: $e',
           name: 'VideoMetadataScreen', category: LogCategory.ui);
-      
+
       if (mounted) {
+        // Show detailed error dialog on iOS
+        if (IOSUploadDebugHelper.shouldShowDebugInfo()) {
+          // Get upload details if available
+          PendingUpload? failedUpload;
+          if (_currentUploadId != null) {
+            final uploadManager = ref.read(uploadManagerProvider);
+            failedUpload = uploadManager.getUpload(_currentUploadId!);
+          }
+
+          IOSUploadDebugHelper.showDetailedError(
+            context,
+            errorMessage: e.toString(),
+            upload: failedUpload,
+            exception: e,
+          );
+        }
+
+        // Also show snackbar for quick feedback
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to publish: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }

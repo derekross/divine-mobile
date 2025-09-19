@@ -39,6 +39,8 @@ class VideoEvent {
     this.moderationStatus,
     this.originalLoops,
     this.originalLikes,
+    this.originalComments,
+    this.originalReposts,
   });
 
   /// Create VideoEvent from Nostr event
@@ -73,6 +75,8 @@ class VideoEvent {
     String? blurhash;
     int? originalLoops;
     int? originalLikes;
+    int? originalComments;
+    int? originalReposts;
 
     // Parse event tags according to NIP-71
     // Handle both List<String> and List<dynamic> from different nostr implementations
@@ -98,7 +102,8 @@ class VideoEvent {
           if (tagValue.isNotEmpty && _isValidVideoUrl(tagValue)) {
             if (tagValue.contains('apt.openvine.co')) {
               // Fix typo: apt.openvine.co -> api.openvine.co
-              final fixedUrl = tagValue.replaceAll('apt.openvine.co', 'api.openvine.co');
+              final fixedUrl =
+                  tagValue.replaceAll('apt.openvine.co', 'api.openvine.co');
               developer.log(
                   '🔧 FIXED: Corrected apt.openvine.co to api.openvine.co: $fixedUrl',
                   name: 'VideoEvent');
@@ -116,7 +121,8 @@ class VideoEvent {
           // Handle streaming tag with HLS/DASH URLs
           // Format: ["streaming", "url", "format"] e.g., ["streaming", "https://cdn.divine.video/.../video.m3u8", "hls"]
           if (tagValue.isNotEmpty && _isValidVideoUrl(tagValue)) {
-            videoUrl ??= tagValue; // Use streaming URL if no other video URL is set
+            videoUrl ??=
+                tagValue; // Use streaming URL if no other video URL is set
             developer.log('✅ Set videoUrl from streaming tag: $tagValue',
                 name: 'VideoEvent');
           }
@@ -139,7 +145,8 @@ class VideoEvent {
                 if (value.isNotEmpty && _isValidVideoUrl(value)) {
                   if (value.contains('apt.openvine.co')) {
                     // Fix typo: apt.openvine.co -> api.openvine.co
-                    final fixedUrl = value.replaceAll('apt.openvine.co', 'api.openvine.co');
+                    final fixedUrl =
+                        value.replaceAll('apt.openvine.co', 'api.openvine.co');
                     developer.log(
                         '🔧 FIXED: Corrected apt.openvine.co to api.openvine.co in imeta: $fixedUrl',
                         name: 'VideoEvent');
@@ -200,7 +207,8 @@ class VideoEvent {
           if (tagValue.isNotEmpty && tagValue.endsWith('.gif')) {
             // Store in tags for potential future use but don't use as main thumbnail
             tags['preview_gif'] = tagValue;
-            developer.log('✅ Found preview GIF tag (not using as thumbnail): $tagValue',
+            developer.log(
+                '✅ Found preview GIF tag (not using as thumbnail): $tagValue',
                 name: 'VideoEvent');
           }
         case 'image':
@@ -227,6 +235,12 @@ class VideoEvent {
         case 'likes':
           // Original like count from classic Vine
           originalLikes = int.tryParse(tagValue);
+        case 'comments':
+          // Original comment count from classic Vine
+          originalComments = int.tryParse(tagValue);
+        case 'reposts':
+          // Original repost count from classic Vine
+          originalReposts = int.tryParse(tagValue);
         case 't':
           if (tagValue.isNotEmpty) {
             hashtags.add(tagValue);
@@ -325,7 +339,8 @@ class VideoEvent {
 
     // If we still have a broken apt.openvine.co URL (shouldn't happen now), fix it
     if (videoUrl != null && videoUrl!.contains('apt.openvine.co')) {
-      final fixedUrl = videoUrl!.replaceAll('apt.openvine.co', 'api.openvine.co');
+      final fixedUrl =
+          videoUrl!.replaceAll('apt.openvine.co', 'api.openvine.co');
       developer.log(
           '🔧 FINAL FIX: Corrected remaining apt.openvine.co to api.openvine.co: $fixedUrl',
           name: 'VideoEvent');
@@ -346,14 +361,18 @@ class VideoEvent {
     }
 
     // Generate fallback thumbnail URL if none provided
-    developer.log('🖼️ BEFORE FALLBACK: thumbnailUrl = $thumbnailUrl', name: 'VideoEvent');
-    final String? finalThumbnailUrl = thumbnailUrl ?? _generateFallbackThumbnailUrl(videoUrl, event.id);
-    
+    developer.log('🖼️ BEFORE FALLBACK: thumbnailUrl = $thumbnailUrl',
+        name: 'VideoEvent');
+    final String? finalThumbnailUrl =
+        thumbnailUrl ?? _generateFallbackThumbnailUrl(videoUrl, event.id);
+
     if (finalThumbnailUrl != thumbnailUrl) {
-      developer.log('🔧 FALLBACK: Generated thumbnail URL: $finalThumbnailUrl', name: 'VideoEvent');
+      developer.log('🔧 FALLBACK: Generated thumbnail URL: $finalThumbnailUrl',
+          name: 'VideoEvent');
     }
-    
-    developer.log('🖼️ FINAL: thumbnailUrl = $finalThumbnailUrl', name: 'VideoEvent');
+
+    developer.log('🖼️ FINAL: thumbnailUrl = $finalThumbnailUrl',
+        name: 'VideoEvent');
     developer.log('🖼️ FINAL: blurhash = $blurhash', name: 'VideoEvent');
     developer.log('🖼️ FINAL: event.id = ${event.id}', name: 'VideoEvent');
 
@@ -384,6 +403,8 @@ class VideoEvent {
       repostedAt: null,
       originalLoops: originalLoops,
       originalLikes: originalLikes,
+      originalComments: originalComments,
+      originalReposts: originalReposts,
     );
   }
   final String id;
@@ -419,10 +440,12 @@ class VideoEvent {
   final bool
       isFlaggedContent; // Content flagged as potentially adult/inappropriate
   final String? moderationStatus;
-  
+
   // Original Vine metrics (from imported data)
   final int? originalLoops; // Original loop count from classic Vine
   final int? originalLikes; // Original like count from classic Vine
+  final int? originalComments; // Original comment count from classic Vine
+  final int? originalReposts; // Original repost count from classic Vine
 
   /// Comparator: items with no loop count first (new vines),
   /// then items with loop count sorted by amount desc.
@@ -448,6 +471,50 @@ class VideoEvent {
     final loopsCompare = bLoops!.compareTo(aLoops!);
     if (loopsCompare != 0) return loopsCompare;
     return b.createdAt.compareTo(a.createdAt);
+  }
+
+  /// Enhanced comparator that combines multiple engagement metrics
+  /// Uses embedded metrics from imported vine data
+  /// Priority based on combined engagement: loops + (comments * 3) + (likes * 2) + (reposts * 2.5)
+  static int compareByEngagementScore(VideoEvent a, VideoEvent b) {
+    // Calculate engagement scores using embedded metrics
+    final aScore = _calculateEngagementScore(a);
+    final bScore = _calculateEngagementScore(b);
+
+    // Higher score wins
+    final scoreCompare = bScore.compareTo(aScore);
+    if (scoreCompare != 0) return scoreCompare;
+
+    // If scores are equal, fall back to higher loop count
+    final loopCompare = (b.originalLoops ?? 0).compareTo(a.originalLoops ?? 0);
+    if (loopCompare != 0) return loopCompare;
+
+    // Final tiebreaker: created_at (though most will have same timestamp from import)
+    return b.createdAt.compareTo(a.createdAt);
+  }
+
+  /// Calculate weighted engagement score for a video
+  /// Uses metrics embedded in the vine import tags
+  /// Weights are designed to prioritize meaningful engagement:
+  /// - Loops (views): base metric, weight 1.0
+  /// - Comments: high engagement, weight 3.0
+  /// - Likes: medium engagement, weight 2.0
+  /// - Reposts: amplification, weight 2.5
+  static double _calculateEngagementScore(VideoEvent event) {
+    // Use embedded metrics from imported vine data
+    final loops = event.originalLoops ?? 0;
+    final comments = event.originalComments ?? 0;
+    final likes = event.originalLikes ?? 0;
+    final reposts = event.originalReposts ?? 0;
+
+    // Calculate weighted score
+    double score = 0.0;
+    score += loops * 1.0; // Base weight for views/loops
+    score += comments * 3.0; // Comments show high engagement
+    score += likes * 2.0; // Likes show appreciation
+    score += reposts * 2.5; // Reposts help spread content
+
+    return score;
   }
 
   /// Parse imeta tag which contains space-separated key-value pairs
@@ -713,7 +780,8 @@ class VideoEvent {
       // The video player will determine if it can actually play the content
       return true;
     } catch (e) {
-      developer.log('🔍 INVALID URL (parse error): $correctedUrl - error: $e', name: 'VideoEvent');
+      developer.log('🔍 INVALID URL (parse error): $correctedUrl - error: $e',
+          name: 'VideoEvent');
       return false;
     }
   }
@@ -766,7 +834,8 @@ class VideoEvent {
   }
 
   /// Generate fallback thumbnail URL when none is provided
-  static String? _generateFallbackThumbnailUrl(String? videoUrl, String eventId) {
+  static String? _generateFallbackThumbnailUrl(
+      String? videoUrl, String eventId) {
     // If no video URL, can't generate thumbnail
     if (videoUrl == null || videoUrl.isEmpty) {
       return null;
@@ -780,19 +849,23 @@ class VideoEvent {
 
     try {
       final uri = Uri.parse(correctedUrl);
-      
+
       // For api.openvine.co videos, use the thumbnail API service
-      if (uri.host.contains('api.openvine.co') || uri.host.contains('apt.openvine.co')) {
+      if (uri.host.contains('api.openvine.co') ||
+          uri.host.contains('apt.openvine.co')) {
         // Extract video ID from path like /media/12345
         final pathSegments = uri.pathSegments;
-        if (pathSegments.isNotEmpty && pathSegments.first == 'media' && pathSegments.length > 1) {
+        if (pathSegments.isNotEmpty &&
+            pathSegments.first == 'media' &&
+            pathSegments.length > 1) {
           final videoId = pathSegments[1];
           return ThumbnailApiService.getThumbnailUrl(videoId);
         }
       }
-      
+
       // For other video hosts, try to generate a thumbnail URL pattern
-      if (uri.host.contains('blossom.primal.net') || uri.host.contains('primal.net')) {
+      if (uri.host.contains('blossom.primal.net') ||
+          uri.host.contains('primal.net')) {
         // Primal uses a thumbnail service with .jpg extension
         final videoPath = uri.path;
         if (videoPath.endsWith('.mp4')) {
@@ -800,21 +873,25 @@ class VideoEvent {
           return 'https://${uri.host}$basePath.jpg';
         }
       }
-      
+
       // For nostr.build, they have a thumbnail pattern
       if (uri.host.contains('nostr.build')) {
         final videoPath = uri.path;
         if (videoPath.contains('/av/')) {
           // nostr.build thumbnail pattern: replace /av/ with /i/ and change extension
-          final thumbnailPath = videoPath.replaceAll('/av/', '/i/').replaceAll('.mp4', '.jpg');
+          final thumbnailPath =
+              videoPath.replaceAll('/av/', '/i/').replaceAll('.mp4', '.jpg');
           return 'https://${uri.host}$thumbnailPath';
         }
       }
-      
-      developer.log('🔧 FALLBACK: Could not generate thumbnail URL for video host: ${uri.host}', name: 'VideoEvent');
+
+      developer.log(
+          '🔧 FALLBACK: Could not generate thumbnail URL for video host: ${uri.host}',
+          name: 'VideoEvent');
       return null;
     } catch (e) {
-      developer.log('🔧 FALLBACK: Error generating thumbnail URL: $e', name: 'VideoEvent');
+      developer.log('🔧 FALLBACK: Error generating thumbnail URL: $e',
+          name: 'VideoEvent');
       return null;
     }
   }

@@ -115,7 +115,8 @@ void main() {
           Log.debug('\n🔧 Testing relay management...');
 
           // Try adding a new relay
-          const newRelay = 'wss://localhost:8081'; // Secondary embedded relay port
+          const newRelay =
+              'wss://localhost:8081'; // Secondary embedded relay port
           Log.debug('Adding relay: $newRelay');
           final addSuccess = await service.addRelay(newRelay);
           Log.debug('Add relay result: ${addSuccess ? "success" : "failed"}');

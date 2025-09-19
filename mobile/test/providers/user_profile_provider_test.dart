@@ -62,7 +62,8 @@ void main() {
     test('should initialize properly', () async {
       // Setup mock Nostr service with all required connection checks
       when(() => mockNostrService.isInitialized).thenReturn(true);
-      when(() => mockNostrService.connectedRelayCount).thenReturn(1); // FIX: Add missing mock
+      when(() => mockNostrService.connectedRelayCount)
+          .thenReturn(1); // FIX: Add missing mock
 
       // Initialize
       await container.read(userProfileNotifierProvider.notifier).initialize();
@@ -76,7 +77,8 @@ void main() {
 
       // Setup mock Nostr service with all required connection checks
       when(() => mockNostrService.isInitialized).thenReturn(true);
-      when(() => mockNostrService.connectedRelayCount).thenReturn(1); // FIX: Add missing mock
+      when(() => mockNostrService.connectedRelayCount)
+          .thenReturn(1); // FIX: Add missing mock
 
       // Setup mock event with real profile data
       final mockEvent = MockEvent();
@@ -94,17 +96,20 @@ void main() {
           .thenAnswer((_) => Stream.value(mockEvent));
 
       // Test the async provider directly
-      final profileAsyncValue = await container.read(userProfileProvider(pubkey).future);
+      final profileAsyncValue =
+          await container.read(userProfileProvider(pubkey).future);
 
       expect(profileAsyncValue, isNotNull);
       expect(profileAsyncValue!.pubkey, equals(pubkey));
       expect(profileAsyncValue.name, equals('Test User'));
-      expect(profileAsyncValue.picture, equals('https://example.com/avatar.jpg'));
+      expect(
+          profileAsyncValue.picture, equals('https://example.com/avatar.jpg'));
 
       // Test that it's cached by calling again (should not hit network again)
-      final cachedProfile = await container.read(userProfileProvider(pubkey).future);
+      final cachedProfile =
+          await container.read(userProfileProvider(pubkey).future);
       expect(cachedProfile, equals(profileAsyncValue));
-      
+
       // Verify only one network call was made
       verify(() => mockNostrService.subscribeToEvents(
           filters: any(named: 'filters'))).called(1);
@@ -139,7 +144,7 @@ void main() {
       expect(profile, isNotNull);
       expect(profile!.pubkey, equals(pubkey));
       expect(profile.name, equals('Notifier Test User'));
-      
+
       // Test that getCachedProfile works (this tests the actual caching mechanism)
       final cachedProfile = container
           .read(userProfileNotifierProvider.notifier)
@@ -153,7 +158,8 @@ void main() {
 
       // Setup mock Nostr service with all required connection checks
       when(() => mockNostrService.isInitialized).thenReturn(true);
-      when(() => mockNostrService.connectedRelayCount).thenReturn(1); // FIX: Add missing mock
+      when(() => mockNostrService.connectedRelayCount)
+          .thenReturn(1); // FIX: Add missing mock
 
       // Pre-populate cache
       final testProfile = models.UserProfile(
@@ -189,7 +195,7 @@ void main() {
       // For each pubkey, we'll test individual fetch (which exercises the core functionality)
       for (int i = 0; i < pubkeys.length; i++) {
         final pubkey = pubkeys[i];
-        
+
         // Setup mock event for this pubkey
         final mockEvent = MockEvent();
         when(() => mockEvent.kind).thenReturn(0);
@@ -201,7 +207,7 @@ void main() {
 
         // Mock stream for this specific pubkey
         when(() => mockNostrService.subscribeToEvents(
-            filters: any(named: 'filters')))
+                filters: any(named: 'filters')))
             .thenAnswer((_) => Stream.value(mockEvent));
 
         // Fetch this profile
@@ -212,7 +218,7 @@ void main() {
         expect(profile, isNotNull);
         expect(profile!.pubkey, equals(pubkey));
         expect(profile.name, equals('User $pubkey'));
-        
+
         // Verify it's cached
         final cachedProfile = container
             .read(userProfileNotifierProvider.notifier)
@@ -227,7 +233,8 @@ void main() {
 
       // Setup mock Nostr service with all required connection checks
       when(() => mockNostrService.isInitialized).thenReturn(true);
-      when(() => mockNostrService.connectedRelayCount).thenReturn(1); // FIX: Add missing mock
+      when(() => mockNostrService.connectedRelayCount)
+          .thenReturn(1); // FIX: Add missing mock
 
       // Mock empty stream (no profile found)
       when(() => mockNostrService.subscribeToEvents(
@@ -243,12 +250,12 @@ void main() {
 
       // Verify it's marked as missing in global cache (the memory cache handles this)
       // Since the missing profile logic is now in the memory cache, we verify behavior differently
-      
+
       // Try to fetch again - should skip due to missing marker
       final profileAgain = await container
           .read(userProfileNotifierProvider.notifier)
           .fetchProfile(pubkey);
-      
+
       expect(profileAgain, isNull);
     });
 
@@ -257,7 +264,8 @@ void main() {
 
       // Setup mock Nostr service with all required connection checks
       when(() => mockNostrService.isInitialized).thenReturn(true);
-      when(() => mockNostrService.connectedRelayCount).thenReturn(1); // FIX: Add missing mock
+      when(() => mockNostrService.connectedRelayCount)
+          .thenReturn(1); // FIX: Add missing mock
 
       // Pre-populate cache with old profile
       final oldProfile = models.UserProfile(
@@ -313,7 +321,8 @@ void main() {
 
       // Setup mock Nostr service with all required connection checks
       when(() => mockNostrService.isInitialized).thenReturn(true);
-      when(() => mockNostrService.connectedRelayCount).thenReturn(1); // FIX: Add missing mock
+      when(() => mockNostrService.connectedRelayCount)
+          .thenReturn(1); // FIX: Add missing mock
 
       // Mock subscription error - reset all previous mocks first
       reset(mockNostrService);
@@ -329,15 +338,15 @@ void main() {
 
       expect(profile, isNull);
 
-      // With the new async provider design, errors are handled gracefully 
+      // With the new async provider design, errors are handled gracefully
       // and the profile is marked as missing rather than stored in state.error
       // Let's verify the profile is marked as missing by trying to fetch again
       final profileAgain = await errorContainer
           .read(userProfileNotifierProvider.notifier)
           .fetchProfile(pubkey);
-      
+
       expect(profileAgain, isNull);
-      
+
       errorContainer.dispose();
     });
   });

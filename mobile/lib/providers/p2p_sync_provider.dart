@@ -9,38 +9,38 @@ import 'package:openvine/providers/app_providers.dart';
 /// Provider for P2P discovery service
 final p2pDiscoveryServiceProvider = Provider<P2PDiscoveryService?>((ref) {
   final nostrService = ref.watch(nostrServiceProvider);
-  
+
   // Check if the Nostr service is NostrService with P2P capabilities
   if (nostrService is NostrService) {
     // The P2P service is managed internally by NostrService
     // We'll access it through the relay service methods
     return null; // Handled internally
   }
-  
+
   return null;
 });
 
 /// Provider for P2P peers discovery state
 final p2pPeersProvider = StreamProvider<List<P2PPeer>>((ref) {
   final nostrService = ref.watch(nostrServiceProvider);
-  
+
   if (nostrService is NostrService) {
     // Create a stream that emits peer updates
     return Stream.periodic(const Duration(seconds: 2), (_) {
       return nostrService.getP2PPeers();
     }).distinct((a, b) => a.length == b.length);
   }
-  
+
   return Stream.value([]);
 });
 
 /// Provider for P2P sync status
 final p2pSyncStatusProvider = FutureProvider<P2PSyncStatus>((ref) async {
   final nostrService = ref.watch(nostrServiceProvider);
-  
+
   if (nostrService is NostrService) {
     final stats = await nostrService.getRelayStats();
-    
+
     return P2PSyncStatus(
       isEnabled: stats?['p2p_enabled'] as bool? ?? false,
       peersCount: stats?['p2p_peers'] as int? ?? 0,
@@ -49,7 +49,7 @@ final p2pSyncStatusProvider = FutureProvider<P2PSyncStatus>((ref) async {
       isDiscovering: false, // TODO: Get actual discovery state
     );
   }
-  
+
   return const P2PSyncStatus(
     isEnabled: false,
     peersCount: 0,
@@ -62,7 +62,7 @@ final p2pSyncStatusProvider = FutureProvider<P2PSyncStatus>((ref) async {
 /// Provider for P2P actions
 final p2pActionsProvider = Provider<P2PActions>((ref) {
   final nostrService = ref.watch(nostrServiceProvider);
-  
+
   return P2PActions(
     startDiscovery: () async {
       if (nostrService is NostrService) {
@@ -107,7 +107,7 @@ class P2PSyncStatus {
   final int connectionsCount;
   final bool isAdvertising;
   final bool isDiscovering;
-  
+
   const P2PSyncStatus({
     required this.isEnabled,
     required this.peersCount,
@@ -115,7 +115,7 @@ class P2PSyncStatus {
     required this.isAdvertising,
     required this.isDiscovering,
   });
-  
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -126,7 +126,7 @@ class P2PSyncStatus {
           connectionsCount == other.connectionsCount &&
           isAdvertising == other.isAdvertising &&
           isDiscovering == other.isDiscovering;
-  
+
   @override
   int get hashCode =>
       isEnabled.hashCode ^
@@ -144,7 +144,7 @@ class P2PActions {
   final Future<void> Function() stopAdvertising;
   final Future<bool> Function(P2PPeer peer) connectToPeer;
   final Future<void> Function() syncWithPeers;
-  
+
   const P2PActions({
     required this.startDiscovery,
     required this.stopDiscovery,

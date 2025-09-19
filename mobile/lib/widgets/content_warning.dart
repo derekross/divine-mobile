@@ -267,7 +267,6 @@ class _ContentWarningState extends State<ContentWarning>
         return 'Content Blocked';
     }
   }
-  
 }
 
 /// Quick content warning for less severe content

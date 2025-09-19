@@ -4,33 +4,29 @@
 import 'package:openvine/models/curation_set.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/services/curation_service.dart';
-import 'package:openvine/providers/video_manager_providers.dart';
 import 'package:openvine/utils/unified_logger.dart';
 
-/// Service that provides curated video collections through VideoManager
+/// Service that provides curated video collections
 ///
-/// This bridges the CurationService (which provides curated content) with
-/// VideoManager (which handles video playback and lifecycle) to ensure
-/// consistent video behavior across the app.
-/// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class ExploreVideoManager  {
+/// This provides curated content from CurationService. VideoManager integration
+/// is handled at the call site to avoid circular dependencies.
+/// FIXED: Removed VideoManager dependency to break circular dependency
+class ExploreVideoManager {
   ExploreVideoManager({
     required CurationService curationService,
-    required VideoManager videoManager,
-  })  : _curationService = curationService,
-        _videoManager = videoManager {
+  })  : _curationService = curationService {
     // Listen to curation service changes
-      // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
+    // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
 
     // Initialize with current content
     _initializeCollections();
   }
   final CurationService _curationService;
-  final VideoManager _videoManager;
 
   // Current collections available in VideoManager
   final Map<CurationSetType, List<VideoEvent>> _availableCollections = {};
-  final Map<CurationSetType, int> _lastVideoCount = {}; // Track counts to reduce duplicate logging
+  final Map<CurationSetType, int> _lastVideoCount =
+      {}; // Track counts to reduce duplicate logging
 
   /// Get videos for a specific curation type, ensuring they're in VideoManager
   List<VideoEvent> getVideosForType(CurationSetType type) =>
@@ -47,7 +43,6 @@ class ExploreVideoManager  {
     await _syncAllCollections();
   }
 
-
   /// Sync all curation collections to VideoManager
   Future<void> _syncAllCollections() async {
     // Sync each collection and ensure videos are added to VideoManager
@@ -62,12 +57,8 @@ class ExploreVideoManager  {
       // Get videos from curation service
       final curatedVideos = _curationService.getVideosForSetType(type);
 
-      // Ensure all curated videos are added to VideoManager
-      for (final video in curatedVideos) {
-        videoManager.addVideoEvent(video);
-      }
-
       // Store videos in our collection
+      // NOTE: VideoManager integration is now handled at call sites to avoid circular dependency
       _availableCollections[type] = curatedVideos;
 
       // Debug: Log what we're getting (reduce spam by only logging on changes)
@@ -104,49 +95,32 @@ class ExploreVideoManager  {
     // _onCurationChanged will be called automatically
   }
 
-  /// Start preloading videos for a specific collection
-  void preloadCollection(CurationSetType type, {int startIndex = 0}) {
+  /// Get videos for preloading for a specific collection
+  /// NOTE: Caller must handle VideoManager integration to avoid circular dependency
+  List<VideoEvent> getVideosForPreloading(CurationSetType type, {int startIndex = 0}) {
     final videos = _availableCollections[type];
-    if (videos != null && videos.isNotEmpty && startIndex < videos.length) {
-      // Use VideoManager's preloading for the collection
-      final videoManager = _videoManager;
-
-      // Preload around the starting position
-      final preloadStart = (startIndex - 2).clamp(0, videos.length - 1);
-      final preloadEnd = (startIndex + 3).clamp(0, videos.length);
-
-      for (var i = preloadStart; i < preloadEnd; i++) {
-        // Simply preload the video - VideoManager will handle if it already exists
-        videoManager.preloadVideo(videos[i].id).catchError((error) {
-          Log.warning(
-              'Error preloading video ${videos[i].id.substring(0, 8)}... - $error',
-              name: 'ExploreVideoManager',
-              category: LogCategory.system);
-        });
-      }
-
-      Log.debug('⚡ Preloading ${type.name} collection around index $startIndex',
-          name: 'ExploreVideoManager', category: LogCategory.system);
+    if (videos == null || videos.isEmpty || startIndex >= videos.length) {
+      return [];
     }
+
+    // Calculate preload range around the starting position
+    final preloadStart = (startIndex - 2).clamp(0, videos.length - 1);
+    final preloadEnd = (startIndex + 3).clamp(0, videos.length);
+
+    final videosToPreload = videos.sublist(preloadStart, preloadEnd);
+
+    Log.debug('⚡ ${type.name} collection preload range: $preloadStart-$preloadEnd (${videosToPreload.length} videos)',
+        name: 'ExploreVideoManager', category: LogCategory.system);
+
+    return videosToPreload;
   }
 
-  /// Pause all videos in collections (called when leaving explore)
-  void pauseAllVideos() {
-    try {
-      _videoManager.pauseAllVideos();
-      Log.debug('Paused all explore videos',
-          name: 'ExploreVideoManager', category: LogCategory.system);
-    } catch (e) {
-      Log.error('Error pausing explore videos: $e',
-          name: 'ExploreVideoManager', category: LogCategory.system);
-    }
+  /// Get total video count across all collections
+  int get totalVideoCount {
+    return _availableCollections.values.fold(0, (sum, videos) => sum + videos.length);
   }
-
-  /// Get VideoManager for direct access
-  VideoManager get videoManager => _videoManager;
 
   void dispose() {
-      // REFACTORED: Service no longer needs manual listener cleanup
-    
+    // REFACTORED: Service no longer needs manual listener cleanup
   }
 }

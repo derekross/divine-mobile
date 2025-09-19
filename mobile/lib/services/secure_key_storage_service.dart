@@ -65,7 +65,7 @@ class SecurityConfig {
 
 /// Secure key storage service with hardware-backed protection
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class SecureKeyStorageService  {
+class SecureKeyStorageService {
   SecureKeyStorageService({SecurityConfig? securityConfig}) {
     if (securityConfig != null) {
       _securityConfig = securityConfig;
@@ -83,7 +83,7 @@ class SecureKeyStorageService  {
 
   final PlatformSecureStorage _platformStorage = PlatformSecureStorage.instance;
   SecurityConfig _securityConfig = SecurityConfig.strict;
-  
+
   // Bunker client for web platform
   NsecBunkerClient? _bunkerClient;
   bool _usingBunker = false;
@@ -232,7 +232,6 @@ class SecureKeyStorageService  {
       debugPrint(
           '🔒 Security level: ${result.securityLevel?.name ?? 'unknown'}');
 
-
       return keyContainer;
     } catch (e) {
       Log.error('Key generation error: $e',
@@ -289,7 +288,6 @@ class SecureKeyStorageService  {
           name: 'SecureKeyStorageService', category: LogCategory.auth);
       debugPrint(
           '🔒 Security level: ${result.securityLevel?.name ?? 'unknown'}');
-
 
       return keyContainer;
     } catch (e) {
@@ -393,7 +391,6 @@ class SecureKeyStorageService  {
       debugPrint(
           '🔒 Security level: ${result.securityLevel?.name ?? 'unknown'}');
 
-
       return keyContainer;
     } catch (e) {
       Log.error('Hex import error: $e',
@@ -471,7 +468,6 @@ class SecureKeyStorageService  {
 
       Log.info('All keys deleted',
           name: 'SecureKeyStorageService', category: LogCategory.auth);
-
     } catch (e) {
       throw SecureKeyStorageException('Failed to delete keys: $e');
     }
@@ -640,7 +636,7 @@ class SecureKeyStorageService  {
   /// Get security level description
   String _getSecurityLevelDescription() {
     final parts = <String>[];
-    
+
     if (_usingBunker) {
       parts.add('Bunker (Remote signing)');
     } else if (_platformStorage.supportsHardwareSecurity) {
@@ -671,7 +667,7 @@ class SecureKeyStorageService  {
     _clearCache();
     disconnectBunker();
   }
-  
+
   /// Authenticate with nsec bunker for web platform
   Future<bool> authenticateWithBunker({
     required String username,
@@ -683,25 +679,25 @@ class SecureKeyStorageService  {
           name: 'SecureKeyStorageService', category: LogCategory.auth);
       return false;
     }
-    
+
     try {
       Log.debug('Authenticating with nsec bunker',
           name: 'SecureKeyStorageService', category: LogCategory.auth);
-      
+
       _bunkerClient = NsecBunkerClient(authEndpoint: bunkerEndpoint);
-      
+
       final authResult = await _bunkerClient!.authenticate(
         username: username,
         password: password,
       );
-      
+
       if (!authResult.success) {
         Log.error('Bunker authentication failed: ${authResult.error}',
             name: 'SecureKeyStorageService', category: LogCategory.auth);
         _bunkerClient = null;
         return false;
       }
-      
+
       // Connect to the bunker relay
       final connected = await _bunkerClient!.connect();
       if (!connected) {
@@ -710,10 +706,10 @@ class SecureKeyStorageService  {
         _bunkerClient = null;
         return false;
       }
-      
+
       _usingBunker = true;
       _isInitialized = true;
-      
+
       // Get public key from bunker and create a pseudo-container
       final pubkey = await _bunkerClient!.getPublicKey();
       if (pubkey != null) {
@@ -722,10 +718,10 @@ class SecureKeyStorageService  {
         _cachedKeyContainer = _createBunkerKeyContainer(pubkey);
         _cacheTimestamp = DateTime.now();
       }
-      
+
       Log.info('Successfully authenticated with nsec bunker',
           name: 'SecureKeyStorageService', category: LogCategory.auth);
-      
+
       return true;
     } catch (e) {
       Log.error('Bunker authentication error: $e',
@@ -735,21 +731,21 @@ class SecureKeyStorageService  {
       return false;
     }
   }
-  
+
   /// Create a special key container for bunker-based keys
   SecureKeyContainer _createBunkerKeyContainer(String publicKey) {
     // For bunker, we create a container with only the public key
     // The private key remains on the bunker server
     // This is a special case where signing happens remotely
-    
+
     // Note: This requires updating SecureKeyContainer to support
     // public-key-only mode for bunker scenarios
     // For now, return a placeholder
-    
+
     // TODO: Implement proper bunker key container
     throw UnimplementedError('Bunker key container not yet implemented');
   }
-  
+
   /// Sign an event using bunker (for web platform)
   Future<Map<String, dynamic>?> signEventWithBunker(
     Map<String, dynamic> event,
@@ -759,7 +755,7 @@ class SecureKeyStorageService  {
           name: 'SecureKeyStorageService', category: LogCategory.auth);
       return null;
     }
-    
+
     try {
       return await _bunkerClient!.signEvent(event);
     } catch (e) {
@@ -768,10 +764,10 @@ class SecureKeyStorageService  {
       return null;
     }
   }
-  
+
   /// Check if using bunker for key management
   bool get isUsingBunker => _usingBunker;
-  
+
   /// Disconnect from bunker
   void disconnectBunker() {
     if (_bunkerClient != null) {

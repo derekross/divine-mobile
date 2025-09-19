@@ -19,7 +19,8 @@ class BookmarkItem {
     this.petname,
   });
 
-  final String type; // 'e' (event), 'a' (parameterized replaceable), 't' (hashtag), 'r' (URL)
+  final String
+      type; // 'e' (event), 'a' (parameterized replaceable), 't' (hashtag), 'r' (URL)
   final String id; // Event ID, article ID, hashtag, or URL
   final String? relay; // Optional relay hint
   final String? petname; // Optional petname/label
@@ -188,9 +189,10 @@ class BookmarkService with NostrListServiceMixin {
       await _saveBookmarksToSharedPreferences();
 
       _isInitialized = true;
-      Log.info('Bookmark service initialized with ${_globalBookmarks.length} global bookmarks and ${_bookmarkSets.length} bookmark sets',
-          name: 'BookmarkService', category: LogCategory.system);
-
+      Log.info(
+          'Bookmark service initialized with ${_globalBookmarks.length} global bookmarks and ${_bookmarkSets.length} bookmark sets',
+          name: 'BookmarkService',
+          category: LogCategory.system);
     } catch (e) {
       Log.error('Failed to initialize bookmark service: $e',
           name: 'BookmarkService', category: LogCategory.system);
@@ -200,7 +202,8 @@ class BookmarkService with NostrListServiceMixin {
   // === GLOBAL BOOKMARKS (Kind 10003) ===
 
   /// Add a video event to global bookmarks
-  Future<bool> addVideoToGlobalBookmarks(String videoEventId, {String? relay, String? petname}) async {
+  Future<bool> addVideoToGlobalBookmarks(String videoEventId,
+      {String? relay, String? petname}) async {
     return addToGlobalBookmarks(
       BookmarkItem(
         type: 'e',
@@ -270,7 +273,8 @@ class BookmarkService with NostrListServiceMixin {
 
   /// Check if an item is in global bookmarks
   bool isInGlobalBookmarks(String itemId, String type) {
-    return _globalBookmarks.any((item) => item.id == itemId && item.type == type);
+    return _globalBookmarks
+        .any((item) => item.id == itemId && item.type == type);
   }
 
   /// Check if a video event is bookmarked globally
@@ -477,7 +481,8 @@ class BookmarkService with NostrListServiceMixin {
   /// Check if an item is in a specific bookmark set
   bool isInBookmarkSet(String setId, String itemId, String type) {
     final set = getBookmarkSetById(setId);
-    return set?.items.any((item) => item.id == itemId && item.type == type) ?? false;
+    return set?.items.any((item) => item.id == itemId && item.type == type) ??
+        false;
   }
 
   // === NOSTR PUBLISHING ===
@@ -568,8 +573,10 @@ class BookmarkService with NostrListServiceMixin {
             _bookmarkSets[setIndex] = set.copyWith(nostrEventId: event.id);
             await _saveBookmarks();
           }
-          Log.debug('Published bookmark set to Nostr: ${set.name} (${event.id})',
-              name: 'BookmarkService', category: LogCategory.system);
+          Log.debug(
+              'Published bookmark set to Nostr: ${set.name} (${event.id})',
+              name: 'BookmarkService',
+              category: LogCategory.system);
         }
       }
     } catch (e) {
@@ -585,10 +592,10 @@ class BookmarkService with NostrListServiceMixin {
     try {
       // Get all our published events using the universal query
       final myEvents = await getMyPublishedEvents();
-      
+
       // Filter for bookmark-related events
       final bookmarkEvents = filterMyEventsByKind(myEvents, [10003, 30003]);
-      
+
       if (bookmarkEvents.isEmpty) {
         Log.debug('No bookmark events found in embedded relay',
             name: 'BookmarkService', category: LogCategory.system);
@@ -596,13 +603,16 @@ class BookmarkService with NostrListServiceMixin {
       }
 
       // Process global bookmarks (kind 10003) - latest replaces previous
-      final globalBookmarkEvents = bookmarkEvents.where((e) => e.kind == 10003).toList();
+      final globalBookmarkEvents =
+          bookmarkEvents.where((e) => e.kind == 10003).toList();
       if (globalBookmarkEvents.isNotEmpty) {
         // Sort by created_at to get the latest
         globalBookmarkEvents.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         _parseGlobalBookmarksFromEvent(globalBookmarkEvents.first);
-        Log.debug('Loaded global bookmarks from Nostr event: ${globalBookmarkEvents.first.id}',
-            name: 'BookmarkService', category: LogCategory.system);
+        Log.debug(
+            'Loaded global bookmarks from Nostr event: ${globalBookmarkEvents.first.id}',
+            name: 'BookmarkService',
+            category: LogCategory.system);
       }
 
       // Process bookmark sets (kind 30003) - latest per d-tag
@@ -610,10 +620,11 @@ class BookmarkService with NostrListServiceMixin {
       for (final event in bookmarkSetEvents.values) {
         _parseBookmarkSetFromEvent(event);
       }
-      
-      Log.info('Loaded ${_globalBookmarks.length} global bookmarks and ${_bookmarkSets.length} bookmark sets from embedded relay',
-          name: 'BookmarkService', category: LogCategory.system);
 
+      Log.info(
+          'Loaded ${_globalBookmarks.length} global bookmarks and ${_bookmarkSets.length} bookmark sets from embedded relay',
+          name: 'BookmarkService',
+          category: LogCategory.system);
     } catch (e) {
       Log.error('Failed to load bookmarks from embedded relay: $e',
           name: 'BookmarkService', category: LogCategory.system);
@@ -623,7 +634,7 @@ class BookmarkService with NostrListServiceMixin {
   /// Parse global bookmarks from NIP-51 kind 10003 event
   void _parseGlobalBookmarksFromEvent(Event event) {
     _globalBookmarks.clear();
-    
+
     for (final tag in event.tags) {
       if (tag.length >= 2 && ['e', 'a', 't', 'r'].contains(tag[0])) {
         final item = BookmarkItem(
@@ -644,7 +655,7 @@ class BookmarkService with NostrListServiceMixin {
     String? title;
     String? description;
     String? imageUrl;
-    
+
     for (final tag in event.tags) {
       if (tag.length >= 2) {
         switch (tag[0]) {
@@ -663,7 +674,7 @@ class BookmarkService with NostrListServiceMixin {
         }
       }
     }
-    
+
     if (dTag == null) {
       Log.warning('Bookmark set event missing d-tag: ${event.id}',
           name: 'BookmarkService', category: LogCategory.system);
@@ -714,8 +725,10 @@ class BookmarkService with NostrListServiceMixin {
           bookmarksData.map(
               (json) => BookmarkItem.fromJson(json as Map<String, dynamic>)),
         );
-        Log.debug('Loaded ${_globalBookmarks.length} global bookmarks from storage',
-            name: 'BookmarkService', category: LogCategory.system);
+        Log.debug(
+            'Loaded ${_globalBookmarks.length} global bookmarks from storage',
+            name: 'BookmarkService',
+            category: LogCategory.system);
       } catch (e) {
         Log.error('Failed to load global bookmarks: $e',
             name: 'BookmarkService', category: LogCategory.system);
@@ -743,25 +756,26 @@ class BookmarkService with NostrListServiceMixin {
 
   /// Get all bookmark sets that contain a specific video
   List<BookmarkSet> getBookmarkSetsContainingVideo(String videoEventId) {
-    return _bookmarkSets.where((set) => 
-        set.items.any((item) => item.type == 'e' && item.id == videoEventId)
-    ).toList();
+    return _bookmarkSets
+        .where((set) => set.items
+            .any((item) => item.type == 'e' && item.id == videoEventId))
+        .toList();
   }
 
   /// Get readable summary of bookmark status for a video
   String getVideoBookmarkSummary(String videoEventId) {
     final isInGlobal = isVideoBookmarkedGlobally(videoEventId);
     final bookmarkSets = getBookmarkSetsContainingVideo(videoEventId);
-    
+
     if (!isInGlobal && bookmarkSets.isEmpty) {
       return 'Not bookmarked';
     }
-    
+
     final parts = <String>[];
     if (isInGlobal) {
       parts.add('Bookmarked');
     }
-    
+
     if (bookmarkSets.isNotEmpty) {
       if (bookmarkSets.length == 1) {
         parts.add('in "${bookmarkSets.first.name}"');
@@ -769,20 +783,24 @@ class BookmarkService with NostrListServiceMixin {
         parts.add('in ${bookmarkSets.length} bookmark sets');
       }
     }
-    
+
     return parts.join(' ');
   }
 
-  /// Save bookmarks to SharedPreferences cache 
+  /// Save bookmarks to SharedPreferences cache
   Future<void> _saveBookmarksToSharedPreferences() async {
     try {
       // Save global bookmarks
-      final globalBookmarksJson = _globalBookmarks.map((item) => item.toJson()).toList();
-      await _prefs.setString(globalBookmarksStorageKey, jsonEncode(globalBookmarksJson));
+      final globalBookmarksJson =
+          _globalBookmarks.map((item) => item.toJson()).toList();
+      await _prefs.setString(
+          globalBookmarksStorageKey, jsonEncode(globalBookmarksJson));
 
       // Save bookmark sets
-      final bookmarkSetsJson = _bookmarkSets.map((set) => set.toJson()).toList();
-      await _prefs.setString(bookmarkSetsStorageKey, jsonEncode(bookmarkSetsJson));
+      final bookmarkSetsJson =
+          _bookmarkSets.map((set) => set.toJson()).toList();
+      await _prefs.setString(
+          bookmarkSetsStorageKey, jsonEncode(bookmarkSetsJson));
     } catch (e) {
       Log.error('Failed to save bookmarks to SharedPreferences: $e',
           name: 'BookmarkService', category: LogCategory.system);

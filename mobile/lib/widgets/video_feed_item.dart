@@ -66,7 +66,6 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
   bool _userPaused = false; // Track if user manually paused the video
   late AnimationController _iconAnimationController;
 
-  
   // Loading state management
   Timer? _readinessCheckTimer;
   bool _isCheckingReadiness = false;
@@ -81,7 +80,8 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     );
     _initializeVideoManager();
     _loadUserProfile();
-    _checkVideoReactions();
+    // DISABLED: Per-video reaction checks create too many relay subscriptions
+    // _checkVideoReactions();
 
     // Handle initial activation state
     if (widget.isActive) {
@@ -102,8 +102,9 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
           '🔄 Video changed from ${oldWidget.video.id.substring(0, 8)}... to ${widget.video.id.substring(0, 8)}... - resetting comment state',
           name: 'VideoFeedItem',
           category: LogCategory.ui);
+      // DISABLED: Per-video reaction checks create too many relay subscriptions
       // Check reactions for the new video
-      _checkVideoReactions();
+      // _checkVideoReactions();
     }
 
     // Handle activation state changes OR video changes
@@ -161,7 +162,6 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
   }
 
   void _handleActivationChange() {
-
     Log.info(
       '🎯 _handleActivationChange called for ${widget.video.id.substring(0, 8)}... isActive: ${widget.isActive}',
       name: 'VideoFeedItem',
@@ -208,27 +208,15 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         } else {
           Log.info('⏳ Controller not initialized, adding listener',
               name: 'VideoFeedItem', category: LogCategory.ui);
-          // Add listener to play when initialized
-          void onInitialized() {
-            Log.info(
-                '🔔 Controller initialization listener triggered, isInitialized: ${_controller!.value.isInitialized}',
-                name: 'VideoFeedItem',
-                category: LogCategory.ui);
-            if (_controller!.value.isInitialized && widget.isActive) {
-              Log.info(
-                  '▶️ Controller now ready, calling _playVideo from listener',
-                  name: 'VideoFeedItem',
-                  category: LogCategory.ui);
-              _playVideo();
-      // REFACTORED: Service no longer needs manual listener cleanup
-            }
-          }
+          // Add listener to play when initialized - REFACTORED
 
-      // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
+          // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
         }
       } else {
-        Log.info('❌ No controller available yet, starting periodic readiness check',
-            name: 'VideoFeedItem', category: LogCategory.ui);
+        Log.info(
+            '❌ No controller available yet, starting periodic readiness check',
+            name: 'VideoFeedItem',
+            category: LogCategory.ui);
         _startReadinessCheck();
       }
     } else {
@@ -246,24 +234,27 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
   void _startReadinessCheck() {
     // Cancel any existing timer
     _stopReadinessCheck();
-    
+
     // Start checking every 100ms as user suggested
-    _readinessCheckTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+    _readinessCheckTimer =
+        Timer.periodic(const Duration(milliseconds: 100), (_) {
       if (!mounted || !widget.isActive) {
         _stopReadinessCheck();
         return;
       }
-      
+
       // Check if video is now available in VideoManagerService
       if (!_isCheckingReadiness) {
         _isCheckingReadiness = true;
-        
+
         try {
           // Try to preload again
           ref.read(videoManagerProvider.notifier).preloadVideo(widget.video.id);
-          
+
           // Check if controller is now available
-          final controller = ref.read(videoManagerProvider).getPlayerController(widget.video.id);
+          final controller = ref
+              .read(videoManagerProvider)
+              .getPlayerController(widget.video.id);
           if (controller != null) {
             Log.info(
               '✅ Video ready after periodic check: ${widget.video.id.substring(0, 8)}...',
@@ -286,14 +277,13 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
       }
     });
   }
-  
+
   void _stopReadinessCheck() {
     _readinessCheckTimer?.cancel();
     _readinessCheckTimer = null;
   }
 
   void _updateController() {
-
     Log.info(
         '🔄 _updateController called for ${widget.video.id.substring(0, 8)}...',
         name: 'VideoFeedItem',
@@ -313,7 +303,8 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         name: 'VideoFeedItem', category: LogCategory.ui);
 
     // Only update controller if we don't have one or if the new one is better
-    if (_controller == null || (newController != null && newController != _controller)) {
+    if (_controller == null ||
+        (newController != null && newController != _controller)) {
       Log.info(
           '🔄 Controller changed! Old: ${_controller != null}, New: ${newController != null}',
           name: 'VideoFeedItem',
@@ -323,9 +314,9 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         if (_controller != null) {
           GlobalVideoRegistry().unregisterController(_controller!);
         }
-        
+
         _controller = newController;
-        
+
         // Register new controller with global video registry
         if (_controller != null) {
           GlobalVideoRegistry().registerController(_controller!);
@@ -344,21 +335,9 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         } else {
           Log.info('⏳ Controller not yet initialized, adding listener',
               name: 'VideoFeedItem', category: LogCategory.ui);
-          // Add listener to play when initialized
-          void onInitialized() {
-            Log.info(
-                '🔔 UpdateController listener triggered, isInitialized: ${newController.value.isInitialized}',
-                name: 'VideoFeedItem',
-                category: LogCategory.ui);
-            if (newController.value.isInitialized && widget.isActive) {
-              Log.info('▶️ Controller ready in listener, calling _playVideo',
-                  name: 'VideoFeedItem', category: LogCategory.ui);
-              _playVideo();
-      // REFACTORED: Service no longer needs manual listener cleanup
-            }
-          }
+          // Add listener to play when initialized - REFACTORED
 
-      // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
+          // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
         }
       } else {
         Log.info(
@@ -373,22 +352,12 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
   }
 
   void _handleRetry() {
-
     setState(() {});
 
     ref.read(videoManagerProvider.notifier).preloadVideo(widget.video.id);
   }
 
   /// Check if the current user has reacted to this video
-  void _checkVideoReactions() {
-    // Use post-frame callback to ensure the widget is fully built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref.read(social_providers.socialNotifierProvider.notifier)
-            .checkVideoReactions(widget.video.id);
-      }
-    });
-  }
 
   void _playVideo() {
     // Only play if widget is marked as active by parent
@@ -398,7 +367,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         name: 'VideoFeedItem',
         category: LogCategory.ui,
       );
-      
+
       return;
     }
 
@@ -410,8 +379,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         name: 'VideoFeedItem',
         category: LogCategory.ui,
       );
-      
-      
+
       ref.read(videoManagerProvider.notifier).resumeVideo(widget.video.id);
       // Only loop when the video is active (not in background/comments)
       _controller!.setLooping(widget.isActive);
@@ -425,7 +393,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     try {
       final analyticsService = ref.read(analyticsServiceProvider);
       final authService = ref.read(authServiceProvider);
-      
+
       // Track with current user's pubkey for proper unique viewer counting
       analyticsService.trackVideoViewWithUser(
         widget.video,
@@ -441,7 +409,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
   void _checkAutoPlay(VideoState videoState) {
     // Check if this video's tab is currently active
     final isTabActive = _getTabActiveStatus();
-    
+
     // Only auto-play if video is ready, widget is active, tab is active, and user hasn't manually paused
     if (widget.isActive &&
         isTabActive &&
@@ -458,7 +426,9 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         category: LogCategory.ui,
       );
       _playVideo();
-    } else if (!isTabActive && _controller != null && _controller!.value.isPlaying) {
+    } else if (!isTabActive &&
+        _controller != null &&
+        _controller!.value.isPlaying) {
       // Pause video if tab is no longer active
       Log.info(
         '⏸️ Pausing video due to tab switch: ${widget.video.id.substring(0, 8)} (tab active: $isTabActive)',
@@ -576,12 +546,12 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     // FIXED: Use specific tab context to prevent cross-tab video continuation
     // CRITICAL: Also check if profile tab is active to prevent background playback
     final isProfileTabActive = ref.watch(isProfileTabActiveProvider);
-    
+
     // If profile tab is active, no videos should auto-play
     if (isProfileTabActive) {
       return false;
     }
-    
+
     switch (widget.tabContext) {
       case TabContext.feed:
         return ref.watch(isFeedTabActiveProvider);
@@ -598,17 +568,15 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
 
     // Check if this video's tab is currently active
     final isTabActive = _getTabActiveStatus();
-    
+
     Log.info(
         '🔵 Build triggered for ${widget.video.id.substring(0, 8)}... (tab active: $isTabActive)',
         name: 'VideoFeedItem',
         category: LogCategory.ui);
 
     if (videoState == null) {
-      Log.info(
-          '❌ Video state is null for ${widget.video.id.substring(0, 8)}',
-          name: 'VideoFeedItem',
-          category: LogCategory.ui);
+      Log.info('❌ Video state is null for ${widget.video.id.substring(0, 8)}',
+          name: 'VideoFeedItem', category: LogCategory.ui);
       return _buildErrorState('Video not found');
     }
 
@@ -646,33 +614,33 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
   /// Estimate the height needed for text content below video
   double _estimateTextHeight() {
     double height = 0;
-    
+
     // Creator info: ~40px
     height += 40;
-    
+
     // Repost attribution if present: ~30px
     if (widget.video.isRepost) {
       height += 30;
     }
-    
+
     // Title if present (max 2 lines): ~50px
     if (widget.video.title?.isNotEmpty == true) {
       height += 50;
     }
-    
+
     // Content/description (max 3 lines): ~70px
     if (widget.video.content.isNotEmpty) {
       height += 70;
     }
-    
+
     // Hashtags if present: ~30px
     if (widget.video.hashtags.isNotEmpty) {
       height += 30;
     }
-    
+
     // Action buttons: ~60px
     height += 60;
-    
+
     return height;
   }
 
@@ -681,12 +649,13 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     // Check if title and content are the same
     final title = widget.video.title?.trim() ?? '';
     final content = widget.video.content.trim();
-    final isDuplicate = title.isNotEmpty && content.isNotEmpty && title == content;
-    
+    final isDuplicate =
+        title.isNotEmpty && content.isNotEmpty && title == content;
+
     // Check if hashtags are already in the content
-    final hashtagsInContent = widget.video.hashtags.isNotEmpty && 
+    final hashtagsInContent = widget.video.hashtags.isNotEmpty &&
         widget.video.hashtags.every((tag) => content.contains('#$tag'));
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -778,21 +747,25 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
       builder: (context, constraints) {
         final availableHeight = constraints.maxHeight;
         final availableWidth = constraints.maxWidth;
-        
-    // For portrait-like aspect ratios (height > width), prefer column layout when video is ready
-    final isPortraitLayout = availableHeight > availableWidth * 1.2;
+
+        // For portrait-like aspect ratios (height > width), prefer column layout when video is ready
+        final isPortraitLayout = availableHeight > availableWidth * 1.2;
         final estimatedTextHeight = _estimateTextHeight();
         final videoHeight = availableWidth; // Square video
-        final requiredHeight = videoHeight + estimatedTextHeight + 48; // 48px padding
+        final requiredHeight =
+            videoHeight + estimatedTextHeight + 48; // 48px padding
         final hasEnoughSpace = requiredHeight <= availableHeight;
-        
-    // Use column layout if forced or for portrait screens with enough space when video is ready
-    final useColumnLayout = widget.forceInfoBelow || (isVideoReady && isPortraitLayout && hasEnoughSpace);
-        
-        Log.debug('Layout: availableH=$availableHeight, availableW=$availableWidth, '
+
+        // Use column layout if forced or for portrait screens with enough space when video is ready
+        final useColumnLayout = widget.forceInfoBelow ||
+            (isVideoReady && isPortraitLayout && hasEnoughSpace);
+
+        Log.debug(
+            'Layout: availableH=$availableHeight, availableW=$availableWidth, '
             'isPortrait=$isPortraitLayout, hasSpace=$hasEnoughSpace, useColumn=$useColumnLayout',
-            name: 'VideoFeedItem', category: LogCategory.ui);
-        
+            name: 'VideoFeedItem',
+            category: LogCategory.ui);
+
         if (useColumnLayout) {
           // Use column layout with text below video
           return Container(
@@ -804,7 +777,8 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
                 // Video takes square space
                 SizedBox(
                   width: availableWidth,
-                  height: availableWidth, // Use actual container width for square aspect
+                  height:
+                      availableWidth, // Use actual container width for square aspect
                   child: Stack(
                     children: [
                       _buildMainContent(videoState),
@@ -887,7 +861,9 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         if (widget.isActive) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ref.read(videoManagerProvider.notifier).preloadVideo(widget.video.id);
+            ref
+                .read(videoManagerProvider.notifier)
+                .preloadVideo(widget.video.id);
           });
         }
         return _buildDisposedState();
@@ -909,34 +885,18 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
 
   Widget _buildLoadingState() {
     // If we have a thumbnail, show it full screen with loading overlay
-    if (widget.video.thumbnailUrl != null && widget.video.thumbnailUrl!.isNotEmpty) {
+    if (widget.video.thumbnailUrl != null &&
+        widget.video.thumbnailUrl!.isNotEmpty) {
       return SizedBox(
         width: double.infinity,
         height: double.infinity,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Display thumbnail as background filling full screen
-            Image.network(
-              widget.video.thumbnailUrl!,
-              fit: BoxFit.cover,  // Cover the entire screen, cropping if necessary
-              width: double.infinity,
-              height: double.infinity,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback if thumbnail fails to load
-                return Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  color: Colors.grey[900],
-                  child: const Center(
-                    child: Icon(
-                      Icons.video_library_outlined,
-                      size: 64,
-                      color: Colors.white54,
-                    ),
-                  ),
-                );
-              },
+            // Display thumbnail with proper aspect ratio
+            Align(
+              alignment: Alignment.topCenter,
+              child: _buildThumbnailWithAspectRatio(),
             ),
             // Semi-transparent overlay
             Container(
@@ -953,7 +913,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         ),
       );
     }
-    
+
     // Fallback loading state without thumbnail - full screen
     return Container(
       width: double.infinity,
@@ -1039,17 +999,11 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
               fit: StackFit.expand,
               children: [
                 // Show thumbnail as background to prevent flash
-                if (widget.video.thumbnailUrl != null && widget.video.thumbnailUrl!.isNotEmpty)
+                if (widget.video.thumbnailUrl != null &&
+                    widget.video.thumbnailUrl!.isNotEmpty)
                   Align(
                     alignment: Alignment.topCenter,
-                    child: Image.network(
-                      widget.video.thumbnailUrl!,
-                      fit: BoxFit.fitWidth,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: Colors.grey[900],
-                      ),
-                    ),
+                    child: _buildThumbnailWithAspectRatio(),
                   ),
                 // Video fills width and is top-aligned
                 if (_controller!.value.isInitialized)
@@ -1100,17 +1054,11 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
           fit: StackFit.expand,
           children: [
             // Show thumbnail as background to prevent flash
-            if (widget.video.thumbnailUrl != null && widget.video.thumbnailUrl!.isNotEmpty)
+            if (widget.video.thumbnailUrl != null &&
+                widget.video.thumbnailUrl!.isNotEmpty)
               Align(
                 alignment: Alignment.topCenter,
-                child: Image.network(
-                  widget.video.thumbnailUrl!,
-                  fit: BoxFit.fitWidth,
-                  width: double.infinity,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.grey[900],
-                  ),
-                ),
+                child: _buildThumbnailWithAspectRatio(),
               ),
             // Video fills width and is top-aligned
             if (_controller!.value.isInitialized)
@@ -1127,53 +1075,74 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     );
   }
 
+  /// Build thumbnail with proper aspect ratio from video dimensions
+  Widget _buildThumbnailWithAspectRatio() {
+    // Calculate aspect ratio from video dimensions if available
+    double aspectRatio = 16 / 9; // Default aspect ratio
+    if (widget.video.width != null && widget.video.height != null) {
+      aspectRatio = widget.video.width! / widget.video.height!;
+    }
+
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: Image.network(
+        widget.video.thumbnailUrl!,
+        fit: BoxFit.fitWidth,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey[900],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFailedState(VideoState videoState, {required bool canRetry}) =>
       Container(
         width: double.infinity,
         height: double.infinity,
         color: Colors.grey[900], // Use neutral color instead of red
         child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.videocam_off,
-                    size: 64,
-                    color: canRetry ? Colors.white54 : Colors.white38,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    canRetry ? 'Video unavailable' : 'Video not available',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (videoState.errorMessage != null) ...[
-                    Text(
-                      _getUserFriendlyErrorMessage(videoState.errorMessage!),
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (canRetry) ...[
-                    ElevatedButton(
-                      onPressed: _handleRetry,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.videocam_off,
+                size: 64,
+                color: canRetry ? Colors.white54 : Colors.white38,
               ),
+              const SizedBox(height: 16),
+              Text(
+                canRetry ? 'Video unavailable' : 'Video not available',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (videoState.errorMessage != null) ...[
+                Text(
+                  _getUserFriendlyErrorMessage(videoState.errorMessage!),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (canRetry) ...[
+                ElevatedButton(
+                  onPressed: _handleRetry,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ],
+          ),
         ),
       );
 
@@ -1243,12 +1212,13 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     // Check if title and content are the same
     final title = widget.video.title?.trim() ?? '';
     final content = widget.video.content.trim();
-    final isDuplicate = title.isNotEmpty && content.isNotEmpty && title == content;
-    
+    final isDuplicate =
+        title.isNotEmpty && content.isNotEmpty && title == content;
+
     // Check if hashtags are already in the content
-    final hashtagsInContent = widget.video.hashtags.isNotEmpty && 
+    final hashtagsInContent = widget.video.hashtags.isNotEmpty &&
         widget.video.hashtags.every((tag) => content.contains('#$tag'));
-    
+
     return Positioned(
       bottom: 0,
       left: 0,
@@ -1394,81 +1364,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     return count.toString();
   }
 
-  Widget _buildVideoInfoBelow() => Container(
-        color: Colors.black,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Username/Creator info
-            _buildCreatorInfo(),
-            const SizedBox(height: 8),
-
-            // Repost attribution (if this is a repost)
-            if (widget.video.isRepost) ...[
-              _buildRepostAttribution(),
-              const SizedBox(height: 8),
-            ],
-
-            // Video title
-            if (widget.video.title?.isNotEmpty == true) ...[
-              SelectableText(
-                widget.video.title!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Video content/description
-            if (widget.video.content.isNotEmpty) ...[
-              ClickableHashtagText(
-                text: widget.video.content,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
-                maxLines: 3,
-                onVideoStateChange: _pauseVideo,
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Hashtags
-            if (widget.video.hashtags.isNotEmpty) ...[
-              Wrap(
-                spacing: 8,
-                children: widget.video.hashtags
-                    .take(3)
-                    .map(
-                      (hashtag) => GestureDetector(
-                        onTap: () => _navigateToHashtagFeed(hashtag),
-                        child: Text(
-                          '#$hashtag',
-                          style: const TextStyle(
-                            color: Colors.blue,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Social action buttons
-            _buildSocialActions(),
-          ],
-        ),
-      );
+  // Removed unused _buildVideoInfoBelow method
 
   Widget _buildLoadingOverlay() => ColoredBox(
         color: Colors.black.withValues(alpha: 0.3),
@@ -1613,7 +1509,8 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
                 const SizedBox(width: 12),
                 Consumer(
                   builder: (context, ref, child) {
-                    final isFollowing = ref.watch(isFollowingProvider(widget.video.pubkey));
+                    final isFollowing =
+                        ref.watch(isFollowingProvider(widget.video.pubkey));
                     return ElevatedButton(
                       onPressed: () => _handleFollow(context, ref),
                       style: ElevatedButton.styleFrom(
@@ -1637,9 +1534,9 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
                 ),
               ],
             ],
+          );
+        },
       );
-    },
-  );
 
   // Prefer original published time if provided; fall back to nostr createdAt
   DateTime _getDisplayTimestamp() {
@@ -1666,7 +1563,8 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
             return const SizedBox.shrink();
           }
 
-          final repostProfile = profileState.getCachedProfile(widget.video.reposterPubkey!);
+          final repostProfile =
+              profileState.getCachedProfile(widget.video.reposterPubkey!);
           final reposterName = repostProfile?.displayName ??
               repostProfile?.name ??
               '@${widget.video.reposterPubkey!.substring(0, 8)}...';
@@ -1732,7 +1630,8 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
             // Like button with functionality
             Consumer(
               builder: (context, ref, child) {
-                final socialState = ref.watch(social_providers.socialNotifierProvider);
+                final socialState =
+                    ref.watch(social_providers.socialNotifierProvider);
                 final isLiked = socialState.isLiked(widget.video.id);
 
                 return _buildActionButton(
@@ -1752,7 +1651,8 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
             // Repost button
             Consumer(
               builder: (context, ref, child) {
-                final socialState = ref.watch(social_providers.socialNotifierProvider);
+                final socialState =
+                    ref.watch(social_providers.socialNotifierProvider);
                 final hasReposted = socialState.hasReposted(widget.video.id);
                 return _buildActionButton(
                   icon: Icons.repeat,
@@ -1790,44 +1690,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
         ),
       );
 
-  /// Build event tags from the original video event for reposting
-  List<List<String>> _buildEventTags() {
-    final tags = <List<String>>[];
-    
-    // Add all raw tags from the original video event
-    widget.video.rawTags.forEach((key, value) {
-      if (value.isNotEmpty) {
-        tags.add([key, value]);
-      }
-    });
-    
-    // Add hashtags as 't' tags
-    for (final hashtag in widget.video.hashtags) {
-      if (hashtag.isNotEmpty) {
-        tags.add(['t', hashtag]);
-      }
-    }
-    
-    // Ensure required tags are present
-    if (widget.video.videoUrl != null && widget.video.videoUrl!.isNotEmpty) {
-      // Check if url tag already exists
-      final hasUrlTag = tags.any((tag) => tag[0] == 'url');
-      if (!hasUrlTag) {
-        tags.add(['url', widget.video.videoUrl!]);
-      }
-    }
-    
-    // Add title if present
-    if (widget.video.title != null && widget.video.title!.isNotEmpty) {
-      final hasTitleTag = tags.any((tag) => tag[0] == 'title');
-      if (!hasTitleTag) {
-        tags.add(['title', widget.video.title!]);
-      }
-    }
-    
-    
-    return tags;
-  }
+  /// Build event tags from the original video event for reposting - REMOVED (unused duplicate method)
 
   Future<void> _handleRepost(BuildContext context) async {
     // Show repost options dialog
@@ -1844,7 +1707,6 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
       builder: (context) => _RevineOptionsSheet(video: widget.video),
     );
   }
-
 
   void _openComments(BuildContext context) {
     // Pause the video when opening comments
@@ -1863,7 +1725,6 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     });
   }
 
-
   /// Handle comment icon tap - opens comments screen
   Future<void> _handleCommentTap(BuildContext context) async {
     _openComments(context);
@@ -1874,7 +1735,8 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
-      await ref.read(social_providers.socialNotifierProvider.notifier)
+      await ref
+          .read(social_providers.socialNotifierProvider.notifier)
           .toggleLike(widget.video.id, widget.video.pubkey);
     } catch (e) {
       scaffoldMessenger.showSnackBar(
@@ -1885,7 +1747,6 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
       );
     }
   }
-
 
   void _handleShare(BuildContext context) {
     // Pause video before showing share menu
@@ -1907,8 +1768,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
     });
   }
 
-  Future<void> _handleFollow(
-      BuildContext context, WidgetRef ref) async {
+  Future<void> _handleFollow(BuildContext context, WidgetRef ref) async {
     try {
       final authService = ref.read(authServiceProvider);
       if (!authService.isAuthenticated) {
@@ -1925,7 +1785,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem>
 
       final optimisticMethods = ref.read(optimisticFollowMethodsProvider);
       final isFollowing = ref.read(isFollowingProvider(widget.video.pubkey));
-      
+
       if (isFollowing) {
         await optimisticMethods.unfollowUser(widget.video.pubkey);
       } else {
@@ -2018,11 +1878,12 @@ class VideoAccessibilityInfo extends StatelessWidget {
 /// Bottom sheet for choosing repost destination
 class _RevineOptionsSheet extends ConsumerStatefulWidget {
   const _RevineOptionsSheet({required this.video});
-  
+
   final VideoEvent video;
 
   @override
-  ConsumerState<_RevineOptionsSheet> createState() => _RevineOptionsSheetState();
+  ConsumerState<_RevineOptionsSheet> createState() =>
+      _RevineOptionsSheetState();
 }
 
 class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
@@ -2039,189 +1900,196 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
               children: [
-                const Icon(Icons.repeat, color: VineTheme.vineGreen, size: 24),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Revine',
-                    style: TextStyle(
-                      color: VineTheme.whiteText,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, color: VineTheme.secondaryText),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            
-            // Video info preview
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: VineTheme.cardBackground,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade800),
-              ),
-              child: Row(
-                children: [
-                  // Thumbnail placeholder
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade800,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(Icons.play_arrow, color: Colors.white),
-                  ),
-                  const SizedBox(width: 12),
-                  // Video details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (widget.video.title?.isNotEmpty == true)
-                          Text(
-                            widget.video.title!,
-                            style: const TextStyle(
-                              color: VineTheme.whiteText,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        Text(
-                          widget.video.content.isNotEmpty 
-                              ? widget.video.content 
-                              : 'Video content',
-                          style: const TextStyle(
-                            color: VineTheme.lightText,
-                            fontSize: 12,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // Main Revine Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _repostToHomeFeed(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: VineTheme.vineGreen,
-                  foregroundColor: VineTheme.whiteText,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                // Header
+                Row(
                   children: [
-                    const Icon(Icons.repeat, size: 20),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Revine',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    const Icon(Icons.repeat,
+                        color: VineTheme.vineGreen, size: 24),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Revine',
+                        style: TextStyle(
+                          color: VineTheme.whiteText,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close,
+                          color: VineTheme.secondaryText),
                     ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // List options section
-            const Text(
-              'Or add this vine to a list',
-              style: TextStyle(
-                color: VineTheme.lightText,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // List options
-            Consumer(
-              builder: (context, ref, child) {
-                final curatedListServiceAsync = ref.watch(curatedListServiceProvider);
-                
-                return curatedListServiceAsync.when(
-                  data: (curatedListService) {
-                    final defaultList = curatedListService.getDefaultList();
-                    
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 8),
+
+                // Video info preview
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: VineTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade800),
+                  ),
+                  child: Row(
+                    children: [
+                      // Thumbnail placeholder
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child:
+                            const Icon(Icons.play_arrow, color: Colors.white),
+                      ),
+                      const SizedBox(width: 12),
+                      // Video details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (widget.video.title?.isNotEmpty == true)
+                              Text(
+                                widget.video.title!,
+                                style: const TextStyle(
+                                  color: VineTheme.whiteText,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            Text(
+                              widget.video.content.isNotEmpty
+                                  ? widget.video.content
+                                  : 'Video content',
+                              style: const TextStyle(
+                                color: VineTheme.lightText,
+                                fontSize: 12,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Main Revine Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _repostToHomeFeed(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: VineTheme.vineGreen,
+                      foregroundColor: VineTheme.whiteText,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Default "My List" option
-                        if (defaultList != null) ...[
-                          _buildRepostOption(
-                            icon: Icons.playlist_play,
-                            title: 'Add to "${defaultList.name}"',
-                            subtitle: 'Your main curated list (${defaultList.videoEventIds.length} videos)',
-                            onTap: () => _addToDefaultList(),
-                            isHighlighted: true,
+                        const Icon(Icons.repeat, size: 20),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Revine',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(height: 12),
-                        ],
-                        
-                        // Bookmarks option
-                        _buildRepostOption(
-                          icon: Icons.bookmark_outline,
-                          title: 'Add to Bookmarks',
-                          subtitle: 'Save for later viewing',
-                          onTap: () => _addToBookmarks(),
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        // More lists option
-                        _buildRepostOption(
-                          icon: Icons.playlist_add,
-                          title: 'Choose List',
-                          subtitle: curatedListService.lists.isEmpty 
-                              ? 'Create or select curated lists'
-                              : 'Choose from ${curatedListService.lists.length} lists or create new',
-                          onTap: () => _showListSelectionDialog(),
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        // Create new list option (bottom)
-                        _buildRepostOption(
-                          icon: Icons.add,
-                          title: 'Create New List',
-                          subtitle: 'Make a new curated list for this vine',
-                          onTap: () => _showCreateNewListDialog(),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // List options section
+                const Text(
+                  'Or add this vine to a list',
+                  style: TextStyle(
+                    color: VineTheme.lightText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // List options
+                Consumer(
+                  builder: (context, ref, child) {
+                    final curatedListServiceAsync =
+                        ref.watch(curatedListServiceProvider);
+
+                    return curatedListServiceAsync.when(
+                      data: (curatedListService) {
+                        final defaultList = curatedListService.getDefaultList();
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Default "My List" option
+                            if (defaultList != null) ...[
+                              _buildRepostOption(
+                                icon: Icons.playlist_play,
+                                title: 'Add to "${defaultList.name}"',
+                                subtitle:
+                                    'Your main curated list (${defaultList.videoEventIds.length} videos)',
+                                onTap: () => _addToDefaultList(),
+                                isHighlighted: true,
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+
+                            // Bookmarks option
+                            _buildRepostOption(
+                              icon: Icons.bookmark_outline,
+                              title: 'Add to Bookmarks',
+                              subtitle: 'Save for later viewing',
+                              onTap: () => _addToBookmarks(),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // More lists option
+                            _buildRepostOption(
+                              icon: Icons.playlist_add,
+                              title: 'Choose List',
+                              subtitle: curatedListService.lists.isEmpty
+                                  ? 'Create or select curated lists'
+                                  : 'Choose from ${curatedListService.lists.length} lists or create new',
+                              onTap: () => _showListSelectionDialog(),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Create new list option (bottom)
+                            _buildRepostOption(
+                              icon: Icons.add,
+                              title: 'Create New List',
+                              subtitle: 'Make a new curated list for this vine',
+                              onTap: () => _showCreateNewListDialog(),
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) =>
+                          Center(child: Text('Error: $error')),
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) => Center(child: Text('Error: $error')),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -2248,7 +2116,9 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
             width: isHighlighted ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
-          color: isHighlighted ? VineTheme.vineGreen.withValues(alpha: 0.05) : null,
+          color: isHighlighted
+              ? VineTheme.vineGreen.withValues(alpha: 0.05)
+              : null,
         ),
         child: Row(
           children: [
@@ -2284,7 +2154,8 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: VineTheme.lightText, size: 16),
+            const Icon(Icons.arrow_forward_ios,
+                color: VineTheme.lightText, size: 16),
           ],
         ),
       ),
@@ -2293,7 +2164,7 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
 
   Future<void> _repostToHomeFeed() async {
     Navigator.of(context).pop(); // Close the dialog first
-    
+
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       // Create Event object for reposting
@@ -2305,7 +2176,8 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
         createdAt: widget.video.createdAt,
       );
 
-      await ref.read(social_providers.socialNotifierProvider.notifier)
+      await ref
+          .read(social_providers.socialNotifierProvider.notifier)
           .repostEvent(eventToRepost);
 
       // Show success message
@@ -2342,16 +2214,17 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
 
   Future<void> _addToDefaultList() async {
     Navigator.of(context).pop(); // Close dialog
-    
+
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
-      final curatedListService = await ref.read(curatedListServiceProvider.future);
+      final curatedListService =
+          await ref.read(curatedListServiceProvider.future);
       final defaultList = curatedListService.getDefaultList();
-      
+
       if (defaultList == null) {
         throw Exception('Default list not found');
       }
-      
+
       // Check if already in list
       if (defaultList.videoEventIds.contains(widget.video.id)) {
         scaffoldMessenger.showSnackBar(
@@ -2362,9 +2235,10 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
         );
         return;
       }
-      
-      final success = await curatedListService.addVideoToList(defaultList.id, widget.video.id);
-      
+
+      final success = await curatedListService.addVideoToList(
+          defaultList.id, widget.video.id);
+
       if (!success) {
         throw Exception('Failed to add video to list');
       }
@@ -2403,11 +2277,11 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
 
   Future<void> _addToBookmarks() async {
     Navigator.of(context).pop(); // Close dialog
-    
+
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       final bookmarkService = await ref.read(bookmarkServiceProvider.future);
-      
+
       // Check if already bookmarked
       if (bookmarkService.isVideoBookmarkedGlobally(widget.video.id)) {
         scaffoldMessenger.showSnackBar(
@@ -2418,9 +2292,10 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
         );
         return;
       }
-      
-      final success = await bookmarkService.addVideoToGlobalBookmarks(widget.video.id);
-      
+
+      final success =
+          await bookmarkService.addVideoToGlobalBookmarks(widget.video.id);
+
       if (!success) {
         throw Exception('Failed to add bookmark');
       }
@@ -2457,7 +2332,7 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
 
   void _showListSelectionDialog() {
     Navigator.of(context).pop(); // Close repost dialog
-    
+
     showDialog(
       context: context,
       builder: (context) => _ListSelectionDialog(video: widget.video),
@@ -2466,7 +2341,7 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
 
   void _showCreateNewListDialog() {
     Navigator.of(context).pop(); // Close repost dialog
-    
+
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
 
@@ -2476,7 +2351,8 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
         backgroundColor: VineTheme.cardBackground,
         title: const Text(
           'Create New List',
-          style: TextStyle(color: VineTheme.whiteText, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: VineTheme.whiteText, fontWeight: FontWeight.w600),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2484,7 +2360,10 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
           children: [
             const Text(
               'List Name',
-              style: TextStyle(color: VineTheme.whiteText, fontSize: 14, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  color: VineTheme.whiteText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -2499,14 +2378,18 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
               autofocus: true,
             ),
             const SizedBox(height: 16),
             const Text(
               'Description (Optional)',
-              style: TextStyle(color: VineTheme.whiteText, fontSize: 14, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  color: VineTheme.whiteText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -2521,7 +2404,8 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
               maxLines: 2,
             ),
@@ -2530,7 +2414,8 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel', style: TextStyle(color: VineTheme.lightText)),
+            child: const Text('Cancel',
+                style: TextStyle(color: VineTheme.lightText)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -2547,19 +2432,21 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
 
               Navigator.of(dialogContext).pop(); // Close create dialog
 
-              final curatedListService = await ref.read(curatedListServiceProvider.future);
+              final curatedListService =
+                  await ref.read(curatedListServiceProvider.future);
               final newList = await curatedListService.createList(
                 name: name,
-                description: descriptionController.text.trim().isEmpty 
-                    ? null 
+                description: descriptionController.text.trim().isEmpty
+                    ? null
                     : descriptionController.text.trim(),
                 isPublic: true,
               );
 
               if (newList != null && mounted) {
                 // Add video to the newly created list
-                final success = await curatedListService.addVideoToList(newList.id, widget.video.id);
-                
+                final success = await curatedListService.addVideoToList(
+                    newList.id, widget.video.id);
+
                 if (success && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -2568,7 +2455,8 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
                           const Icon(Icons.check_circle, color: Colors.white),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text('Created "${newList.name}" and added vine!'),
+                            child: Text(
+                                'Created "${newList.name}" and added vine!'),
                           ),
                         ],
                       ),
@@ -2605,17 +2493,17 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
   List<List<String>> _buildEventTags() {
     // Build tags for the event - simplified version
     final tags = <List<String>>[];
-    
+
     // Add basic event info tags if available
     if (widget.video.title?.isNotEmpty == true) {
       tags.add(['title', widget.video.title!]);
     }
-    
+
     // Add hashtags
     for (final hashtag in widget.video.hashtags) {
       tags.add(['t', hashtag]);
     }
-    
+
     return tags;
   }
 }
@@ -2623,129 +2511,143 @@ class _RevineOptionsSheetState extends ConsumerState<_RevineOptionsSheet> {
 /// Dialog for selecting which list to add the video to
 class _ListSelectionDialog extends ConsumerWidget {
   const _ListSelectionDialog({required this.video});
-  
+
   final VideoEvent video;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final curatedListServiceAsync = ref.watch(curatedListServiceProvider);
-    
+
     return curatedListServiceAsync.when(
       data: (curatedListService) {
         final lists = curatedListService.lists;
-        
+
         return AlertDialog(
-      backgroundColor: VineTheme.backgroundColor,
-      title: const Text(
-        'Add to List',
-        style: TextStyle(color: VineTheme.whiteText),
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Create new list option
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: VineTheme.vineGreen.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.add, color: VineTheme.vineGreen, size: 18),
-              ),
-              title: const Text(
-                'Create New List',
-                style: TextStyle(color: VineTheme.whiteText, fontWeight: FontWeight.w600),
-              ),
-              subtitle: const Text(
-                'Make a new curated list for this video',
-                style: TextStyle(color: VineTheme.lightText, fontSize: 12),
-              ),
-              onTap: () => _showCreateListDialog(context, ref),
-            ),
-            if (lists.isNotEmpty) ...[
-              const Divider(color: VineTheme.lightText),
-              const SizedBox(height: 8),
-              // Existing lists
-              ...lists.asMap().entries.map((entry) {
-                final list = entry.value;
-                final isAlreadyInList = list.videoEventIds.contains(video.id);
-                
-                return ListTile(
+          backgroundColor: VineTheme.backgroundColor,
+          title: const Text(
+            'Add to List',
+            style: TextStyle(color: VineTheme.whiteText),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Create new list option
+                ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isAlreadyInList 
-                          ? VineTheme.vineGreen.withValues(alpha: 0.2)
-                          : VineTheme.vineGreen.withValues(alpha: 0.2),
+                      color: VineTheme.vineGreen.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Icon(
-                      isAlreadyInList ? Icons.check : Icons.playlist_add,
-                      color: isAlreadyInList ? VineTheme.vineGreen : VineTheme.vineGreen,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.add,
+                        color: VineTheme.vineGreen, size: 18),
                   ),
-                  title: Text(
-                    list.name,
-                    style: const TextStyle(color: VineTheme.whiteText),
+                  title: const Text(
+                    'Create New List',
+                    style: TextStyle(
+                        color: VineTheme.whiteText,
+                        fontWeight: FontWeight.w600),
                   ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (list.description?.isNotEmpty == true)
-                        Text(
-                          list.description!,
-                          style: const TextStyle(color: VineTheme.lightText),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  subtitle: const Text(
+                    'Make a new curated list for this video',
+                    style: TextStyle(color: VineTheme.lightText, fontSize: 12),
+                  ),
+                  onTap: () => _showCreateListDialog(context, ref),
+                ),
+                if (lists.isNotEmpty) ...[
+                  const Divider(color: VineTheme.lightText),
+                  const SizedBox(height: 8),
+                  // Existing lists
+                  ...lists.asMap().entries.map((entry) {
+                    final list = entry.value;
+                    final isAlreadyInList =
+                        list.videoEventIds.contains(video.id);
+
+                    return ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isAlreadyInList
+                              ? VineTheme.vineGreen.withValues(alpha: 0.2)
+                              : VineTheme.vineGreen.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                      Text(
-                        '${list.videoEventIds.length} videos',
-                        style: const TextStyle(color: VineTheme.lightText, fontSize: 12),
+                        child: Icon(
+                          isAlreadyInList ? Icons.check : Icons.playlist_add,
+                          color: isAlreadyInList
+                              ? VineTheme.vineGreen
+                              : VineTheme.vineGreen,
+                          size: 18,
+                        ),
                       ),
-                      if (isAlreadyInList)
-                        const Text(
-                          'Already in this list',
-                          style: TextStyle(color: VineTheme.vineGreen, fontSize: 12),
-                        ),
-                    ],
-                  ),
-                  enabled: !isAlreadyInList,
-                  onTap: isAlreadyInList ? null : () => _addToListAndRepost(context, ref, list),
-                );
-              }).toList(),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: VineTheme.vineGreen),
+                      title: Text(
+                        list.name,
+                        style: const TextStyle(color: VineTheme.whiteText),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (list.description?.isNotEmpty == true)
+                            Text(
+                              list.description!,
+                              style:
+                                  const TextStyle(color: VineTheme.lightText),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          Text(
+                            '${list.videoEventIds.length} videos',
+                            style: const TextStyle(
+                                color: VineTheme.lightText, fontSize: 12),
+                          ),
+                          if (isAlreadyInList)
+                            const Text(
+                              'Already in this list',
+                              style: TextStyle(
+                                  color: VineTheme.vineGreen, fontSize: 12),
+                            ),
+                        ],
+                      ),
+                      enabled: !isAlreadyInList,
+                      onTap: isAlreadyInList
+                          ? null
+                          : () => _addToListAndRepost(context, ref, list),
+                    );
+                  }),
+                ],
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: VineTheme.vineGreen),
+              ),
+            ),
+          ],
+        );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Error: $error')),
     );
   }
 
-  Future<void> _addToListAndRepost(BuildContext context, WidgetRef ref, CuratedList list) async {
+  Future<void> _addToListAndRepost(
+      BuildContext context, WidgetRef ref, CuratedList list) async {
     Navigator.of(context).pop(); // Close dialog
-    
+
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       // Add video to the selected list
-      final curatedListService = await ref.read(curatedListServiceProvider.future);
-      final success = await curatedListService.addVideoToList(list.id, video.id);
-      
+      final curatedListService =
+          await ref.read(curatedListServiceProvider.future);
+      final success =
+          await curatedListService.addVideoToList(list.id, video.id);
+
       if (!success) {
         throw Exception('Failed to add video to list');
       }
@@ -2795,7 +2697,8 @@ class _ListSelectionDialog extends ConsumerWidget {
         backgroundColor: VineTheme.cardBackground,
         title: const Text(
           'Create New List',
-          style: TextStyle(color: VineTheme.whiteText, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: VineTheme.whiteText, fontWeight: FontWeight.w600),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2803,7 +2706,10 @@ class _ListSelectionDialog extends ConsumerWidget {
           children: [
             const Text(
               'List Name',
-              style: TextStyle(color: VineTheme.whiteText, fontSize: 14, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  color: VineTheme.whiteText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -2818,14 +2724,18 @@ class _ListSelectionDialog extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
               autofocus: true,
             ),
             const SizedBox(height: 16),
             const Text(
               'Description (Optional)',
-              style: TextStyle(color: VineTheme.whiteText, fontSize: 14, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  color: VineTheme.whiteText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -2840,7 +2750,8 @@ class _ListSelectionDialog extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
               maxLines: 2,
             ),
@@ -2849,7 +2760,8 @@ class _ListSelectionDialog extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel', style: TextStyle(color: VineTheme.lightText)),
+            child: const Text('Cancel',
+                style: TextStyle(color: VineTheme.lightText)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -2867,19 +2779,21 @@ class _ListSelectionDialog extends ConsumerWidget {
               Navigator.of(dialogContext).pop(); // Close create dialog
               Navigator.of(context).pop(); // Close list selection dialog
 
-              final curatedListService = await ref.read(curatedListServiceProvider.future);
+              final curatedListService =
+                  await ref.read(curatedListServiceProvider.future);
               final newList = await curatedListService.createList(
                 name: name,
-                description: descriptionController.text.trim().isEmpty 
-                    ? null 
+                description: descriptionController.text.trim().isEmpty
+                    ? null
                     : descriptionController.text.trim(),
                 isPublic: true,
               );
 
               if (newList != null) {
                 // Add video to the newly created list
-                final success = await curatedListService.addVideoToList(newList.id, video.id);
-                
+                final success = await curatedListService.addVideoToList(
+                    newList.id, video.id);
+
                 if (success && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -2888,7 +2802,8 @@ class _ListSelectionDialog extends ConsumerWidget {
                           const Icon(Icons.check_circle, color: Colors.white),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text('Created "${newList.name}" and added video!'),
+                            child: Text(
+                                'Created "${newList.name}" and added video!'),
                           ),
                         ],
                       ),

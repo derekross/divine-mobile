@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
+// import 'package:crypto/crypto.dart'; // Not needed - no SHA256 for new recordings
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:openvine/config/app_config.dart';
@@ -54,13 +54,13 @@ class DirectUploadResult {
 
 /// Service for uploading videos and images directly to CF Workers
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class DirectUploadService  {
+class DirectUploadService {
   DirectUploadService({
     Nip98AuthService? authService,
     http.Client? httpClient,
-  }) : _authService = authService,
-       _httpClient = httpClient ?? http.Client();
-  
+  })  : _authService = authService,
+        _httpClient = httpClient ?? http.Client();
+
   static String get _baseUrl => AppConfig.backendBaseUrl;
 
   final Map<String, StreamController<double>> _progressControllers = {};
@@ -79,17 +79,39 @@ class DirectUploadService  {
   }) async {
     Log.info('🚀 === DIRECT UPLOAD SERVICE STARTED ===',
         name: 'DirectUploadService', category: LogCategory.system);
+    Log.info(
+        '📱 Platform: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+        name: 'DirectUploadService',
+        category: LogCategory.system);
     Log.info('📁 Video path: ${videoFile.path}',
         name: 'DirectUploadService', category: LogCategory.system);
     Log.info('📊 File exists: ${videoFile.existsSync()}',
         name: 'DirectUploadService', category: LogCategory.system);
     if (videoFile.existsSync()) {
-      Log.info('📊 File size: ${videoFile.lengthSync()} bytes',
-          name: 'DirectUploadService', category: LogCategory.system);
+      Log.info(
+          '📊 File size: ${videoFile.lengthSync()} bytes (${(videoFile.lengthSync() / 1024 / 1024).toStringAsFixed(2)} MB)',
+          name: 'DirectUploadService',
+          category: LogCategory.system);
+      // Check if file is readable
+      try {
+        final testRead = videoFile.openRead();
+        await testRead.first.timeout(Duration(seconds: 1)).catchError((e) {
+          Log.warning('⚠️ File might not be readable: $e',
+              name: 'DirectUploadService', category: LogCategory.system);
+          return Uint8List(0);
+        });
+        Log.info('✅ File is readable',
+            name: 'DirectUploadService', category: LogCategory.system);
+      } catch (e) {
+        Log.error('❌ Cannot read file: $e',
+            name: 'DirectUploadService', category: LogCategory.system);
+        return DirectUploadResult.failure('Cannot read video file: $e');
+      }
     } else {
       Log.error('❌ VIDEO FILE DOES NOT EXIST!',
           name: 'DirectUploadService', category: LogCategory.system);
-      return DirectUploadResult.failure('Video file does not exist at path: ${videoFile.path}');
+      return DirectUploadResult.failure(
+          'Video file does not exist at path: ${videoFile.path}');
     }
 
     // First check backend connectivity
@@ -99,7 +121,8 @@ class DirectUploadService  {
     if (!isHealthy) {
       Log.error('❌ Backend is not accessible, aborting upload',
           name: 'DirectUploadService', category: LogCategory.system);
-      return DirectUploadResult.failure('Backend service is not accessible. Please check your internet connection.');
+      return DirectUploadResult.failure(
+          'Backend service is not accessible. Please check your internet connection.');
     }
     Log.info('✅ Backend is healthy, proceeding with upload',
         name: 'DirectUploadService', category: LogCategory.system);
@@ -119,47 +142,12 @@ class DirectUploadService  {
         _progressSubscriptions[videoId] = subscription;
       }
 
-      // Step 1: Calculate SHA256 hash to check for duplicates
-      progressController.add(0.02); // 2% for hash calculation
-      Log.debug('📱 Calculating SHA256 hash for deduplication...',
+      // Skip SHA256 calculation - these are always new recordings
+      progressController.add(0.05); // Jump to 5%
+      Log.debug('📱 Processing new recording for upload',
           name: 'DirectUploadService', category: LogCategory.system);
 
-      final fileBytes = await videoFile.readAsBytes();
-      final sha256Hash = await _calculateSHA256(fileBytes);
-      
-      Log.debug('SHA256 calculated: ${sha256Hash.substring(0, 16)}...',
-          name: 'DirectUploadService', category: LogCategory.system);
-
-      // Step 2: Check if file already exists on server
-      progressController.add(0.05); // 5% for duplicate check
-      final duplicateCheckResult = await _checkFileExists(sha256Hash);
-      
-      if (duplicateCheckResult != null && duplicateCheckResult['exists'] == true) {
-        final existingUrl = duplicateCheckResult['url'];
-        Log.info('File already exists on server, skipping upload: $existingUrl',
-            name: 'DirectUploadService', category: LogCategory.system);
-        
-        progressController.add(1.0); // Mark as complete
-        
-        // Cleanup progress controller and subscription
-        _progressControllers.remove(videoId);
-        final subscription = _progressSubscriptions.remove(videoId);
-        await subscription?.cancel();
-        await progressController.close();
-        
-        // Return the existing file's metadata
-        return DirectUploadResult.success(
-          videoId: duplicateCheckResult['fileId'] ?? videoId,
-          cdnUrl: existingUrl,
-          metadata: {
-            'sha256': sha256Hash,
-            'deduplication': true,
-            'existing_file': true
-          },
-        );
-      }
-
-      // Step 3: Generate thumbnail before upload (file is new)
+      // Step 2: Generate thumbnail before upload
       progressController.add(0.08); // 8% for thumbnail generation
       Log.debug('📱 Generating video thumbnail...',
           name: 'DirectUploadService', category: LogCategory.system);
@@ -198,6 +186,9 @@ class DirectUploadService  {
       final headers = await _getAuthHeaders(url);
       request.headers.addAll(headers);
 
+      // Add required fields
+      request.fields['pubkey'] = nostrPubkey;
+
       // Add video file with progress tracking
       final fileLength = await videoFile.length();
       final stream = videoFile.openRead();
@@ -211,15 +202,17 @@ class DirectUploadService  {
             bytesUploaded += data.length;
             final progress = bytesUploaded / fileLength;
             progressController.add(progress * 0.9); // 0-90% for upload
-            
+
             // Log progress every 10%
             final progressPercent = (progress * 100).round();
             if (progressPercent >= lastProgressLog + 10) {
               lastProgressLog = progressPercent;
-              Log.info('📊 Upload progress: $progressPercent% ($bytesUploaded / $fileLength bytes)',
-                  name: 'DirectUploadService', category: LogCategory.system);
+              Log.info(
+                  '📊 Upload progress: $progressPercent% ($bytesUploaded / $fileLength bytes)',
+                  name: 'DirectUploadService',
+                  category: LogCategory.system);
             }
-            
+
             sink.add(data);
           },
         ),
@@ -259,9 +252,19 @@ class DirectUploadService  {
 
       // Send request
       progressController.add(0.10); // 10% - Starting main upload
-      
+
       Log.info('📤 Sending upload request to: $url',
           name: 'DirectUploadService', category: LogCategory.system);
+      Log.info('📦 Request method: ${request.method}',
+          name: 'DirectUploadService', category: LogCategory.system);
+      Log.info('📦 Request files: ${request.files.length} files',
+          name: 'DirectUploadService', category: LogCategory.system);
+      for (var file in request.files) {
+        Log.info(
+            '  - Field: ${file.field}, Filename: ${file.filename}, Length: ${file.length} bytes',
+            name: 'DirectUploadService',
+            category: LogCategory.system);
+      }
       Log.debug('Request headers: ${request.headers}',
           name: 'DirectUploadService', category: LogCategory.system);
       Log.debug('Request fields: ${request.fields}',
@@ -269,35 +272,48 @@ class DirectUploadService  {
 
       http.StreamedResponse streamedResponse;
       try {
+        Log.info('🔄 Attempting to send HTTP request...',
+            name: 'DirectUploadService', category: LogCategory.system);
         streamedResponse = await _httpClient.send(request).timeout(
           const Duration(minutes: 5),
           onTimeout: () {
+            Log.error('⏱️ Upload timed out after 5 minutes',
+                name: 'DirectUploadService', category: LogCategory.system);
             throw TimeoutException('Upload timed out after 5 minutes');
           },
         );
-      } catch (e) {
+        Log.info('✅ HTTP request sent successfully',
+            name: 'DirectUploadService', category: LogCategory.system);
+      } catch (e, stack) {
+        Log.error('❌ Failed to send HTTP request: $e',
+            name: 'DirectUploadService', category: LogCategory.system);
+        Log.error('Stack trace: $stack',
+            name: 'DirectUploadService', category: LogCategory.system);
+
         if (e is SocketException) {
-          Log.error('🌐 Network error: ${e.message}',
-              name: 'DirectUploadService', category: LogCategory.system);
+          Log.error(
+              '🌐 Network error details: ${e.message}, OSError: ${e.osError}',
+              name: 'DirectUploadService',
+              category: LogCategory.system);
           throw Exception('Network connection failed: ${e.message}');
         } else if (e is TimeoutException) {
           Log.error('⏱️ Upload timeout: ${e.message}',
               name: 'DirectUploadService', category: LogCategory.system);
           throw Exception('Upload timed out: ${e.message}');
         } else {
-          Log.error('🚨 Request send error: $e',
+          Log.error('🚨 Request send error type: ${e.runtimeType}',
               name: 'DirectUploadService', category: LogCategory.system);
           rethrow;
         }
       }
-      
+
       Log.info('📡 Upload request sent, status: ${streamedResponse.statusCode}',
           name: 'DirectUploadService', category: LogCategory.system);
 
       progressController.add(0.95); // Upload complete, processing response
 
       final response = await http.Response.fromStream(streamedResponse);
-      
+
       Log.debug('📥 Response body: ${response.body}',
           name: 'DirectUploadService', category: LogCategory.system);
 
@@ -334,7 +350,7 @@ class DirectUploadService  {
           final thumbnailUrl = data['thumbnail_url'] ?? data['thumb_url'];
           Log.info('📸 Thumbnail URL from backend: $thumbnailUrl',
               name: 'DirectUploadService', category: LogCategory.system);
-          
+
           return DirectUploadResult.success(
             videoId: videoId ?? 'unknown',
             cdnUrl: cdnUrl,
@@ -386,7 +402,32 @@ class DirectUploadService  {
         await controller?.close();
       }
 
-      return DirectUploadResult.failure('Upload failed: $e');
+      // Build detailed error message for user display
+      String detailedError = 'Upload failed: ${e.toString()}';
+
+      // Provide user-friendly error messages based on error type
+      if (e is SocketException) {
+        detailedError = '🌐 Network Error: ${e.message}';
+        if (e.osError != null) {
+          detailedError += '\nOS Error: ${e.osError}';
+        }
+      } else if (e is TimeoutException) {
+        detailedError =
+            '⏱️ Upload timed out\nCheck your connection and try again';
+      } else if (e.toString().contains('400')) {
+        detailedError =
+            '❌ Server rejected upload (400)\nCheck file format/size';
+      } else if (e.toString().contains('401')) {
+        detailedError = '🔐 Authentication failed\nTry signing in again';
+      } else if (e.toString().contains('413')) {
+        detailedError = '📦 File too large\nMax size exceeded';
+      } else if (e.toString().contains('500')) {
+        detailedError = '⚠️ Server error\nPlease try again later';
+      } else if (e.toString().contains('Network connection failed')) {
+        detailedError = e.toString(); // Already formatted
+      }
+
+      return DirectUploadResult.failure(detailedError);
     }
   }
 
@@ -394,7 +435,7 @@ class DirectUploadService  {
   Future<Map<String, String>> _getAuthHeaders(String url) async {
     Log.debug('🔐 Creating auth headers for URL: $url',
         name: 'DirectUploadService', category: LogCategory.system);
-    
+
     final headers = <String, String>{
       'Accept': 'application/json',
     };
@@ -459,21 +500,23 @@ class DirectUploadService  {
       final nip96Url = AppConfig.nip96InfoUrl;
       Log.info('🏥 Checking backend availability at: $nip96Url',
           name: 'DirectUploadService', category: LogCategory.system);
-      
+
       final response = await _httpClient.get(Uri.parse(nip96Url)).timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           throw TimeoutException('Backend check timed out');
         },
       );
-      
+
       if (response.statusCode == 200) {
         Log.info('✅ Backend is available and responding',
             name: 'DirectUploadService', category: LogCategory.system);
         return true;
       } else {
-        Log.error('❌ Backend check failed: ${response.statusCode} - ${response.body}',
-            name: 'DirectUploadService', category: LogCategory.system);
+        Log.error(
+            '❌ Backend check failed: ${response.statusCode} - ${response.body}',
+            name: 'DirectUploadService',
+            category: LogCategory.system);
         return false;
       }
     } catch (e) {
@@ -530,15 +573,17 @@ class DirectUploadService  {
             bytesUploaded += data.length;
             final progress = bytesUploaded / fileLength;
             progressController.add(progress * 0.9); // 0-90% for upload
-            
+
             // Log progress every 10%
             final progressPercent = (progress * 100).round();
             if (progressPercent >= lastProgressLog + 10) {
               lastProgressLog = progressPercent;
-              Log.info('📊 Upload progress: $progressPercent% ($bytesUploaded / $fileLength bytes)',
-                  name: 'DirectUploadService', category: LogCategory.system);
+              Log.info(
+                  '📊 Upload progress: $progressPercent% ($bytesUploaded / $fileLength bytes)',
+                  name: 'DirectUploadService',
+                  category: LogCategory.system);
             }
-            
+
             sink.add(data);
           },
         ),
@@ -618,7 +663,7 @@ class DirectUploadService  {
       }
 
       if (e is DirectUploadException) {
-        rethrow;
+        return DirectUploadResult.failure(e.message);
       }
 
       return DirectUploadResult.failure(e.toString());
@@ -682,39 +727,7 @@ class DirectUploadService  {
     }
   }
 
-  /// Calculate SHA256 hash of file bytes
-  Future<String> _calculateSHA256(Uint8List bytes) async {
-    final digest = sha256.convert(bytes);
-    return digest.toString();
-  }
-
-  /// Check if file exists on server by SHA256 hash
-  Future<Map<String, dynamic>?> _checkFileExists(String sha256Hash) async {
-    try {
-      final url = '$_baseUrl/api/check/$sha256Hash';
-      final response = await _httpClient.get(
-        Uri.parse(url),
-        headers: {
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        Log.debug('File check result: ${data['exists'] ? 'exists' : 'not found'}',
-            name: 'DirectUploadService', category: LogCategory.system);
-        return data;
-      } else {
-        Log.warning('File check failed with status ${response.statusCode}',
-            name: 'DirectUploadService', category: LogCategory.system);
-        return null;
-      }
-    } catch (e) {
-      Log.warning('File check error: $e (continuing with upload)',
-          name: 'DirectUploadService', category: LogCategory.system);
-      return null;
-    }
-  }
+  // SHA256 and deduplication methods removed - not needed for new recordings
 
   void dispose() {
     // Cancel all active uploads and subscriptions
@@ -726,7 +739,6 @@ class DirectUploadService  {
     }
     _progressSubscriptions.clear();
     _progressControllers.clear();
-    
   }
 }
 

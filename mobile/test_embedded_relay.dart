@@ -5,92 +5,96 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_embedded_nostr_relay/flutter_embedded_nostr_relay.dart' as embedded;
+import 'package:flutter_embedded_nostr_relay/flutter_embedded_nostr_relay.dart'
+    as embedded;
+import 'package:openvine/utils/unified_logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  print('\n=== EMBEDDED RELAY DIRECT TEST ===\n');
-  
+  Log.info('\n=== EMBEDDED RELAY DIRECT TEST ===\n', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   // Initialize embedded relay
-  print('1. Initializing embedded relay...');
+  Log.info('1. Initializing embedded relay...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   final embeddedRelay = embedded.EmbeddedNostrRelay();
   await embeddedRelay.initialize(
     enableGarbageCollection: true,
   );
-  print('   ✅ Embedded relay initialized');
-  
+  Log.info('   ✅ Embedded relay initialized', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   // Add external relay
-  print('\n2. Adding external relay...');
+  Log.info('\n2. Adding external relay...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   const relayUrl = 'wss://relay3.openvine.co';
   await embeddedRelay.addExternalRelay(relayUrl);
-  print('   ✅ Added relay: $relayUrl');
-  
+  Log.info('   ✅ Added relay: $relayUrl', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   // Check connection status
-  print('\n3. Checking connection status...');
+  Log.info('\n3. Checking connection status...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   final connectedRelays = embeddedRelay.connectedRelays;
-  print('   Connected relays: $connectedRelays');
-  
+  Log.info('   Connected relays: $connectedRelays', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   if (!connectedRelays.contains(relayUrl)) {
-    print('   ⚠️ WARNING: Not connected to $relayUrl yet');
-    print('   Waiting 2 seconds for connection...');
+    Log.info('   ⚠️ WARNING: Not connected to $relayUrl yet', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+    Log.info('   Waiting 2 seconds for connection...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
     await Future.delayed(Duration(seconds: 2));
     final connectedRelaysAfter = embeddedRelay.connectedRelays;
-    print('   Connected relays after wait: $connectedRelaysAfter');
+    Log.info('   Connected relays after wait: $connectedRelaysAfter', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   }
-  
+
   // Test 1: Query with NO author filter (should work)
-  print('\n4. Testing query with NO author filter...');
+  Log.info('\n4. Testing query with NO author filter...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   final openFilter = embedded.Filter(
     kinds: [32222], // Video events
     limit: 5,
   );
-  
+
   final openEvents = await embeddedRelay.queryEvents([openFilter]);
-  print('   Received ${openEvents.length} events with open filter');
-  
+  Log.info('   Received ${openEvents.length} events with open filter', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   if (openEvents.isNotEmpty) {
-    print('   ✅ Open filter works - relay is responding');
-    print('   First event author: ${openEvents.first.pubkey.substring(0, 8)}...');
+    Log.info('   ✅ Open filter works - relay is responding', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+    Log.info(
+        '   First event author: ${openEvents.first.pubkey.substring(0, 8)}...',
+        name: 'EmbeddedRelayTest', category: LogCategory.relay);
   } else {
-    print('   ❌ No events received with open filter');
+    Log.info('   ❌ No events received with open filter', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   }
-  
+
   // Test 2: Query with specific author filter
-  print('\n5. Testing query with specific author filter...');
-  
+  Log.info('\n5. Testing query with specific author filter...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   // Use authors we know have videos from the logs
   final knownAuthors = [
     '377d059b8e4154c95e45c951b5b2b1b15d6f11c17e59e6a7b1c70ba7f3f7e079', // ＊emi＊
     '46322367c46f0fd68e587c8b3f0a967bb3e0c97a6b96c48ae40be08a78c73b64', // 일곱숨결7ᴴᴱᴬᴿᵀ
   ];
-  
+
   final authorFilter = embedded.Filter(
     kinds: [32222],
     authors: knownAuthors,
     limit: 10,
   );
-  
+
   final authorEvents = await embeddedRelay.queryEvents([authorFilter]);
-  print('   Received ${authorEvents.length} events with author filter');
-  
+  Log.info('   Received ${authorEvents.length} events with author filter', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   if (authorEvents.isNotEmpty) {
-    print('   ✅ Author filter works');
+    Log.info('   ✅ Author filter works', name: 'EmbeddedRelayTest', category: LogCategory.relay);
     for (var i = 0; i < authorEvents.length && i < 3; i++) {
-      print('   Event $i: author=${authorEvents[i].pubkey.substring(0, 8)}...');
+      Log.info('   Event $i: author=${authorEvents[i].pubkey.substring(0, 8)}...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
     }
   } else {
-    print('   ❌ No events received with author filter');
+    Log.info('   ❌ No events received with author filter', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   }
-  
+
   // Test 3: Create a subscription and see if it gets events
-  print('\n6. Testing subscription (REQ message)...');
-  
+  Log.info('\n6. Testing subscription (REQ message)...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   final subscriptionId = 'test_sub_${DateTime.now().millisecondsSinceEpoch}';
   var receivedCount = 0;
   final completer = Completer<void>();
-  
-  print('   Creating subscription with ID: $subscriptionId');
-  
+
+  Log.info('   Creating subscription with ID: $subscriptionId', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   final subscription = embeddedRelay.subscribe(
     subscriptionId: subscriptionId,
     filters: [
@@ -101,36 +105,38 @@ void main() async {
     ],
     onEvent: (event) {
       receivedCount++;
-      print('   📨 Received event ${receivedCount}: kind=${event.kind}, author=${event.pubkey.substring(0, 8)}...');
+      Log.info(
+          '   📨 Received event $receivedCount: kind=${event.kind}, author=${event.pubkey.substring(0, 8)}...',
+          name: 'EmbeddedRelayTest', category: LogCategory.relay);
       if (receivedCount >= 3 && !completer.isCompleted) {
         completer.complete();
       }
     },
     onError: (error) {
-      print('   ❌ Subscription error: $error');
+      Log.info('   ❌ Subscription error: $error', name: 'EmbeddedRelayTest', category: LogCategory.relay);
       if (!completer.isCompleted) {
         completer.completeError(error);
       }
     },
   );
-  
+
   // Wait for events with timeout
   try {
     await completer.future.timeout(Duration(seconds: 5));
-    print('   ✅ Subscription received $receivedCount events');
+    Log.info('   ✅ Subscription received $receivedCount events', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   } catch (e) {
     if (e is TimeoutException) {
-      print('   ⏱️ Timeout after 5 seconds - received $receivedCount events');
+      Log.info('   ⏱️ Timeout after 5 seconds - received $receivedCount events', name: 'EmbeddedRelayTest', category: LogCategory.relay);
     } else {
-      print('   ❌ Error: $e');
+      Log.info('   ❌ Error: $e', name: 'EmbeddedRelayTest', category: LogCategory.relay);
     }
   }
-  
+
   subscription.close();
-  
+
   // Test 4: Test with the actual followed users
-  print('\n7. Testing with actual followed users from home feed...');
-  
+  Log.info('\n7. Testing with actual followed users from home feed...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   final followedUsers = [
     '2646f4c01362b3b48d4b4e31d9c96a4eabe06c4eb97fe1a482ef651f1bf023b7',
     '2d85b149e9eb1b56720b7123e303ead76e4d7cc3aa24073c5b909ae89aaabe38',
@@ -142,54 +148,60 @@ void main() async {
     '4f62e079b8e44cffe1173ea87e90e604c8c92e5e93e7c616e3e9fff10f98e23a',
     '032a9cf96e1965f3f96a13bb6e8f4c6b5a1c7e17c973d6e3bc674cc91bbf4f69',
   ];
-  
+
   final followedFilter = embedded.Filter(
     kinds: [32222],
     authors: followedUsers,
     limit: 50,
   );
-  
-  print('   Querying for videos from ${followedUsers.length} followed users...');
+
+  Log.info(
+      '   Querying for videos from ${followedUsers.length} followed users...',
+      name: 'EmbeddedRelayTest', category: LogCategory.relay);
   final followedEvents = await embeddedRelay.queryEvents([followedFilter]);
-  print('   Received ${followedEvents.length} events from followed users');
-  
+  Log.info('   Received ${followedEvents.length} events from followed users', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   if (followedEvents.isEmpty) {
-    print('   ❌ No videos found from followed users');
-    print('   This confirms the issue - these users should have videos!');
+    Log.info('   ❌ No videos found from followed users', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+    Log.info('   This confirms the issue - these users should have videos!', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   } else {
-    print('   ✅ Found videos from followed users');
+    Log.info('   ✅ Found videos from followed users', name: 'EmbeddedRelayTest', category: LogCategory.relay);
     // Group by author
     final eventsByAuthor = <String, int>{};
     for (final event in followedEvents) {
       eventsByAuthor[event.pubkey] = (eventsByAuthor[event.pubkey] ?? 0) + 1;
     }
-    print('   Videos per author:');
+    Log.info('   Videos per author:', name: 'EmbeddedRelayTest', category: LogCategory.relay);
     eventsByAuthor.forEach((pubkey, count) {
-      print('     ${pubkey.substring(0, 8)}...: $count videos');
+      Log.info('     ${pubkey.substring(0, 8)}...: $count videos', name: 'EmbeddedRelayTest', category: LogCategory.relay);
     });
   }
-  
+
   // Clean up
-  print('\n8. Shutting down...');
+  Log.info('\n8. Shutting down...', name: 'EmbeddedRelayTest', category: LogCategory.relay);
   await embeddedRelay.shutdown();
-  print('   ✅ Embedded relay shut down');
-  
-  print('\n=== TEST COMPLETE ===\n');
-  
+  Log.info('   ✅ Embedded relay shut down', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
+  Log.info('\n=== TEST COMPLETE ===\n', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   // Summary
-  print('SUMMARY:');
-  print('- Open query (no filter): ${openEvents.length} events');
-  print('- Known authors query: ${authorEvents.length} events');
-  print('- Subscription received: $receivedCount events');
-  print('- Followed users query: ${followedEvents.length} events');
-  
+  Log.info('SUMMARY:', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+  Log.info('- Open query (no filter): ${openEvents.length} events', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+  Log.info('- Known authors query: ${authorEvents.length} events', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+  Log.info('- Subscription received: $receivedCount events', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+  Log.info('- Followed users query: ${followedEvents.length} events', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+
   if (followedEvents.isEmpty && openEvents.isNotEmpty) {
-    print('\n❌ PROBLEM CONFIRMED: Embedded relay works but fails with specific author filters!');
-    print('This suggests the issue is either:');
-    print('1. The followed users have no videos on the relay');
-    print('2. There\'s a bug in author filtering in the embedded relay');
-    print('3. The relay is not properly querying external relays with author filters');
+    Log.info(
+        '\n❌ PROBLEM CONFIRMED: Embedded relay works but fails with specific author filters!',
+        name: 'EmbeddedRelayTest', category: LogCategory.relay);
+    Log.info('This suggests the issue is either:', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+    Log.info('1. The followed users have no videos on the relay', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+    Log.info('2. There\'s a bug in author filtering in the embedded relay', name: 'EmbeddedRelayTest', category: LogCategory.relay);
+    Log.info(
+        '3. The relay is not properly querying external relays with author filters',
+        name: 'EmbeddedRelayTest', category: LogCategory.relay);
   }
-  
+
   exit(0);
 }

@@ -24,7 +24,8 @@ void main() {
 
     setUpAll(() {
       // Initialize platform channel mocking once for all tests
-      const MethodChannel('flutter.io/videoPlayer').setMockMethodCallHandler((call) async {
+      const MethodChannel('flutter.io/videoPlayer')
+          .setMockMethodCallHandler((call) async {
         switch (call.method) {
           case 'init':
             return null;
@@ -49,7 +50,7 @@ void main() {
     setUp(() {
       mockSocialService = MockSocialService();
       mockVideoManager = MockIVideoManager();
-      
+
       testVideoEvent = VideoEvent(
         id: 'test_video_123',
         pubkey: 'test_author_pubkey',
@@ -65,28 +66,31 @@ void main() {
         event: testVideoEvent,
         loadingState: VideoLoadingState.ready,
       );
-      when(mockVideoManager.getVideoState('test_video_123')).thenReturn(testVideoState);
+      when(mockVideoManager.getVideoState('test_video_123'))
+          .thenReturn(testVideoState);
       when(mockVideoManager.getController('test_video_123')).thenReturn(null);
       when(mockVideoManager.videos).thenReturn([testVideoEvent]);
       when(mockVideoManager.readyVideos).thenReturn([testVideoEvent]);
-      when(mockVideoManager.preloadVideo('test_video_123')).thenAnswer((_) async {});
-      when(mockVideoManager.addVideoEvent(testVideoEvent)).thenAnswer((_) async {});
+      when(mockVideoManager.preloadVideo('test_video_123'))
+          .thenAnswer((_) async {});
+      when(mockVideoManager.addVideoEvent(testVideoEvent))
+          .thenAnswer((_) async {});
     });
-
 
     Widget createTestWidget({bool isLiked = false, int likeCount = 0}) {
       // Mock social service responses
       when(mockSocialService.isLiked(testVideoEvent.id)).thenReturn(isLiked);
-      when(mockSocialService.getCachedLikeCount(testVideoEvent.id)).thenReturn(likeCount);
+      when(mockSocialService.getCachedLikeCount(testVideoEvent.id))
+          .thenReturn(likeCount);
       when(mockSocialService.getLikeStatus(testVideoEvent.id)).thenAnswer(
         (_) async => {'count': likeCount, 'user_liked': isLiked},
       );
-      when(mockSocialService.toggleLike(testVideoEvent.id, testVideoEvent.pubkey))
+      when(mockSocialService.toggleLike(
+              testVideoEvent.id, testVideoEvent.pubkey))
           .thenAnswer((_) async {});
       when(mockSocialService.fetchCommentsForEvent(testVideoEvent.id))
           .thenAnswer((_) => const Stream.empty());
 
-      
       final container = ProviderContainer(
         overrides: [
           socialServiceProvider.overrideWithValue(mockSocialService),
@@ -94,7 +98,7 @@ void main() {
           // The real provider will be used but should work with platform channel mocks
         ],
       );
-      
+
       return UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
@@ -142,12 +146,14 @@ void main() {
     testWidgets('should display formatted like counts correctly',
         (tester) async {
       // Test thousands formatting
-      await tester.pumpWidget(createTestWidget(isLiked: false, likeCount: 1500));
+      await tester
+          .pumpWidget(createTestWidget(isLiked: false, likeCount: 1500));
       await tester.pumpAndSettle();
       expect(find.text('1.5K'), findsOneWidget);
 
-      // Test millions formatting  
-      await tester.pumpWidget(createTestWidget(isLiked: false, likeCount: 2500000));
+      // Test millions formatting
+      await tester
+          .pumpWidget(createTestWidget(isLiked: false, likeCount: 2500000));
       await tester.pumpAndSettle();
       expect(find.text('2.5M'), findsOneWidget);
 

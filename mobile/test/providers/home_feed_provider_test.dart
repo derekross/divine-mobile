@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:nostr_sdk/nostr_sdk.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/providers/home_feed_provider.dart';
 import 'package:openvine/providers/app_providers.dart';
@@ -14,7 +13,6 @@ import 'package:openvine/services/video_event_service.dart';
 import 'package:openvine/services/nostr_service_interface.dart';
 import 'package:openvine/services/subscription_manager.dart';
 import 'package:openvine/state/social_state.dart';
-import 'package:openvine/state/video_feed_state.dart';
 
 import 'home_feed_provider_test.mocks.dart';
 
@@ -48,7 +46,8 @@ void main() {
         overrides: [
           videoEventServiceProvider.overrideWithValue(mockVideoEventService),
           nostrServiceProvider.overrideWithValue(mockNostrService),
-          subscriptionManagerProvider.overrideWithValue(mockSubscriptionManager),
+          subscriptionManagerProvider
+              .overrideWithValue(mockSubscriptionManager),
         ],
       );
     });
@@ -57,13 +56,15 @@ void main() {
       container.dispose();
     });
 
-    test('should return empty state when user is not following anyone', () async {
+    test('should return empty state when user is not following anyone',
+        () async {
       // Setup: User is not following anyone - create new container with overrides
       final testContainer = ProviderContainer(
         overrides: [
           videoEventServiceProvider.overrideWithValue(mockVideoEventService),
           nostrServiceProvider.overrideWithValue(mockNostrService),
-          subscriptionManagerProvider.overrideWithValue(mockSubscriptionManager),
+          subscriptionManagerProvider
+              .overrideWithValue(mockSubscriptionManager),
           social.socialNotifierProvider.overrideWith(() {
             return social.SocialNotifier()
               ..state = const SocialState(
@@ -188,7 +189,8 @@ void main() {
 
       // Assert: Videos should be sorted newest first
       expect(result.videos.length, equals(2));
-      expect(result.videos[0].createdAt, greaterThan(result.videos[1].createdAt));
+      expect(
+          result.videos[0].createdAt, greaterThan(result.videos[1].createdAt));
       expect(result.videos[0].content, equals('Newer video'));
       expect(result.videos[1].content, equals('Older video'));
     });
@@ -196,7 +198,7 @@ void main() {
     test('should handle load more functionality', () async {
       // Setup
       final followingPubkeys = ['pubkey1'];
-      
+
       container.updateOverrides([
         social.socialNotifierProvider.overrideWith(() {
           return social.SocialNotifier()
@@ -229,7 +231,7 @@ void main() {
     test('should handle refresh functionality', () async {
       // Setup
       final followingPubkeys = ['pubkey1'];
-      
+
       container.updateOverrides([
         social.socialNotifierProvider.overrideWith(() {
           return social.SocialNotifier()
@@ -256,7 +258,7 @@ void main() {
     test('should handle empty video list correctly', () async {
       // Setup: User is following people but no videos available
       final followingPubkeys = ['pubkey1', 'pubkey2'];
-      
+
       container.updateOverrides([
         social.socialNotifierProvider.overrideWith(() {
           return social.SocialNotifier()

@@ -75,7 +75,7 @@ void main() {
           analyticsServiceProvider.overrideWithValue(mockAnalyticsService),
         ],
       );
-      
+
       return UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
@@ -129,7 +129,8 @@ void main() {
       expect(find.byType(ProfileScreen), findsOneWidget);
 
       // Verify the ProfileScreen was created with correct pubkey
-      final profileScreen = tester.widget(find.byType(ProfileScreen)) as ProfileScreen;
+      final profileScreen =
+          tester.widget(find.byType(ProfileScreen)) as ProfileScreen;
       expect(profileScreen.profilePubkey, equals('creator_pubkey'));
     });
 
@@ -191,7 +192,8 @@ void main() {
       expect(find.byType(ProfileScreen), findsOneWidget);
 
       // Verify the ProfileScreen was created with reposter's pubkey
-      final profileScreen = tester.widget(find.byType(ProfileScreen)) as ProfileScreen;
+      final profileScreen =
+          tester.widget(find.byType(ProfileScreen)) as ProfileScreen;
       expect(profileScreen.profilePubkey, equals('reposter_pubkey'));
     });
 

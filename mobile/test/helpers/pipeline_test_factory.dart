@@ -84,7 +84,7 @@ class PipelineTestFactory {
 
     // Create real services with mocked dependencies
     final apiService = ApiService(client: mockHttpClient);
-    final uploadService = DirectUploadService(httpClient: mockHttpClient);
+    final uploadService = DirectUploadService();
     final notificationService = NotificationService.instance;
 
     // Create Hive box for this test
@@ -149,20 +149,21 @@ class PipelineTestFactory {
     final healthResponse = MockResponse();
     when(() => healthResponse.statusCode).thenReturn(200);
     when(() => healthResponse.body).thenReturn('{"status": "healthy"}');
-    
+
     // Mock file existence check (returns 200 with exists: false - file doesn't exist)
     final fileCheckResponse = MockResponse();
     when(() => fileCheckResponse.statusCode).thenReturn(200);
     when(() => fileCheckResponse.body).thenReturn('{"exists": false}');
 
     // Setup URL matching
-    when(() => mockHttpClient.get(any(that: predicate<Uri>((uri) => 
-      uri.toString().contains('/health')
-    )))).thenAnswer((_) async => healthResponse);
-    
-    when(() => mockHttpClient.get(any(that: predicate<Uri>((uri) => 
-      uri.toString().contains('/api/check/')
-    )))).thenAnswer((_) async => fileCheckResponse);
+    when(() => mockHttpClient.get(any(
+            that: predicate<Uri>((uri) => uri.toString().contains('/health')))))
+        .thenAnswer((_) async => healthResponse);
+
+    when(() => mockHttpClient.get(any(
+            that: predicate<Uri>(
+                (uri) => uri.toString().contains('/api/check/')))))
+        .thenAnswer((_) async => fileCheckResponse);
     // Successful direct upload
     final uploadResponse = MockResponse();
     when(() => uploadResponse.statusCode).thenReturn(200);
@@ -192,18 +193,18 @@ class PipelineTestFactory {
     when(() => mockStreamedResponse.reasonPhrase).thenReturn('OK');
     when(() => mockStreamedResponse.persistentConnection).thenReturn(false);
     when(() => mockStreamedResponse.contentLength).thenReturn(100);
-    when(() => mockStreamedResponse.stream).thenAnswer((_) => 
-      http.ByteStream.fromBytes(utf8.encode(jsonEncode({
-        'videoId': config.videoId,
-        'cdnUrl': config.cdnUrl,
-        'metadata': {
-          'bytes': 1024000,
-          'width': 1920,
-          'height': 1080,
-          'duration': 6.5,
-          ...?config.customMetadata,
-        },
-      }))));
+    when(() => mockStreamedResponse.stream)
+        .thenAnswer((_) => http.ByteStream.fromBytes(utf8.encode(jsonEncode({
+              'videoId': config.videoId,
+              'cdnUrl': config.cdnUrl,
+              'metadata': {
+                'bytes': 1024000,
+                'width': 1920,
+                'height': 1080,
+                'duration': 6.5,
+                ...?config.customMetadata,
+              },
+            }))));
 
     when(() => mockHttpClient.send(any())).thenAnswer((_) async {
       if (config.networkDelay != null) {
@@ -271,19 +272,20 @@ class PipelineTestFactory {
     final healthResponse = MockResponse();
     when(() => healthResponse.statusCode).thenReturn(200);
     when(() => healthResponse.body).thenReturn('{"status": "healthy"}');
-    
+
     // Mock file existence check (returns 200 with exists: false - file doesn't exist)
     final fileCheckResponse = MockResponse();
     when(() => fileCheckResponse.statusCode).thenReturn(200);
     when(() => fileCheckResponse.body).thenReturn('{"exists": false}');
 
-    when(() => mockHttpClient.get(any(that: predicate<Uri>((uri) => 
-      uri.toString().contains('/health')
-    )))).thenAnswer((_) async => healthResponse);
-    
-    when(() => mockHttpClient.get(any(that: predicate<Uri>((uri) => 
-      uri.toString().contains('/api/check/')
-    )))).thenAnswer((_) async => fileCheckResponse);
+    when(() => mockHttpClient.get(any(
+            that: predicate<Uri>((uri) => uri.toString().contains('/health')))))
+        .thenAnswer((_) async => healthResponse);
+
+    when(() => mockHttpClient.get(any(
+            that: predicate<Uri>(
+                (uri) => uri.toString().contains('/api/check/')))))
+        .thenAnswer((_) async => fileCheckResponse);
 
     // Failed upload via send() method
     final mockStreamedResponse = MockStreamedResponse();
@@ -297,12 +299,13 @@ class PipelineTestFactory {
     when(() => mockStreamedResponse.reasonPhrase).thenReturn('Bad Request');
     when(() => mockStreamedResponse.persistentConnection).thenReturn(false);
     when(() => mockStreamedResponse.contentLength).thenReturn(50);
-    when(() => mockStreamedResponse.stream).thenAnswer((_) => 
-      http.ByteStream.fromBytes(utf8.encode(jsonEncode({
-        'error': {'message': 'Invalid file format'},
-      }))));
+    when(() => mockStreamedResponse.stream)
+        .thenAnswer((_) => http.ByteStream.fromBytes(utf8.encode(jsonEncode({
+              'error': {'message': 'Invalid file format'},
+            }))));
 
-    when(() => mockHttpClient.send(any())).thenAnswer((_) async => mockStreamedResponse);
+    when(() => mockHttpClient.send(any()))
+        .thenAnswer((_) async => mockStreamedResponse);
   }
 
   static void _setupProcessingFailureScenario(
@@ -342,19 +345,20 @@ class PipelineTestFactory {
   ) {
     // Network requests that timeout - throw TimeoutException directly
     when(() => mockHttpClient.get(any(), headers: any(named: 'headers')))
-        .thenThrow(TimeoutException('Network timeout', const Duration(seconds: 10)));
+        .thenThrow(
+            TimeoutException('Network timeout', const Duration(seconds: 10)));
 
-    when(() => mockHttpClient.send(any()))
-        .thenThrow(TimeoutException('Upload timeout', const Duration(minutes: 5)));
+    when(() => mockHttpClient.send(any())).thenThrow(
+        TimeoutException('Upload timeout', const Duration(minutes: 5)));
 
     // Mock health check for consistent behavior
     final healthResponse = MockResponse();
     when(() => healthResponse.statusCode).thenReturn(200);
     when(() => healthResponse.body).thenReturn('{"status": "healthy"}');
-    
-    when(() => mockHttpClient.get(any(that: predicate<Uri>((uri) => 
-      uri.toString().contains('/health')
-    )))).thenAnswer((_) async => healthResponse);
+
+    when(() => mockHttpClient.get(any(
+            that: predicate<Uri>((uri) => uri.toString().contains('/health')))))
+        .thenAnswer((_) async => healthResponse);
   }
 
   static void _setupMalformedResponseScenario(

@@ -28,7 +28,7 @@ class VideoFeed extends _$VideoFeed {
       name: 'VideoFeedProvider',
       category: LogCategory.video,
     );
-    
+
     // Clean up timer on dispose
     ref.onDispose(() {
       _profileFetchTimer?.cancel();
@@ -41,9 +41,10 @@ class VideoFeed extends _$VideoFeed {
       // Only trigger discovery stream when Explore tab is visible
       ref.read(videoEventsProvider);
     }
-    
-    final sourceVideos = List<VideoEvent>.from(videoEventService.discoveryVideos);
-    
+
+    final sourceVideos =
+        List<VideoEvent>.from(videoEventService.discoveryVideos);
+
     Log.info(
       '✅ VideoFeed: Retrieved ${sourceVideos.length} video events for discovery',
       name: 'VideoFeedProvider',
@@ -64,13 +65,13 @@ class VideoFeed extends _$VideoFeed {
       error: null,
       lastUpdated: DateTime.now(),
     );
-    
+
     Log.info(
       '📋 VideoFeed: Discovery feed complete - ${sortedVideos.length} videos',
       name: 'VideoFeedProvider',
       category: LogCategory.video,
     );
-    
+
     return feedState;
   }
 
@@ -96,7 +97,7 @@ class VideoFeed extends _$VideoFeed {
 
       // Wait for profiles to be fetched before continuing
       await profilesProvider.fetchMultipleProfiles(newPubkeys);
-      
+
       Log.debug(
         'VideoFeed: Profile fetching completed for ${newPubkeys.length} profiles',
         name: 'VideoFeedProvider',
@@ -114,13 +115,13 @@ class VideoFeed extends _$VideoFeed {
   /// Load more historical events
   Future<void> loadMore() async {
     final currentState = await future;
-    
+
     Log.info(
       'VideoFeed: loadMore() called - isLoadingMore: ${currentState.isLoadingMore}',
       name: 'VideoFeedProvider',
       category: LogCategory.video,
     );
-    
+
     if (currentState.isLoadingMore) {
       return;
     }
@@ -130,11 +131,14 @@ class VideoFeed extends _$VideoFeed {
 
     try {
       final videoEventService = ref.read(videoEventServiceProvider);
-      final eventCountBefore = videoEventService.getEventCount(SubscriptionType.discovery);
-      
-      await videoEventService.loadMoreEvents(SubscriptionType.discovery, limit: 50);
-      
-      final eventCountAfter = videoEventService.getEventCount(SubscriptionType.discovery);
+      final eventCountBefore =
+          videoEventService.getEventCount(SubscriptionType.discovery);
+
+      await videoEventService.loadMoreEvents(SubscriptionType.discovery,
+          limit: 50);
+
+      final eventCountAfter =
+          videoEventService.getEventCount(SubscriptionType.discovery);
       final newEventsLoaded = eventCountAfter - eventCountBefore;
 
       Log.info(
@@ -142,7 +146,7 @@ class VideoFeed extends _$VideoFeed {
         name: 'VideoFeedProvider',
         category: LogCategory.video,
       );
-      
+
       // Reset loading state - state will auto-update via dependencies
       final newState = await future;
       state = AsyncData(newState.copyWith(

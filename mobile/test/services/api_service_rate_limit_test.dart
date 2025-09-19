@@ -56,7 +56,7 @@ void main() {
           mimeType: 'video/mp4',
         );
       }
-      
+
       // Assert - should have made 2 HTTP calls
       expect(callCount, 2);
 
@@ -94,7 +94,7 @@ void main() {
         fileSize: 1024,
         mimeType: 'video/mp4',
       );
-      
+
       expect(result, isA<Map<String, dynamic>>());
     });
   });

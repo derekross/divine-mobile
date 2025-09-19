@@ -29,21 +29,22 @@ class RecordingSegment {
   Duration get duration => endTime.difference(startTime);
 
   Map<String, dynamic> toJson() => {
-    'segmentId': segmentId,
-    'startTime': startTime.toIso8601String(),
-    'endTime': endTime.toIso8601String(),
-    'duration': duration.inMilliseconds,
-    'frameHashes': frameHashes,
-    'sensorData': sensorData,
-  };
+        'segmentId': segmentId,
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
+        'duration': duration.inMilliseconds,
+        'frameHashes': frameHashes,
+        'sensorData': sensorData,
+      };
 
-  factory RecordingSegment.fromJson(Map<String, dynamic> json) => RecordingSegment(
-    segmentId: json['segmentId'] as String,
-    startTime: DateTime.parse(json['startTime'] as String),
-    endTime: DateTime.parse(json['endTime'] as String),
-    frameHashes: (json['frameHashes'] as List<dynamic>).cast<String>(),
-    sensorData: json['sensorData'] as Map<String, dynamic>?,
-  );
+  factory RecordingSegment.fromJson(Map<String, dynamic> json) =>
+      RecordingSegment(
+        segmentId: json['segmentId'] as String,
+        startTime: DateTime.parse(json['startTime'] as String),
+        endTime: DateTime.parse(json['endTime'] as String),
+        frameHashes: (json['frameHashes'] as List<dynamic>).cast<String>(),
+        sensorData: json['sensorData'] as Map<String, dynamic>?,
+      );
 }
 
 /// User interaction during recording
@@ -63,20 +64,22 @@ class UserInteractionProof {
   final Map<String, dynamic>? metadata;
 
   Map<String, dynamic> toJson() => {
-    'timestamp': timestamp.toIso8601String(),
-    'interactionType': interactionType,
-    'coordinates': coordinates,
-    'pressure': pressure,
-    'metadata': metadata,
-  };
+        'timestamp': timestamp.toIso8601String(),
+        'interactionType': interactionType,
+        'coordinates': coordinates,
+        'pressure': pressure,
+        'metadata': metadata,
+      };
 
-  factory UserInteractionProof.fromJson(Map<String, dynamic> json) => UserInteractionProof(
-    timestamp: DateTime.parse(json['timestamp'] as String),
-    interactionType: json['interactionType'] as String,
-    coordinates: (json['coordinates'] as Map<String, dynamic>).cast<String, double>(),
-    pressure: json['pressure'] as double?,
-    metadata: json['metadata'] as Map<String, dynamic>?,
-  );
+  factory UserInteractionProof.fromJson(Map<String, dynamic> json) =>
+      UserInteractionProof(
+        timestamp: DateTime.parse(json['timestamp'] as String),
+        interactionType: json['interactionType'] as String,
+        coordinates: (json['coordinates'] as Map<String, dynamic>)
+            .cast<String, double>(),
+        pressure: json['pressure'] as double?,
+        metadata: json['metadata'] as Map<String, dynamic>?,
+      );
 }
 
 /// Proof generated during recording pauses
@@ -96,21 +99,22 @@ class PauseProof {
   Duration get duration => endTime.difference(startTime);
 
   Map<String, dynamic> toJson() => {
-    'startTime': startTime.toIso8601String(),
-    'endTime': endTime.toIso8601String(),
-    'duration': duration.inMilliseconds,
-    'sensorData': sensorData,
-    'interactions': interactions?.map((i) => i.toJson()).toList(),
-  };
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
+        'duration': duration.inMilliseconds,
+        'sensorData': sensorData,
+        'interactions': interactions?.map((i) => i.toJson()).toList(),
+      };
 
   factory PauseProof.fromJson(Map<String, dynamic> json) => PauseProof(
-    startTime: DateTime.parse(json['startTime'] as String),
-    endTime: DateTime.parse(json['endTime'] as String),
-    sensorData: json['sensorData'] as Map<String, dynamic>,
-    interactions: (json['interactions'] as List<dynamic>?)
-        ?.map((i) => UserInteractionProof.fromJson(i as Map<String, dynamic>))
-        .toList(),
-  );
+        startTime: DateTime.parse(json['startTime'] as String),
+        endTime: DateTime.parse(json['endTime'] as String),
+        sensorData: json['sensorData'] as Map<String, dynamic>,
+        interactions: (json['interactions'] as List<dynamic>?)
+            ?.map(
+                (i) => UserInteractionProof.fromJson(i as Map<String, dynamic>))
+            .toList(),
+      );
 }
 
 /// Complete proof manifest for a vine session
@@ -141,46 +145,50 @@ class ProofManifest {
 
   Duration get totalDuration => vineSessionEnd.difference(vineSessionStart);
   Duration get recordingDuration => Duration(
-    milliseconds: segments.fold(0, (sum, segment) => sum + segment.duration.inMilliseconds),
-  );
+        milliseconds: segments.fold(
+            0, (sum, segment) => sum + segment.duration.inMilliseconds),
+      );
 
   Map<String, dynamic> toJson() => {
-    'sessionId': sessionId,
-    'challengeNonce': challengeNonce,
-    'vineSessionStart': vineSessionStart.toIso8601String(),
-    'vineSessionEnd': vineSessionEnd.toIso8601String(),
-    'totalDuration': totalDuration.inMilliseconds,
-    'recordingDuration': recordingDuration.inMilliseconds,
-    'segments': segments.map((s) => s.toJson()).toList(),
-    'pauseProofs': pauseProofs.map((p) => p.toJson()).toList(),
-    'interactions': interactions.map((i) => i.toJson()).toList(),
-    'finalVideoHash': finalVideoHash,
-    'deviceAttestation': deviceAttestation?.toJson(),
-    'pgpSignature': pgpSignature?.toJson(),
-  };
+        'sessionId': sessionId,
+        'challengeNonce': challengeNonce,
+        'vineSessionStart': vineSessionStart.toIso8601String(),
+        'vineSessionEnd': vineSessionEnd.toIso8601String(),
+        'totalDuration': totalDuration.inMilliseconds,
+        'recordingDuration': recordingDuration.inMilliseconds,
+        'segments': segments.map((s) => s.toJson()).toList(),
+        'pauseProofs': pauseProofs.map((p) => p.toJson()).toList(),
+        'interactions': interactions.map((i) => i.toJson()).toList(),
+        'finalVideoHash': finalVideoHash,
+        'deviceAttestation': deviceAttestation?.toJson(),
+        'pgpSignature': pgpSignature?.toJson(),
+      };
 
   factory ProofManifest.fromJson(Map<String, dynamic> json) => ProofManifest(
-    sessionId: json['sessionId'] as String,
-    challengeNonce: json['challengeNonce'] as String,
-    vineSessionStart: DateTime.parse(json['vineSessionStart'] as String),
-    vineSessionEnd: DateTime.parse(json['vineSessionEnd'] as String),
-    segments: (json['segments'] as List<dynamic>)
-        .map((s) => RecordingSegment.fromJson(s as Map<String, dynamic>))
-        .toList(),
-    pauseProofs: (json['pauseProofs'] as List<dynamic>)
-        .map((p) => PauseProof.fromJson(p as Map<String, dynamic>))
-        .toList(),
-    interactions: (json['interactions'] as List<dynamic>)
-        .map((i) => UserInteractionProof.fromJson(i as Map<String, dynamic>))
-        .toList(),
-    finalVideoHash: json['finalVideoHash'] as String,
-    deviceAttestation: json['deviceAttestation'] != null 
-        ? DeviceAttestation.fromJson(json['deviceAttestation'] as Map<String, dynamic>)
-        : null,
-    pgpSignature: json['pgpSignature'] != null
-        ? ProofSignature.fromJson(json['pgpSignature'] as Map<String, dynamic>)
-        : null,
-  );
+        sessionId: json['sessionId'] as String,
+        challengeNonce: json['challengeNonce'] as String,
+        vineSessionStart: DateTime.parse(json['vineSessionStart'] as String),
+        vineSessionEnd: DateTime.parse(json['vineSessionEnd'] as String),
+        segments: (json['segments'] as List<dynamic>)
+            .map((s) => RecordingSegment.fromJson(s as Map<String, dynamic>))
+            .toList(),
+        pauseProofs: (json['pauseProofs'] as List<dynamic>)
+            .map((p) => PauseProof.fromJson(p as Map<String, dynamic>))
+            .toList(),
+        interactions: (json['interactions'] as List<dynamic>)
+            .map(
+                (i) => UserInteractionProof.fromJson(i as Map<String, dynamic>))
+            .toList(),
+        finalVideoHash: json['finalVideoHash'] as String,
+        deviceAttestation: json['deviceAttestation'] != null
+            ? DeviceAttestation.fromJson(
+                json['deviceAttestation'] as Map<String, dynamic>)
+            : null,
+        pgpSignature: json['pgpSignature'] != null
+            ? ProofSignature.fromJson(
+                json['pgpSignature'] as Map<String, dynamic>)
+            : null,
+      );
 }
 
 /// ProofMode session management service
@@ -210,7 +218,8 @@ class ProofModeSessionService {
       final challengeNonce = _generateChallengeNonce();
 
       // Get device attestation
-      final attestation = await _attestationService.generateAttestation(challengeNonce);
+      final attestation =
+          await _attestationService.generateAttestation(challengeNonce);
 
       _currentSession = ProofSession(
         sessionId: sessionId,
@@ -282,7 +291,8 @@ class ProofModeSessionService {
   }
 
   /// Record user interaction
-  Future<void> recordInteraction(String type, double x, double y, {double? pressure}) async {
+  Future<void> recordInteraction(String type, double x, double y,
+      {double? pressure}) async {
     final session = _currentSession;
     if (session == null) return;
 
@@ -294,7 +304,7 @@ class ProofModeSessionService {
     );
 
     session.addInteraction(interaction);
-    
+
     Log.debug('Recorded interaction: $type at ($x, $y)',
         name: 'ProofModeSessionService', category: LogCategory.system);
   }
@@ -350,9 +360,11 @@ class ProofModeSessionService {
 
       _currentSession = null;
 
-      Log.info('ProofMode session finalized with ${signedManifest.segments.length} segments, '
-               '${signedManifest.interactions.length} interactions, duration: ${signedManifest.totalDuration.inSeconds}s',
-          name: 'ProofModeSessionService', category: LogCategory.system);
+      Log.info(
+          'ProofMode session finalized with ${signedManifest.segments.length} segments, '
+          '${signedManifest.interactions.length} interactions, duration: ${signedManifest.totalDuration.inSeconds}s',
+          name: 'ProofModeSessionService',
+          category: LogCategory.system);
 
       return signedManifest;
     } catch (e) {
@@ -450,7 +462,7 @@ class ProofSession {
   void startRecordingSegment(String segmentId) {
     _currentSegmentStart = DateTime.now();
     _currentFrameHashes = [];
-    
+
     // End current pause proof if active
     if (_currentPauseProof != null && _currentPauseStart != null) {
       final pauseProof = PauseProof(

@@ -29,7 +29,7 @@ void main() {
     setUp(() {
       mockNostrService = MockINostrService();
       mockVideoEventService = MockVideoEventService();
-      
+
       container = ProviderContainer(
         overrides: [
           nostrServiceProvider.overrideWithValue(mockNostrService),
@@ -57,7 +57,7 @@ void main() {
 
     group('Loading Videos', () {
       const testPubkey = 'test_pubkey_123';
-      
+
       test('should use cached videos from VideoEventService', () async {
         // Arrange
         final now = DateTime.now();
@@ -112,7 +112,8 @@ void main() {
 
       test('should handle loading errors gracefully', () async {
         // Arrange
-        when(mockVideoEventService.getVideosByAuthor(testPubkey)).thenReturn([]);
+        when(mockVideoEventService.getVideosByAuthor(testPubkey))
+            .thenReturn([]);
         when(mockNostrService.subscribeToEvents(filters: anyNamed('filters')))
             .thenAnswer((_) => Stream.error(Exception('Network error')));
 
@@ -130,8 +131,9 @@ void main() {
 
       test('should prevent concurrent loads for same user', () async {
         // Arrange
-        when(mockVideoEventService.getVideosByAuthor(testPubkey)).thenReturn([]);
-        
+        when(mockVideoEventService.getVideosByAuthor(testPubkey))
+            .thenReturn([]);
+
         final controller = StreamController<Event>();
         when(mockNostrService.subscribeToEvents(filters: anyNamed('filters')))
             .thenAnswer((_) => controller.stream);
@@ -143,7 +145,7 @@ void main() {
 
         // Complete the stream
         await controller.close();
-        
+
         await Future.wait([future1, future2]);
 
         // Assert - should only call service once
@@ -153,7 +155,7 @@ void main() {
 
     group('Cache Management', () {
       const testPubkey = 'test_pubkey_cache';
-      
+
       test('should refresh videos by clearing cache', () async {
         // Arrange - first load with some videos
         final now = DateTime.now();
@@ -218,7 +220,8 @@ void main() {
 
       test('should clear error state', () async {
         // Create error state first by failing a load
-        when(mockVideoEventService.getVideosByAuthor(testPubkey)).thenReturn([]);
+        when(mockVideoEventService.getVideosByAuthor(testPubkey))
+            .thenReturn([]);
         when(mockNostrService.subscribeToEvents(filters: anyNamed('filters')))
             .thenAnswer((_) => Stream.error(Exception('Test error')));
 
@@ -227,7 +230,7 @@ void main() {
 
         // Verify we can clear error (implementation might vary)
         notifier.clearError();
-        
+
         final state = container.read(profileVideosNotifierProvider);
         expect(state.error, isNull);
       });
@@ -240,7 +243,7 @@ void main() {
 
     group('Load More Videos', () {
       const testPubkey = 'test_pubkey_more';
-      
+
       test('should load more videos with pagination', () async {
         // Arrange - setup initial videos
         final now = DateTime.now();
@@ -270,7 +273,7 @@ void main() {
 
         // Set hasMore = true for load more test
         // (This would need to be done differently in real implementation)
-        
+
         // Mock load more subscription
         final controller2 = StreamController<Event>();
         when(mockNostrService.subscribeToEvents(filters: anyNamed('filters')))
@@ -288,11 +291,11 @@ void main() {
       test('should not load more when hasMore is false', () async {
         // This test ensures loadMoreVideos returns early when there are no more videos
         final notifier = container.read(profileVideosNotifierProvider.notifier);
-        
+
         // Initial state has hasMore = true, but no videos loaded
         // This should cause loadMoreVideos to return early
         await notifier.loadMoreVideos();
-        
+
         // Should complete without attempting to create subscription
         final state = container.read(profileVideosNotifierProvider);
         expect(state.isLoadingMore, false);
@@ -301,7 +304,7 @@ void main() {
 
     group('Video Management', () {
       const testPubkey = 'test_pubkey_manage';
-      
+
       test('should add video optimistically', () async {
         // Load some initial videos first
         when(mockVideoEventService.getVideosByAuthor(testPubkey))

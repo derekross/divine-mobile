@@ -6,7 +6,7 @@ import 'package:video_player/video_player.dart';
 
 /// Test implementation of VideoPlayerController that doesn't require real video files
 class TestVideoPlayerController extends VideoPlayerController {
-  TestVideoPlayerController(String dataSource) 
+  TestVideoPlayerController(String dataSource)
       : _dataSource = dataSource,
         super.networkUrl(Uri.parse(dataSource));
 
@@ -15,7 +15,7 @@ class TestVideoPlayerController extends VideoPlayerController {
   bool _isPlaying = false;
   bool _isDisposed = false;
   Duration _position = Duration.zero;
-  
+
   @override
   Future<void> initialize() async {
     if (_isDisposed) throw StateError('Controller is disposed');
@@ -63,8 +63,8 @@ class TestVideoPlayerController extends VideoPlayerController {
   }
 
   @override
-  VideoPlayerValue get value => _isDisposed 
-      ? VideoPlayerValue.uninitialized() 
+  VideoPlayerValue get value => _isDisposed
+      ? VideoPlayerValue.uninitialized()
       : VideoPlayerValue(
           duration: const Duration(seconds: 6),
           size: const Size(1080, 1920),

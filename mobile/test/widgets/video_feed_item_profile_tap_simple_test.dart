@@ -77,7 +77,7 @@ void main() {
           analyticsServiceProvider.overrideWithValue(mockAnalyticsService),
         ],
       );
-      
+
       return UncontrolledProviderScope(
         container: container,
         child: MaterialApp(

@@ -7,10 +7,13 @@ import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:openvine/models/pending_upload.dart';
 import 'package:openvine/services/circuit_breaker_service.dart';
+import 'package:openvine/services/blossom_upload_service.dart';
+import 'package:openvine/services/cloudflare_stream_service.dart';
 import 'package:openvine/services/direct_upload_service.dart';
 import 'package:openvine/services/upload_initialization_helper.dart';
 import 'package:openvine/utils/async_utils.dart';
 import 'package:openvine/utils/unified_logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Upload retry configuration
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
@@ -54,21 +57,35 @@ class UploadMetrics {
   final bool wasSuccessful;
 }
 
+/// Upload target options
+enum UploadTarget {
+  openvineBackend, // Default - api.openvine.co
+  blossomServer,   // User-configured Blossom server
+  cloudflareStream, // Direct to Cloudflare Stream
+}
+
 /// Manages video uploads and their persistent state with enhanced reliability
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class UploadManager  {
+class UploadManager {
   UploadManager({
     required DirectUploadService uploadService,
+    BlossomUploadService? blossomService,
+    CloudflareStreamService? streamService,
     VideoCircuitBreaker? circuitBreaker,
     UploadRetryConfig? retryConfig,
   })  : _uploadService = uploadService,
+        _blossomService = blossomService,
+        _streamService = streamService,
         _circuitBreaker = circuitBreaker ?? VideoCircuitBreaker(),
         _retryConfig = retryConfig ?? const UploadRetryConfig();
-  static const String _uploadsBoxName = 'pending_uploads';
+  // Removed unused _uploadsBoxName constant
+  static const String _uploadTargetKey = 'upload_target';
 
   // Core services
   Box<PendingUpload>? _uploadsBox;
   final DirectUploadService _uploadService;
+  final BlossomUploadService? _blossomService;
+  final CloudflareStreamService? _streamService;
   final VideoCircuitBreaker _circuitBreaker;
   final UploadRetryConfig _retryConfig;
 
@@ -78,9 +95,33 @@ class UploadManager  {
   final Map<String, Timer> _retryTimers = {};
 
   bool _isInitialized = false;
-  
+
   /// Check if the upload manager is initialized
   bool get isInitialized => _isInitialized && _uploadsBox != null;
+
+  /// Get the current upload target
+  Future<UploadTarget> getUploadTarget() async {
+    final prefs = await SharedPreferences.getInstance();
+    final targetIndex = prefs.getInt(_uploadTargetKey) ?? 0;
+    return UploadTarget.values[targetIndex];
+  }
+
+  /// Set the upload target
+  Future<void> setUploadTarget(UploadTarget target) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_uploadTargetKey, target.index);
+    Log.info('Upload target set to: ${target.name}',
+        name: 'UploadManager', category: LogCategory.video);
+  }
+
+  /// Check if Cloudflare Stream is available
+  bool get isCloudflareStreamAvailable => _streamService != null;
+
+  /// Check if Blossom is available and configured
+  Future<bool> isBlossomAvailable() async {
+    if (_blossomService == null) return false;
+    return await _blossomService!.isBlossomEnabled();
+  }
 
   /// Initialize the upload manager and load persisted uploads
   /// Uses robust initialization with retry logic and recovery strategies
@@ -99,9 +140,10 @@ class UploadManager  {
       _uploadsBox = await UploadInitializationHelper.initializeUploadsBox(
         forceReinit: !_isInitialized,
       );
-      
+
       if (_uploadsBox == null || !_uploadsBox!.isOpen) {
-        throw Exception('Failed to initialize uploads box after all recovery attempts');
+        throw Exception(
+            'Failed to initialize uploads box after all recovery attempts');
       }
 
       _isInitialized = true;
@@ -119,21 +161,21 @@ class UploadManager  {
     } catch (e, stackTrace) {
       _isInitialized = false;
       _uploadsBox = null;
-      
+
       // Log the error but don't rethrow immediately - the helper already retried
       Log.error('❌ Failed to initialize UploadManager after all retries: $e',
           name: 'UploadManager', category: LogCategory.video);
       Log.verbose('📱 Stack trace: $stackTrace',
           name: 'UploadManager', category: LogCategory.video);
-      
+
       // Store the error for later retry
       _initializationError = e;
-      
+
       // Don't rethrow - allow the app to continue and retry on demand
       // rethrow;
     }
   }
-  
+
   // Store initialization error for potential retry
   dynamic _initializationError;
 
@@ -215,18 +257,20 @@ class UploadManager  {
   }) async {
     Log.info('🚀 === STARTING UPLOAD ===',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     // Ensure initialization with robust retry
     if (!isInitialized || _uploadsBox == null || !_uploadsBox!.isOpen) {
-      Log.warning('UploadManager not ready, attempting robust initialization...',
-          name: 'UploadManager', category: LogCategory.video);
-      
+      Log.warning(
+          'UploadManager not ready, attempting robust initialization...',
+          name: 'UploadManager',
+          category: LogCategory.video);
+
       try {
         // Use the robust helper directly for immediate retry
         _uploadsBox = await UploadInitializationHelper.initializeUploadsBox(
           forceReinit: true,
         );
-        
+
         if (_uploadsBox != null && _uploadsBox!.isOpen) {
           _isInitialized = true;
           _initializationError = null;
@@ -238,17 +282,19 @@ class UploadManager  {
       } catch (e) {
         Log.error('❌ Robust initialization failed: $e',
             name: 'UploadManager', category: LogCategory.video);
-        
+
         // Check if circuit breaker is active
         final debugState = UploadInitializationHelper.getDebugState();
         if (debugState['circuitBreakerActive'] == true) {
-          throw Exception('Upload service temporarily unavailable - too many failures. Please try again later.');
+          throw Exception(
+              'Upload service temporarily unavailable - too many failures. Please try again later.');
         }
-        
-        throw Exception('Failed to initialize upload storage after multiple retries: $e');
+
+        throw Exception(
+            'Failed to initialize upload storage after multiple retries: $e');
       }
     }
-    
+
     Log.info('📁 Video path: ${videoFile.path}',
         name: 'UploadManager', category: LogCategory.video);
     Log.info('📊 File exists: ${videoFile.existsSync()}',
@@ -257,8 +303,10 @@ class UploadManager  {
       Log.info('📊 File size: ${videoFile.lengthSync()} bytes',
           name: 'UploadManager', category: LogCategory.video);
     }
-    Log.info('👤 Nostr pubkey: ${nostrPubkey.length > 8 ? nostrPubkey.substring(0, 8) + '...' : nostrPubkey}',
-        name: 'UploadManager', category: LogCategory.video);
+    Log.info(
+        '👤 Nostr pubkey: ${nostrPubkey.length > 8 ? '${nostrPubkey.substring(0, 8)}...' : nostrPubkey}',
+        name: 'UploadManager',
+        category: LogCategory.video);
     Log.info('📝 Title: $title',
         name: 'UploadManager', category: LogCategory.video);
     Log.info('🏷️ Hashtags: $hashtags',
@@ -291,7 +339,7 @@ class UploadManager  {
     // Start the upload process
     Log.info('🔄 Starting background upload process...',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     // Start upload in background but catch any immediate errors
     _performUpload(upload).catchError((error) {
       Log.error('❌ Background upload failed to start: $error',
@@ -309,15 +357,15 @@ class UploadManager  {
         name: 'UploadManager', category: LogCategory.video);
     Log.info('🆔 Upload ID: ${upload.id}',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     final startTime = DateTime.now();
     final videoFile = File(upload.localVideoPath);
-    
+
     Log.info('📁 Checking video file: ${upload.localVideoPath}',
         name: 'UploadManager', category: LogCategory.video);
     Log.info('📊 File exists: ${videoFile.existsSync()}',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     if (!videoFile.existsSync()) {
       Log.error('❌ VIDEO FILE DOES NOT EXIST!',
           name: 'UploadManager', category: LogCategory.video);
@@ -329,7 +377,7 @@ class UploadManager  {
     final fileSizeMB = videoFile.lengthSync() / (1024 * 1024);
     Log.info('📊 File size: ${fileSizeMB.toStringAsFixed(2)} MB',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     _uploadMetrics[upload.id] = UploadMetrics(
       uploadId: upload.id,
       startTime: startTime,
@@ -408,42 +456,130 @@ class UploadManager  {
 
   /// Execute upload with timeout and progress tracking
   Future<dynamic> _executeUploadWithTimeout(
-          PendingUpload upload, File videoFile) async {
+      PendingUpload upload, File videoFile) async {
     Log.info('📤 === EXECUTING UPLOAD ===',
         name: 'UploadManager', category: LogCategory.video);
     Log.info('📁 Video: ${videoFile.path}',
         name: 'UploadManager', category: LogCategory.video);
-    Log.info('👤 Pubkey: ${upload.nostrPubkey.length > 8 ? upload.nostrPubkey.substring(0, 8) + '...' : upload.nostrPubkey}',
-        name: 'UploadManager', category: LogCategory.video);
+    Log.info(
+        '👤 Pubkey: ${upload.nostrPubkey.length > 8 ? '${upload.nostrPubkey.substring(0, 8)}...' : upload.nostrPubkey}',
+        name: 'UploadManager',
+        category: LogCategory.video);
     Log.info('📝 Title: ${upload.title}',
         name: 'UploadManager', category: LogCategory.video);
     Log.info('⏱️ Timeout: ${_retryConfig.networkTimeout.inMinutes} minutes',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     try {
-      final result = await _uploadService
-          .uploadVideo(
-        videoFile: videoFile,
-        nostrPubkey: upload.nostrPubkey,
-        title: upload.title,
-        description: upload.description,
-        hashtags: upload.hashtags,
-        onProgress: (progress) {
-          Log.info('📊 Upload progress: ${(progress * 100).toStringAsFixed(1)}%',
-              name: 'UploadManager', category: LogCategory.video);
-          _updateUploadProgress(upload.id, progress);
-        },
-      )
-          .timeout(
-        _retryConfig.networkTimeout,
-        onTimeout: () {
-          Log.error('⏱️ Upload timed out!',
-              name: 'UploadManager', category: LogCategory.video);
-          throw TimeoutException(
-              'Upload timed out after ${_retryConfig.networkTimeout.inMinutes} minutes');
-        },
-      );
-      
+      // Choose upload service based on configured target
+      final uploadTarget = await getUploadTarget();
+      dynamic result;
+
+      switch (uploadTarget) {
+        case UploadTarget.cloudflareStream:
+          if (_streamService != null) {
+            Log.info('🎬 Using Cloudflare Stream service',
+                name: 'UploadManager', category: LogCategory.video);
+
+            // Generate a unique Vine ID for this upload
+            final vineId = 'vine_${upload.id}_${DateTime.now().millisecondsSinceEpoch}';
+
+            final streamResult = await _streamService!.migrateToStream(
+              videoFile: videoFile,
+              vineId: vineId,
+              title: upload.title,
+              description: upload.description,
+              hashtags: upload.hashtags,
+              generateBlurhash: true,
+              onProgress: (progress) {
+                Log.info(
+                    '📊 Upload progress: ${(progress * 100).toStringAsFixed(1)}%',
+                    name: 'UploadManager',
+                    category: LogCategory.video);
+                _updateUploadProgress(upload.id, progress);
+              },
+            ).timeout(
+              _retryConfig.networkTimeout,
+              onTimeout: () {
+                Log.error('⏱️ Upload timed out!',
+                    name: 'UploadManager', category: LogCategory.video);
+                throw TimeoutException(
+                    'Upload timed out after ${_retryConfig.networkTimeout.inMinutes} minutes');
+              },
+            );
+
+            // Convert CloudflareStreamResult to DirectUploadResult format
+            result = DirectUploadResult.success(
+              videoId: streamResult.streamUid ?? vineId,
+              cdnUrl: streamResult.hlsUrl ?? '',
+              thumbnailUrl: streamResult.thumbnailUrl,
+              metadata: {
+                ...?streamResult.metadata,
+                'mp4Url': streamResult.mp4Url,
+                'dashUrl': streamResult.dashUrl,
+                'animatedThumbnailUrl': streamResult.animatedThumbnailUrl,
+                'blurhash': streamResult.blurhash,
+              },
+            );
+          } else {
+            Log.warning('Cloudflare Stream not available, falling back to backend',
+                name: 'UploadManager', category: LogCategory.video);
+            result = await _uploadToBackend(upload, videoFile);
+          }
+          break;
+
+        case UploadTarget.blossomServer:
+          if (_blossomService != null) {
+            final isBlossomEnabled = await _blossomService!.isBlossomEnabled();
+            if (isBlossomEnabled) {
+              final blossomServer = await _blossomService!.getBlossomServer();
+              if (blossomServer != null && blossomServer.isNotEmpty) {
+                Log.info('🌸 Using Blossom upload service to: $blossomServer',
+                    name: 'UploadManager', category: LogCategory.video);
+                result = await _blossomService!.uploadVideo(
+                  videoFile: videoFile,
+                  nostrPubkey: upload.nostrPubkey,
+                  title: upload.title ?? '',
+                  description: upload.description,
+                  hashtags: upload.hashtags,
+                  onProgress: (progress) {
+                    Log.info(
+                        '📊 Upload progress: ${(progress * 100).toStringAsFixed(1)}%',
+                        name: 'UploadManager',
+                        category: LogCategory.video);
+                    _updateUploadProgress(upload.id, progress);
+                  },
+                ).timeout(
+                  _retryConfig.networkTimeout,
+                  onTimeout: () {
+                    Log.error('⏱️ Upload timed out!',
+                        name: 'UploadManager', category: LogCategory.video);
+                    throw TimeoutException(
+                        'Upload timed out after ${_retryConfig.networkTimeout.inMinutes} minutes');
+                  },
+                );
+              } else {
+                Log.warning('⚠️ Blossom enabled but no server configured, using backend',
+                    name: 'UploadManager', category: LogCategory.video);
+                result = await _uploadToBackend(upload, videoFile);
+              }
+            } else {
+              Log.info('☁️ Blossom disabled, using backend',
+                  name: 'UploadManager', category: LogCategory.video);
+              result = await _uploadToBackend(upload, videoFile);
+            }
+          } else {
+            Log.warning('Blossom service not available, using backend',
+                name: 'UploadManager', category: LogCategory.video);
+            result = await _uploadToBackend(upload, videoFile);
+          }
+          break;
+
+        case UploadTarget.openvineBackend:
+          result = await _uploadToBackend(upload, videoFile);
+          break;
+      }
+
       Log.info('✅ Upload execution completed',
           name: 'UploadManager', category: LogCategory.video);
       return result;
@@ -476,7 +612,6 @@ class UploadManager  {
       }
 
       // Notify that upload is ready for immediate publishing
-
     } else {
       throw Exception(
           result.errorMessage ?? 'Upload failed with unknown error');
@@ -739,7 +874,6 @@ class UploadManager  {
     // Remove from storage
     await _uploadsBox?.delete(uploadId);
 
-
     Log.info('Upload deleted permanently: $uploadId',
         name: 'UploadManager', category: LogCategory.video);
   }
@@ -762,9 +896,7 @@ class UploadManager  {
           name: 'UploadManager', category: LogCategory.video);
     }
 
-    if (completedUploads.isNotEmpty) {
-
-    }
+    if (completedUploads.isNotEmpty) {}
   }
 
   /// Resume any uploads that were interrupted
@@ -798,68 +930,70 @@ class UploadManager  {
             name: 'UploadManager', category: LogCategory.video);
         return;
       } catch (e) {
-        Log.warning('Failed to save with existing box: $e, attempting recovery...',
-            name: 'UploadManager', category: LogCategory.video);
+        Log.warning(
+            'Failed to save with existing box: $e, attempting recovery...',
+            name: 'UploadManager',
+            category: LogCategory.video);
       }
     }
-    
+
     // Box is null or save failed - use robust initialization
     Log.warning('Upload box not ready, using robust initialization...',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     try {
       _uploadsBox = await UploadInitializationHelper.initializeUploadsBox(
         forceReinit: true,
       );
-      
+
       if (_uploadsBox == null || !_uploadsBox!.isOpen) {
         throw Exception('Failed to initialize box for saving upload');
       }
-      
+
       _isInitialized = true;
-      
+
       // Retry save with new box
       await _uploadsBox!.put(upload.id, upload);
       Log.info('✅ Upload saved after robust initialization: ${upload.id}',
           name: 'UploadManager', category: LogCategory.video);
-      
     } catch (e) {
       Log.error('❌ Failed to save upload after all retries: $e',
           name: 'UploadManager', category: LogCategory.video);
-      
+
       // As a last resort, queue the upload for later
       _queueUploadForLater(upload);
-      
-      throw Exception('Unable to save upload: Storage initialization failed after multiple attempts');
+
+      throw Exception(
+          'Unable to save upload: Storage initialization failed after multiple attempts');
     }
   }
-  
+
   // Queue for uploads that couldn't be saved immediately
   final List<PendingUpload> _pendingSaveQueue = [];
   Timer? _saveQueueTimer;
-  
+
   /// Queue upload for later save attempt
   void _queueUploadForLater(PendingUpload upload) {
     Log.warning('Queueing upload ${upload.id} for later save attempt',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     _pendingSaveQueue.add(upload);
-    
+
     // Schedule retry in 5 seconds
     _saveQueueTimer?.cancel();
     _saveQueueTimer = Timer(const Duration(seconds: 5), _processSaveQueue);
   }
-  
+
   /// Process queued uploads
   Future<void> _processSaveQueue() async {
     if (_pendingSaveQueue.isEmpty) return;
-    
+
     Log.info('Processing ${_pendingSaveQueue.length} queued uploads',
         name: 'UploadManager', category: LogCategory.video);
-    
+
     final queue = List<PendingUpload>.from(_pendingSaveQueue);
     _pendingSaveQueue.clear();
-    
+
     for (final upload in queue) {
       try {
         await _saveUpload(upload);
@@ -872,7 +1006,7 @@ class UploadManager  {
         _pendingSaveQueue.add(upload);
       }
     }
-    
+
     // If there are still pending uploads, schedule another retry
     if (_pendingSaveQueue.isNotEmpty) {
       _saveQueueTimer = Timer(const Duration(seconds: 30), _processSaveQueue);
@@ -884,7 +1018,6 @@ class UploadManager  {
     if (_uploadsBox == null) return;
 
     await _uploadsBox!.put(upload.id, upload);
-
   }
 
   /// Update upload status (public method for VideoEventPublisher)
@@ -909,11 +1042,12 @@ class UploadManager  {
     Log.info('Updated upload status: $uploadId -> $status',
         name: 'UploadManager', category: LogCategory.video);
   }
-  
+
   /// Update upload metadata (title, description, hashtags)
-  Future<void> updateUploadMetadata(String uploadId, {
+  Future<void> updateUploadMetadata(
+    String uploadId, {
     String? title,
-    String? description, 
+    String? description,
     List<String>? hashtags,
   }) async {
     final upload = getUpload(uploadId);
@@ -973,7 +1107,6 @@ class UploadManager  {
     if (fixedCount > 0) {
       Log.error('Fixed $fixedCount stuck uploads - moved back to failed status',
           name: 'UploadManager', category: LogCategory.video);
-
     }
   }
 
@@ -1085,22 +1218,52 @@ class UploadManager  {
 
   /// Create successful upload with metadata
   PendingUpload _createSuccessfulUpload(PendingUpload upload, dynamic result) {
+    // Handle DirectUploadResult structure
     final thumbnailUrl = result.thumbnailUrl as String?;
     Log.info('📸 Storing thumbnail URL in PendingUpload: $thumbnailUrl',
         name: 'UploadManager', category: LogCategory.system);
-    
+
     return upload.copyWith(
-        status:
-            UploadStatus.readyToPublish, // Direct upload is immediately ready
-        cloudinaryPublicId:
-            result.videoId as String?, // Use videoId for existing systems
-        videoId: result.videoId
-            as String?, // Store videoId for new publishing system
-        cdnUrl: result.cdnUrl as String?, // Store CDN URL directly
-        thumbnailPath: thumbnailUrl, // Store thumbnail URL
-        uploadProgress: 1,
-        completedAt: DateTime.now(),
-      );
+      status: UploadStatus.readyToPublish, // Direct upload is immediately ready
+      cloudinaryPublicId:
+          result.videoId as String?, // Use videoId for existing systems
+      videoId:
+          result.videoId as String?, // Store videoId for new publishing system
+      cdnUrl: result.cdnUrl as String?, // Store CDN URL directly
+      thumbnailPath: thumbnailUrl, // Store thumbnail URL
+      uploadProgress: 1,
+      completedAt: DateTime.now(),
+    );
+  }
+
+  /// Helper method to upload to OpenVine backend
+  Future<DirectUploadResult> _uploadToBackend(
+      PendingUpload upload, File videoFile) async {
+    Log.info('☁️ Using OpenVine backend upload service',
+        name: 'UploadManager', category: LogCategory.video);
+
+    return await _uploadService.uploadVideo(
+      videoFile: videoFile,
+      nostrPubkey: upload.nostrPubkey,
+      title: upload.title,
+      description: upload.description,
+      hashtags: upload.hashtags,
+      onProgress: (progress) {
+        Log.info(
+            '📊 Upload progress: ${(progress * 100).toStringAsFixed(1)}%',
+            name: 'UploadManager',
+            category: LogCategory.video);
+        _updateUploadProgress(upload.id, progress);
+      },
+    ).timeout(
+      _retryConfig.networkTimeout,
+      onTimeout: () {
+        Log.error('⏱️ Upload timed out!',
+            name: 'UploadManager', category: LogCategory.video);
+        throw TimeoutException(
+            'Upload timed out after ${_retryConfig.networkTimeout.inMinutes} minutes');
+      },
+    );
   }
 
   /// Create success metrics with calculated values
@@ -1160,7 +1323,7 @@ class UploadManager  {
       timer.cancel();
     }
     _retryTimers.clear();
-    
+
     // Cancel save queue timer
     _saveQueueTimer?.cancel();
     _saveQueueTimer = null;
@@ -1168,14 +1331,16 @@ class UploadManager  {
     // Clean up old metrics
     _cleanupOldMetrics();
 
-    // Close Hive box
-    _uploadsBox?.close();
+    // Note: We don't close the box here as it might be shared across instances
+    // The box will be closed when Hive.close() is called in tearDownAll
+    // Closing it here causes "File closed" errors in tests
+    // _uploadsBox?.close();
     _uploadsBox = null;
     _isInitialized = false;
-    
+
     // Clear any pending saves
     _pendingSaveQueue.clear();
-    
+
     Log.info('UploadManager disposed',
         name: 'UploadManager', category: LogCategory.video);
   }

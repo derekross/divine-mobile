@@ -86,7 +86,7 @@ class ContentReport {
 
 /// Service for reporting inappropriate content
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class ContentReportingService  {
+class ContentReportingService {
   ContentReportingService({
     required INostrService nostrService,
     required SharedPreferences prefs,
@@ -98,7 +98,8 @@ class ContentReportingService  {
   final SharedPreferences _prefs;
 
   // divine moderation relay for reports
-  static const String moderationRelayUrl = 'wss://localhost:8080'; // Embedded relay
+  static const String moderationRelayUrl =
+      'wss://localhost:8080'; // Embedded relay
   static const String reportsStorageKey = 'content_reports_history';
 
   final List<ContentReport> _reportHistory = [];
@@ -181,7 +182,6 @@ class ContentReportingService  {
 
       _reportHistory.add(report);
       await _saveReportHistory();
-
 
       Log.debug('Content report submitted: $reportId',
           name: 'ContentReportingService', category: LogCategory.system);
@@ -277,7 +277,6 @@ class ContentReportingService  {
 
     if (_reportHistory.length != initialCount) {
       await _saveReportHistory();
-
 
       final removedCount = initialCount - _reportHistory.length;
       Log.debug('🧹 Cleared $removedCount old reports',
@@ -439,6 +438,5 @@ class ContentReportingService  {
 
   void dispose() {
     // Clean up any active operations
-    
   }
 }

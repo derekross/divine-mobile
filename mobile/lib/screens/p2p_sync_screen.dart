@@ -99,7 +99,8 @@ class _P2PSyncScreenState extends ConsumerState<P2PSyncScreen> {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: status.isEnabled
                         ? Theme.of(context).colorScheme.primaryContainer
@@ -145,14 +146,16 @@ class _P2PSyncScreenState extends ConsumerState<P2PSyncScreen> {
                     Chip(
                       label: const Text('Broadcasting'),
                       avatar: const Icon(Icons.broadcast_on_personal, size: 18),
-                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.secondaryContainer,
                     ),
                   if (status.isDiscovering) ...[
                     if (status.isAdvertising) const SizedBox(width: 8),
                     Chip(
                       label: const Text('Discovering'),
                       avatar: const Icon(Icons.search, size: 18),
-                      backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.tertiaryContainer,
                     ),
                   ],
                 ],
@@ -184,8 +187,8 @@ class _P2PSyncScreenState extends ConsumerState<P2PSyncScreen> {
             Text(
               value,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             Text(
               label,
@@ -210,7 +213,8 @@ class _P2PSyncScreenState extends ConsumerState<P2PSyncScreen> {
                 ? () => actions.stopDiscovery()
                 : () => actions.startDiscovery(),
             icon: Icon(status.isDiscovering ? Icons.stop : Icons.search),
-            label: Text(status.isDiscovering ? 'Stop Discovery' : 'Start Discovery'),
+            label: Text(
+                status.isDiscovering ? 'Stop Discovery' : 'Start Discovery'),
           ),
         ),
         const SizedBox(width: 12),
@@ -275,8 +279,8 @@ class _P2PSyncScreenState extends ConsumerState<P2PSyncScreen> {
             'Start discovery to find other divine users\nwho are sharing videos nearby.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
         ],
       ),
@@ -305,7 +309,7 @@ class _P2PSyncScreenState extends ConsumerState<P2PSyncScreen> {
     final transportIcon = peer.transportType == P2PTransportType.ble
         ? Icons.bluetooth
         : Icons.wifi;
-    
+
     final transportColor = peer.transportType == P2PTransportType.ble
         ? Colors.blue
         : VineTheme.vineGreen;
@@ -364,10 +368,10 @@ class _P2PSyncScreenState extends ConsumerState<P2PSyncScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final primaryColor = Theme.of(context).colorScheme.primary;
     final errorColor = Theme.of(context).colorScheme.error;
-    
+
     try {
       final success = await actions.connectToPeer(peer);
-      
+
       if (success) {
         messenger.showSnackBar(
           SnackBar(
@@ -375,10 +379,10 @@ class _P2PSyncScreenState extends ConsumerState<P2PSyncScreen> {
             backgroundColor: primaryColor,
           ),
         );
-        
+
         // Automatically start syncing after connection
         await actions.syncWithPeers();
-        
+
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Video sync started'),

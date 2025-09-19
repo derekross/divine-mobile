@@ -31,7 +31,6 @@ void main() {
   });
 
   group('VisibilityAwareVideo', () {
-
     Widget createTestWidget({
       required String videoId,
       required Widget child,
@@ -145,7 +144,8 @@ void main() {
       expect(videoIdInChild, equals(videoId));
     });
 
-    testWidgets('should provide access to VideoVisibilityManager through Riverpod',
+    testWidgets(
+        'should provide access to VideoVisibilityManager through Riverpod',
         (tester) async {
       const videoId = 'test-video';
 
@@ -162,7 +162,8 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('Manager: VideoVisibilityManager'), findsOneWidget);
+      expect(find.textContaining('Manager: VideoVisibilityManager'),
+          findsOneWidget);
     });
   });
 

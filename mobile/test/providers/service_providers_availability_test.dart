@@ -20,11 +20,16 @@ void main() {
     test('Provider functions should have expected signatures', () {
       // Verify provider types at compile time
       expect(videoManagerProvider.runtimeType.toString(), contains('Provider'));
-      expect(contentDeletionServiceProvider.runtimeType.toString(), contains('Provider'));
-      expect(contentReportingServiceProvider.runtimeType.toString(), contains('Provider'));
-      expect(curatedListServiceProvider.runtimeType.toString(), contains('Provider'));
-      expect(videoSharingServiceProvider.runtimeType.toString(), contains('Provider'));
-      expect(videoVisibilityManagerProvider.runtimeType.toString(), contains('Provider'));
+      expect(contentDeletionServiceProvider.runtimeType.toString(),
+          contains('Provider'));
+      expect(contentReportingServiceProvider.runtimeType.toString(),
+          contains('Provider'));
+      expect(curatedListServiceProvider.runtimeType.toString(),
+          contains('Provider'));
+      expect(videoSharingServiceProvider.runtimeType.toString(),
+          contains('Provider'));
+      expect(videoVisibilityManagerProvider.runtimeType.toString(),
+          contains('Provider'));
     });
   });
 }

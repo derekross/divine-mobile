@@ -192,38 +192,38 @@ class _NotificationSettingsScreenState
                     subtitle: 'Mark all notifications as read',
                     onTap: () async {
                       await service.markAllAsRead();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('All notifications marked as read'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
-                  isDarkMode: isDarkMode,
-                ),
-                _buildActionCard(
-                  icon: Icons.delete_sweep,
-                  iconColor: Colors.red,
-                  title: 'Clear Old Notifications',
-                  subtitle: 'Remove notifications older than 30 days',
-                  onTap: () async {
-                    await service.clearOlderThan(const Duration(days: 30));
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Old notifications cleared'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
-                  isDarkMode: isDarkMode,
-                ),
-              ],
-            );
-          },
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('All notifications marked as read'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    isDarkMode: isDarkMode,
+                  ),
+                  _buildActionCard(
+                    icon: Icons.delete_sweep,
+                    iconColor: Colors.red,
+                    title: 'Clear Old Notifications',
+                    subtitle: 'Remove notifications older than 30 days',
+                    onTap: () async {
+                      await service.clearOlderThan(const Duration(days: 30));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Old notifications cleared'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
+              );
+            },
           ),
 
           const SizedBox(height: 24),

@@ -85,7 +85,7 @@ void main() {
           authServiceProvider.overrideWithValue(mockAuthService),
         ],
       );
-      
+
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,

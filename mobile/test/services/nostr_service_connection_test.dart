@@ -124,12 +124,10 @@ void main() {
 
     test('should implement connection state machine without delays', () async {
       // Connection states
-      var state = ConnectionState.disconnected;
       final stateController = StreamController<ConnectionState>.broadcast();
 
       // State transition function
       void transitionTo(ConnectionState newState) {
-        state = newState;
         stateController.add(newState);
         Log.debug('Connection state: $newState', name: 'ConnectionTest');
       }
@@ -210,10 +208,4 @@ void main() {
   });
 }
 
-extension on NostrService {
-  // Extension method for testing - would be added to actual service
-  bool isRelayAuthenticated(String relayUrl) {
-    // In actual implementation, this would check relay instance auth state
-    return true; // Stub for test
-  }
-}
+// Removed empty extension that only contained unused test helper method

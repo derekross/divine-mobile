@@ -82,9 +82,9 @@ class FollowSet {
 
 /// Service for managing social interactions on Nostr
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class SocialService  {
+class SocialService {
   SocialService(this._nostrService, this._authService,
-      {required SubscriptionManager subscriptionManager, 
+      {required SubscriptionManager subscriptionManager,
       PersonalEventCacheService? personalEventCache})
       : _subscriptionManager = subscriptionManager,
         _personalEventCache = personalEventCache {
@@ -140,10 +140,10 @@ class SocialService  {
       if (_authService.isAuthenticated) {
         // Load cached following list first for immediate UI display
         await _loadFollowingListFromCache();
-        
+
         // Load cached personal events for instant access
         await _loadCachedPersonalEvents();
-        
+
         await _loadUserLikedEvents();
         await _loadUserRepostedEvents();
         await fetchCurrentUserFollowList();
@@ -160,8 +160,10 @@ class SocialService  {
   /// Load cached personal events for instant access on startup
   Future<void> _loadCachedPersonalEvents() async {
     if (_personalEventCache?.isInitialized != true) {
-      Log.debug('PersonalEventCache not initialized, skipping cached event loading',
-          name: 'SocialService', category: LogCategory.system);
+      Log.debug(
+          'PersonalEventCache not initialized, skipping cached event loading',
+          name: 'SocialService',
+          category: LogCategory.system);
       return;
     }
 
@@ -169,7 +171,8 @@ class SocialService  {
       // Load cached likes (Kind 7 events) to populate _likedEventIds
       final cachedLikes = _personalEventCache!.getEventsByKind(7);
       for (final likeEvent in cachedLikes) {
-        final eTags = likeEvent.tags.where((tag) => tag.isNotEmpty && tag[0] == 'e');
+        final eTags =
+            likeEvent.tags.where((tag) => tag.isNotEmpty && tag[0] == 'e');
         for (final eTag in eTags) {
           if (eTag.length > 1) {
             final likedEventId = eTag[1];
@@ -179,7 +182,7 @@ class SocialService  {
         }
       }
 
-      // Load cached reposts (Kind 6 events) to populate _repostedEventIds  
+      // Load cached reposts (Kind 6 events) to populate _repostedEventIds
       final cachedReposts = _personalEventCache!.getEventsByKind(6);
       for (final repostEvent in cachedReposts) {
         _processRepostEvent(repostEvent);
@@ -189,14 +192,20 @@ class SocialService  {
       final cachedContactLists = _personalEventCache!.getEventsByKind(3);
       if (cachedContactLists.isNotEmpty) {
         // Use the most recent contact list event
-        final latestContactList = cachedContactLists.first; // Already sorted by creation time
-        final pTags = latestContactList.tags.where((tag) => tag.isNotEmpty && tag[0] == 'p');
-        final pubkeys = pTags.map((tag) => tag.length > 1 ? tag[1] : '').where((pubkey) => pubkey.isNotEmpty).cast<String>().toList();
-        
+        final latestContactList =
+            cachedContactLists.first; // Already sorted by creation time
+        final pTags = latestContactList.tags
+            .where((tag) => tag.isNotEmpty && tag[0] == 'p');
+        final pubkeys = pTags
+            .map((tag) => tag.length > 1 ? tag[1] : '')
+            .where((pubkey) => pubkey.isNotEmpty)
+            .cast<String>()
+            .toList();
+
         if (pubkeys.isNotEmpty) {
           _followingPubkeys = pubkeys;
           _currentUserContactListEvent = latestContactList;
-          
+
           // Save to SharedPreferences cache as well
           await _saveFollowingListToCache();
         }
@@ -235,7 +244,7 @@ class SocialService  {
       final addressableId = '32222:$pubkey:$dTag';
       return _repostedEventIds.contains(addressableId);
     }
-    
+
     // Fallback to event ID for backward compatibility
     return _repostedEventIds.contains(eventId);
   }
@@ -337,8 +346,6 @@ class SocialService  {
           }
         }
       }
-
-
     } catch (e) {
       Log.error('Error toggling like: $e',
           name: 'SocialService', category: LogCategory.system);
@@ -715,7 +722,8 @@ class SocialService  {
         ],
       );
 
-      final contactListEvent = await ContactListCompletionHelper.queryContactList(
+      final contactListEvent =
+          await ContactListCompletionHelper.queryContactList(
         eventStream: eventStream,
         pubkey: currentUserPubkey,
         fallbackTimeoutSeconds: 10,
@@ -759,11 +767,9 @@ class SocialService  {
       _followingPubkeys = followedPubkeys;
       Log.info('Updated follow list: ${_followingPubkeys.length} following',
           name: 'SocialService', category: LogCategory.system);
-      
+
       // Persist following list to local storage for aggressive caching
       _saveFollowingListToCache();
-
-
     }
   }
 
@@ -830,7 +836,6 @@ class SocialService  {
           'Successfully followed user: ${pubkeyToFollow.substring(0, 8)}...',
           name: 'SocialService',
           category: LogCategory.system);
-
     } catch (e) {
       Log.error('Error following user: $e',
           name: 'SocialService', category: LogCategory.system);
@@ -899,7 +904,6 @@ class SocialService  {
           'Successfully unfollowed user: ${pubkeyToUnfollow.substring(0, 8)}...',
           name: 'SocialService',
           category: LogCategory.system);
-
     } catch (e) {
       Log.error('Error unfollowing user: $e',
           name: 'SocialService', category: LogCategory.system);
@@ -954,7 +958,7 @@ class SocialService  {
           ),
         ],
       );
-      
+
       final followingEvent = await ContactListCompletionHelper.queryContactList(
         eventStream: followingEventStream,
         pubkey: pubkey,
@@ -1021,7 +1025,7 @@ class SocialService  {
       );
 
       await followersCompleter.future;
-      
+
       return {
         'followers': followersCount,
         'following': followingCount,
@@ -1256,7 +1260,7 @@ class SocialService  {
       if (event != null) {
         // Cache the follow set event immediately after creation
         _personalEventCache?.cacheUserEvent(event);
-        
+
         final result = await _nostrService.broadcastEvent(event);
         if (result.successCount > 0) {
           // Update local set with Nostr event ID
@@ -1634,17 +1638,17 @@ class SocialService  {
           break;
         }
       }
-      
+
       if (dTagValue == null) {
         throw Exception('Cannot repost: Video event missing required d tag');
       }
-      
+
       // Use 'a' tag for addressable event reference
       final repostTags = <List<String>>[
         ['a', '32222:${eventToRepost.pubkey}:$dTagValue'],
         ['p', eventToRepost.pubkey], // Reference to original author
       ];
-      
+
       final event = await _authService.createAndSignEvent(
         kind: 6, // Repost event
         content: '', // Content is typically empty for reposts
@@ -1673,7 +1677,6 @@ class SocialService  {
 
       Log.info('Event reposted successfully: ${event.id.substring(0, 8)}...',
           name: 'SocialService', category: LogCategory.system);
-
     } catch (e) {
       Log.error('Error reposting event: $e',
           name: 'SocialService', category: LogCategory.system);
@@ -1705,7 +1708,10 @@ class SocialService  {
           ['k', '3'], // Request deletion of Kind 3 (contact list) events
           ['k', '6'], // Request deletion of Kind 6 (repost) events
           ['k', '7'], // Request deletion of Kind 7 (reaction) events
-          ['k', '32222'], // Request deletion of Kind 32222 (addressable video) events
+          [
+            'k',
+            '32222'
+          ], // Request deletion of Kind 32222 (addressable video) events
         ],
       );
 
@@ -1740,8 +1746,10 @@ class SocialService  {
       if (currentUserPubkey != null) {
         final key = 'following_list_$currentUserPubkey';
         await prefs.setString(key, jsonEncode(_followingPubkeys));
-        Log.debug('💾 Saved following list to cache: ${_followingPubkeys.length} users',
-            name: 'SocialService', category: LogCategory.system);
+        Log.debug(
+            '💾 Saved following list to cache: ${_followingPubkeys.length} users',
+            name: 'SocialService',
+            category: LogCategory.system);
       }
     } catch (e) {
       Log.error('Failed to save following list to cache: $e',
@@ -1760,8 +1768,10 @@ class SocialService  {
         if (cached != null) {
           final List<dynamic> decoded = jsonDecode(cached);
           _followingPubkeys = decoded.cast<String>();
-          Log.info('📋 Loaded cached following list: ${_followingPubkeys.length} users',
-              name: 'SocialService', category: LogCategory.system);
+          Log.info(
+              '📋 Loaded cached following list: ${_followingPubkeys.length} users',
+              name: 'SocialService',
+              category: LogCategory.system);
         }
       }
     } catch (e) {
@@ -1795,8 +1805,6 @@ class SocialService  {
       _subscriptionManager.cancelSubscription(_userRepostsSubscriptionId!);
       _userRepostsSubscriptionId = null;
     }
-
-    
   }
 
   /// Process a repost event and extract the reposted event ID

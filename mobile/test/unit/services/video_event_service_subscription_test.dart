@@ -226,7 +226,8 @@ void main() {
       event1.id = 'video-1';
 
       // First subscription
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery, limit: 50);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery, limit: 50);
       await Future.delayed(const Duration(milliseconds: 10));
 
       eventStreamController.add(event1);

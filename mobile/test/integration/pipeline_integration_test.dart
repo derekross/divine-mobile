@@ -282,13 +282,15 @@ void main() {
           status: UploadStatus.readyToPublish,
           createdAt: DateTime.now(),
         );
-        
+
         // This should handle the error gracefully and return false
-        final result = await videoEventPublisher.publishDirectUpload(testUpload);
+        final result =
+            await videoEventPublisher.publishDirectUpload(testUpload);
         expect(result, false);
 
         // ASSERT: Publisher should track the failure
-        expect(videoEventPublisher.publishingStats['total_failed'], greaterThan(0));
+        expect(videoEventPublisher.publishingStats['total_failed'],
+            greaterThan(0));
       });
 
       test('pipeline should handle Nostr broadcasting failures gracefully',
@@ -324,7 +326,7 @@ void main() {
 
         // ACT: Try to publish with Nostr failure
         await videoEventPublisher.initialize();
-        
+
         final testUpload = PendingUpload(
           id: 'nostr-failure-test',
           localVideoPath: '/tmp/test-video.mp4',
@@ -334,8 +336,9 @@ void main() {
           status: UploadStatus.readyToPublish,
           createdAt: DateTime.now(),
         );
-        
-        final result = await videoEventPublisher.publishDirectUpload(testUpload);
+
+        final result =
+            await videoEventPublisher.publishDirectUpload(testUpload);
         expect(result, false); // Should fail due to mock Nostr failure
 
         // ASSERT: Should track the failure
@@ -527,12 +530,14 @@ void main() {
           status: UploadStatus.readyToPublish,
           createdAt: DateTime.now(),
         );
-        
-        final result = await videoEventPublisher.publishDirectUpload(testUpload);
+
+        final result =
+            await videoEventPublisher.publishDirectUpload(testUpload);
         expect(result, false); // Should fail due to malformed response
 
         // Publisher should track the error
-        expect(videoEventPublisher.publishingStats['total_failed'], greaterThan(0));
+        expect(videoEventPublisher.publishingStats['total_failed'],
+            greaterThan(0));
       });
 
       test('pipeline should handle network timeouts', () async {
@@ -556,12 +561,14 @@ void main() {
           status: UploadStatus.readyToPublish,
           createdAt: DateTime.now(),
         );
-        
-        final result = await videoEventPublisher.publishDirectUpload(testUpload);
+
+        final result =
+            await videoEventPublisher.publishDirectUpload(testUpload);
         expect(result, false); // Should fail due to timeout
 
         // Should track timeout as failure
-        expect(videoEventPublisher.publishingStats['total_failed'], greaterThan(0));
+        expect(videoEventPublisher.publishingStats['total_failed'],
+            greaterThan(0));
       });
     });
   });

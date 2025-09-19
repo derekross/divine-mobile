@@ -45,7 +45,8 @@ void main() {
       );
     });
 
-    testWidgets('builds widget tree correctly when thumbnail URL exists', (tester) async {
+    testWidgets('builds widget tree correctly when thumbnail URL exists',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -60,15 +61,16 @@ void main() {
 
       // Widget should build without error
       expect(find.byType(VideoThumbnailWidget), findsOneWidget);
-      
+
       // Should create an Image widget when thumbnail URL exists
       expect(find.byType(Image), findsOneWidget);
-      
+
       // Should not show placeholder when thumbnail exists
       expect(find.byType(VideoIconPlaceholder), findsNothing);
     });
 
-    testWidgets('displays blurhash when only blurhash is available', (tester) async {
+    testWidgets('displays blurhash when only blurhash is available',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -85,13 +87,15 @@ void main() {
 
       // Should show BlurhashDisplay
       expect(find.byType(BlurhashDisplay), findsOneWidget);
-      
+
       // Should not show placeholder or image
       expect(find.byType(VideoIconPlaceholder), findsNothing);
       expect(find.byType(Image), findsNothing);
     });
 
-    testWidgets('displays blurhash as background when both thumbnail and blurhash exist', (tester) async {
+    testWidgets(
+        'displays blurhash as background when both thumbnail and blurhash exist',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -110,7 +114,9 @@ void main() {
       expect(find.byType(Stack), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('displays icon placeholder when neither thumbnail nor blurhash exists', (tester) async {
+    testWidgets(
+        'displays icon placeholder when neither thumbnail nor blurhash exists',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -127,7 +133,7 @@ void main() {
 
       // Should show VideoIconPlaceholder
       expect(find.byType(VideoIconPlaceholder), findsOneWidget);
-      
+
       // Should not show blurhash or image
       expect(find.byType(BlurhashDisplay), findsNothing);
       expect(find.byType(Image), findsNothing);
@@ -229,7 +235,8 @@ void main() {
       expect(find.byType(VideoThumbnailWidget), findsOneWidget);
     });
 
-    testWidgets('does not try to generate thumbnails when URL is missing', (tester) async {
+    testWidgets('does not try to generate thumbnails when URL is missing',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -246,15 +253,17 @@ void main() {
 
       // Should show blurhash, not loading indicator
       expect(find.byType(BlurhashDisplay), findsOneWidget);
-      
+
       // Should not show loading placeholder
       final placeholderFinder = find.byWidgetPredicate(
-        (widget) => widget is VideoIconPlaceholder && widget.showLoading == true,
+        (widget) =>
+            widget is VideoIconPlaceholder && widget.showLoading == true,
       );
       expect(placeholderFinder, findsNothing);
     });
 
-    testWidgets('shows loading state briefly during initialization', (tester) async {
+    testWidgets('shows loading state briefly during initialization',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -270,7 +279,7 @@ void main() {
       // Initially might show loading state
       // After settling, should show the content
       await tester.pumpAndSettle();
-      
+
       expect(find.byType(VideoThumbnailWidget), findsOneWidget);
     });
 

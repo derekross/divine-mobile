@@ -20,11 +20,12 @@ void main() {
 
     setUp(() {
       mockPrefs = MockSharedPreferences();
-      
+
       // Set up default stubs for all flags
       for (final flag in FeatureFlag.values) {
         when(mockPrefs.getBool('ff_${flag.name}')).thenReturn(null);
-        when(mockPrefs.setBool('ff_${flag.name}', any)).thenAnswer((_) async => true);
+        when(mockPrefs.setBool('ff_${flag.name}', any))
+            .thenAnswer((_) async => true);
         when(mockPrefs.remove('ff_${flag.name}')).thenAnswer((_) async => true);
         when(mockPrefs.containsKey('ff_${flag.name}')).thenReturn(false);
       }
@@ -42,12 +43,11 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
-      
+
       for (final flag in FeatureFlag.values) {
         expect(find.text(flag.displayName), findsOneWidget);
         expect(find.text(flag.description), findsOneWidget);
@@ -65,11 +65,11 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      
+
       expect(find.byType(AppBar), findsOneWidget);
       expect(find.text('Feature Flags'), findsOneWidget);
     });
-    
+
     testWidgets('should toggle flags', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -82,28 +82,27 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
-      
+
       // Find and tap the first switch
       final switches = find.byType(Switch);
       expect(switches, findsAtLeast(1));
-      
+
       await tester.tap(switches.first);
       await tester.pumpAndSettle();
-      
+
       // Verify that setBool was called for some flag
       verify(mockPrefs.setBool(any, any)).called(1);
     });
-    
+
     testWidgets('should show override indicators', (tester) async {
       // Set up one flag as having user override
       when(mockPrefs.getBool('ff_newCameraUI')).thenReturn(true);
       when(mockPrefs.containsKey('ff_newCameraUI')).thenReturn(true);
-      
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -115,21 +114,20 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
-      
+
       // Find the switch for newCameraUI
       final switches = tester.widgetList<Switch>(find.byType(Switch));
       expect(switches, isNotEmpty);
-      
+
       // Check if any switch shows override indication (different color)
       final firstSwitch = switches.first;
       expect(firstSwitch.value, isTrue);
     });
-    
+
     testWidgets('should reset all flags on reset button press', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -142,19 +140,18 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
-      
+
       // Find and tap the reset button
       final resetButton = find.byIcon(Icons.restore);
       expect(resetButton, findsOneWidget);
-      
+
       await tester.tap(resetButton);
       await tester.pumpAndSettle();
-      
+
       // Verify that remove was called for all flags
       for (final flag in FeatureFlag.values) {
         verify(mockPrefs.remove('ff_${flag.name}')).called(1);
@@ -167,7 +164,7 @@ void main() {
       when(mockPrefs.containsKey('ff_newCameraUI')).thenReturn(true);
       when(mockPrefs.getBool('ff_enhancedVideoPlayer')).thenReturn(false);
       when(mockPrefs.containsKey('ff_enhancedVideoPlayer')).thenReturn(true);
-      
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -179,16 +176,15 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
-      
+
       // Check that switches reflect the flag states
       final switches = tester.widgetList<Switch>(find.byType(Switch));
       expect(switches, hasLength(FeatureFlag.values.length));
-      
+
       // Find switches by looking for the flag display names
       expect(find.text('New Camera UI'), findsOneWidget);
       expect(find.text('Enhanced Video Player'), findsOneWidget);
@@ -198,7 +194,7 @@ void main() {
       // Set up a flag with user override
       when(mockPrefs.getBool('ff_newCameraUI')).thenReturn(true);
       when(mockPrefs.containsKey('ff_newCameraUI')).thenReturn(true);
-      
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -210,12 +206,11 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
-      
+
       // Look for individual reset buttons (if implemented)
       // This tests the interface for individual flag reset
       final resetButtons = find.byType(IconButton);
@@ -234,12 +229,11 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
-      
+
       // Verify the screen is scrollable
       expect(find.byType(ListView), findsOneWidget);
     });

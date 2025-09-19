@@ -22,7 +22,8 @@ class UniversalCameraScreen extends ConsumerStatefulWidget {
   const UniversalCameraScreen({super.key});
 
   @override
-  ConsumerState<UniversalCameraScreen> createState() => _UniversalCameraScreenState();
+  ConsumerState<UniversalCameraScreen> createState() =>
+      _UniversalCameraScreenState();
 }
 
 class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
@@ -52,11 +53,13 @@ class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
           // Stop all background videos after widget tree is built
           final videoManager = ref.read(videoManagerProvider.notifier);
           videoManager.stopAllVideos();
-          
+
           // Clean up any metadata controllers from previous recording sessions
           await videoManager.disposeVideosWithPrefix('metadata_');
-          Log.info('Cleaned up old metadata controllers and stopped all background videos',
-              name: 'UniversalCameraScreen', category: LogCategory.ui);
+          Log.info(
+              'Cleaned up old metadata controllers and stopped all background videos',
+              name: 'UniversalCameraScreen',
+              category: LogCategory.ui);
 
           // Get services from providers
           _uploadManager = ref.read(uploadManagerProvider);
@@ -201,7 +204,8 @@ class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
                     Log.debug('📱 Building camera preview widget',
                         name: 'UniversalCameraScreen',
                         category: LogCategory.ui);
-                    final controller = ref.watch(vineRecordingProvider.notifier).controller;
+                    final controller =
+                        ref.watch(vineRecordingProvider.notifier).controller;
                     return controller.cameraPreview;
                   },
                 ),
@@ -214,13 +218,15 @@ class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
               Positioned.fill(
                 child: Consumer(
                   builder: (context, ref, child) {
-                    final recordingNotifier = ref.watch(vineRecordingProvider.notifier);
+                    final recordingNotifier =
+                        ref.watch(vineRecordingProvider.notifier);
                     // Only show controls if camera interface is initialized
                     if (recordingNotifier.controller.cameraInterface == null) {
                       return const SizedBox.shrink();
                     }
                     return CameraControlsOverlay(
-                      cameraInterface: recordingNotifier.controller.cameraInterface!,
+                      cameraInterface:
+                          recordingNotifier.controller.cameraInterface!,
                       recordingState: recordingNotifier.controller.state,
                     );
                   },
@@ -233,7 +239,8 @@ class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
                 child: Consumer(
                   builder: (context, ref, child) {
                     final recordingState = ref.watch(vineRecordingProvider);
-                    final recordingNotifier = ref.watch(vineRecordingProvider.notifier);
+                    final recordingNotifier =
+                        ref.watch(vineRecordingProvider.notifier);
                     return VineRecordingUIWithProvider(
                       controller: recordingNotifier.controller,
                       state: recordingState,
@@ -286,7 +293,7 @@ class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
 
     // Check for specific error types and provide helpful guidance
     if (_errorMessage?.contains('No cameras available') == true ||
-        _errorMessage?.contains('No camera found') == true || 
+        _errorMessage?.contains('No camera found') == true ||
         _errorMessage?.contains('NotFoundError') == true) {
       title = 'No Camera Found';
       icon = Icons.videocam_off;
@@ -306,8 +313,8 @@ class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
         ),
       );
     } else if (_errorMessage?.contains('Camera access denied') == true ||
-               _errorMessage?.contains('NotAllowedError') == true ||
-               _errorMessage?.contains('PermissionDeniedError') == true) {
+        _errorMessage?.contains('NotAllowedError') == true ||
+        _errorMessage?.contains('PermissionDeniedError') == true) {
       title = 'Camera Permission Needed';
       icon = Icons.camera_alt;
       message = 'divine needs camera access to record videos.';
@@ -331,7 +338,7 @@ class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
         ),
       ]);
     } else if (_errorMessage?.contains('Camera is already in use') == true ||
-               _errorMessage?.contains('NotReadableError') == true) {
+        _errorMessage?.contains('NotReadableError') == true) {
       title = 'Camera In Use';
       icon = Icons.warning_amber;
       message = 'Your camera is being used by another application.';
@@ -411,11 +418,11 @@ class _UniversalCameraScreenState extends ConsumerState<UniversalCameraScreen> {
                   ),
                   child: Text(actionText),
                 ),
-                ],
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }

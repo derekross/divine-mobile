@@ -89,6 +89,12 @@ class MockUploadManager extends _i1.Mock implements _i6.UploadManager {
       ) as bool);
 
   @override
+  bool get isCloudflareStreamAvailable => (super.noSuchMethod(
+        Invocation.getter(#isCloudflareStreamAvailable),
+        returnValue: false,
+      ) as bool);
+
+  @override
   List<_i2.PendingUpload> get pendingUploads => (super.noSuchMethod(
         Invocation.getter(#pendingUploads),
         returnValue: <_i2.PendingUpload>[],
@@ -105,6 +111,36 @@ class MockUploadManager extends _i1.Mock implements _i6.UploadManager {
         Invocation.getter(#uploadStats),
         returnValue: <String, int>{},
       ) as Map<String, int>);
+
+  @override
+  _i7.Future<_i6.UploadTarget> getUploadTarget() => (super.noSuchMethod(
+        Invocation.method(
+          #getUploadTarget,
+          [],
+        ),
+        returnValue: _i7.Future<_i6.UploadTarget>.value(
+            _i6.UploadTarget.openvineBackend),
+      ) as _i7.Future<_i6.UploadTarget>);
+
+  @override
+  _i7.Future<void> setUploadTarget(_i6.UploadTarget? target) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #setUploadTarget,
+          [target],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<bool> isBlossomAvailable() => (super.noSuchMethod(
+        Invocation.method(
+          #isBlossomAvailable,
+          [],
+        ),
+        returnValue: _i7.Future<bool>.value(false),
+      ) as _i7.Future<bool>);
 
   @override
   _i7.Future<void> initialize() => (super.noSuchMethod(

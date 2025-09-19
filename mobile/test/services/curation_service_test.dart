@@ -76,12 +76,8 @@ void main() {
           curationService.getVideosForSetType(CurationSetType.editorsPicks);
       final trending =
           curationService.getVideosForSetType(CurationSetType.trending);
-      final featured =
-          curationService.getVideosForSetType(CurationSetType.featured);
-
       expect(editorsPicks, isA<List<VideoEvent>>());
       expect(trending, isA<List<VideoEvent>>());
-      expect(featured, isA<List<VideoEvent>>());
     });
 
     test('should handle empty video events gracefully', () {

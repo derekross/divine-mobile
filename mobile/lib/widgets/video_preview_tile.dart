@@ -72,7 +72,9 @@ class _VideoPreviewTileState extends ConsumerState<VideoPreviewTile>
   }
 
   Future<void> _initializeVideo() async {
-    if (_isInitializing || _videoControllerId != null || !widget.video.hasVideo) {
+    if (_isInitializing ||
+        _videoControllerId != null ||
+        !widget.video.hasVideo) {
       return;
     }
 
@@ -94,7 +96,7 @@ class _VideoPreviewTileState extends ConsumerState<VideoPreviewTile>
       // Use VideoManager to create controller securely
       final videoManager = ref.read(videoManagerProvider.notifier);
       final controllerId = 'preview_${widget.video.id}';
-      
+
       final controller = await videoManager.createNetworkController(
         controllerId,
         widget.video.videoUrl!,
@@ -103,10 +105,10 @@ class _VideoPreviewTileState extends ConsumerState<VideoPreviewTile>
 
       if (controller != null && mounted && widget.isActive) {
         _videoControllerId = controllerId;
-        
+
         // Pause all other videos before playing this one
         videoManager.pauseAllVideos();
-        
+
         await controller.setLooping(true);
         await controller.setVolume(0); // Mute for preview
         await controller.play();
@@ -154,7 +156,7 @@ class _VideoPreviewTileState extends ConsumerState<VideoPreviewTile>
     super.build(context);
 
     // Watch for the controller via VideoManager provider
-    final controller = _videoControllerId != null 
+    final controller = _videoControllerId != null
         ? ref.watch(videoPlayerControllerProvider(_videoControllerId!))
         : null;
 

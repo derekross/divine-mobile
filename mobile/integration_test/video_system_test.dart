@@ -13,7 +13,8 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Riverpod Video System Integration Tests', () {
-    testWidgets('Video feed displays correctly with Riverpod architecture', (tester) async {
+    testWidgets('Video feed displays correctly with Riverpod architecture',
+        (tester) async {
       // Setup app with ProviderScope for Riverpod
       await tester.pumpWidget(
         ProviderScope(
@@ -30,7 +31,7 @@ void main() {
       // This is expected since we don't have test data setup
       final context = tester.element(find.byType(VideoFeedScreen));
       final container = ProviderScope.containerOf(context);
-      
+
       // Verify that providers can be accessed
       expect(() => container.read(videoManagerProvider), returnsNormally);
       expect(() => container.read(videoFeedProvider), returnsNormally);
@@ -65,15 +66,15 @@ void main() {
 
       final context = tester.element(find.byType(VideoFeedScreen));
       final container = ProviderScope.containerOf(context);
-      
+
       // Test that providers don't throw when accessed
-      expect(() => container.read(videoManagerProvider.notifier), returnsNormally);
+      expect(
+          () => container.read(videoManagerProvider.notifier), returnsNormally);
       expect(() => container.read(videoFeedProvider.notifier), returnsNormally);
-      
+
       // Verify providers have correct initial state
       final videoManager = container.read(videoManagerProvider);
       expect(videoManager, isNotNull);
     });
   });
-
 }

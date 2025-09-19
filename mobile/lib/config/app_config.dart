@@ -38,7 +38,6 @@ class AppConfig {
   static String get cloudinaryWebhookUrl => '$backendBaseUrl/v1/media/webhook';
   static String get readyEventsUrl => '$backendBaseUrl/v1/media/ready-events';
 
-
   // App configuration
   static const String appName = 'divine';
   static const String appVersion = '1.0.0';

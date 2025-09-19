@@ -14,7 +14,7 @@ import 'package:openvine/services/video_event_service.dart';
 import 'package:openvine/services/subscription_manager.dart';
 
 /// Service Integration Test Helper
-/// 
+///
 /// Provides consistently configured service instances for integration tests
 /// with proper async coordination and reliable cleanup patterns.
 class ServiceIntegrationTestHelper {
@@ -26,30 +26,30 @@ class ServiceIntegrationTestHelper {
     if (_isInitialized) return;
 
     TestWidgetsFlutterBinding.ensureInitialized();
-    
+
     // Setup platform channel mocks
     _setupPlatformChannelMocks();
-    
+
     // Initialize Hive once
     await Hive.initFlutter();
-    
+
     _isInitialized = true;
   }
 
   /// Create a properly configured NostrService for testing
   static Future<NostrService> createNostrService() async {
     await initializeTestEnvironment();
-    
+
     final keyManager = NostrKeyManager();
     await keyManager.initialize();
-    
+
     if (!keyManager.hasKeys) {
       await keyManager.generateKeys();
     }
-    
+
     final service = NostrService(keyManager);
     _createdServices.add(service);
-    
+
     return service;
   }
 
@@ -58,28 +58,28 @@ class ServiceIntegrationTestHelper {
     DirectUploadService? uploadService,
   }) async {
     await initializeTestEnvironment();
-    
+
     final service = uploadService ?? _createMockDirectUploadService();
     final manager = UploadManager(uploadService: service);
-    
+
     await manager.initialize();
     _createdServices.add(manager);
-    
+
     return manager;
   }
 
   /// Create a VideoEventService with subscription manager
   static Future<VideoEventService> createVideoEventService() async {
     await initializeTestEnvironment();
-    
+
     final nostrService = await createNostrService();
     final subscriptionManager = SubscriptionManager(nostrService);
-    
+
     final service = VideoEventService(
       nostrService,
       subscriptionManager: subscriptionManager,
     );
-    
+
     _createdServices.add(service);
     return service;
   }
@@ -100,9 +100,9 @@ class ServiceIntegrationTestHelper {
         // Ignore disposal errors
       }
     }
-    
+
     _createdServices.clear();
-    
+
     // Clean up Hive boxes
     await _cleanupHiveBoxes();
   }
@@ -115,7 +115,7 @@ class ServiceIntegrationTestHelper {
   }) async {
     final completer = Completer<void>();
     final stopwatch = Stopwatch()..start();
-    
+
     Timer.periodic(checkInterval, (timer) {
       if (condition()) {
         timer.cancel();
@@ -126,13 +126,13 @@ class ServiceIntegrationTestHelper {
         timer.cancel();
         if (!completer.isCompleted) {
           completer.completeError(TimeoutException(
-            'Condition not met within timeout', 
+            'Condition not met within timeout',
             timeout,
           ));
         }
       }
     });
-    
+
     return completer.future;
   }
 
@@ -140,8 +140,10 @@ class ServiceIntegrationTestHelper {
 
   static void _setupPlatformChannelMocks() {
     // Mock SharedPreferences
-    const MethodChannel prefsChannel = MethodChannel('plugins.flutter.io/shared_preferences');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel prefsChannel =
+        MethodChannel('plugins.flutter.io/shared_preferences');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       prefsChannel,
       (MethodCall methodCall) async {
         switch (methodCall.method) {
@@ -162,8 +164,10 @@ class ServiceIntegrationTestHelper {
     );
 
     // Mock connectivity
-    const MethodChannel connectivityChannel = MethodChannel('dev.fluttercommunity.plus/connectivity');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel connectivityChannel =
+        MethodChannel('dev.fluttercommunity.plus/connectivity');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       connectivityChannel,
       (MethodCall methodCall) async {
         if (methodCall.method == 'check') {
@@ -174,8 +178,10 @@ class ServiceIntegrationTestHelper {
     );
 
     // Mock secure storage
-    const MethodChannel secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel secureStorageChannel =
+        MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       secureStorageChannel,
       (MethodCall methodCall) async {
         switch (methodCall.method) {
@@ -195,8 +201,10 @@ class ServiceIntegrationTestHelper {
     );
 
     // Mock path_provider
-    const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel pathProviderChannel =
+        MethodChannel('plugins.flutter.io/path_provider');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       pathProviderChannel,
       (MethodCall methodCall) async {
         switch (methodCall.method) {
@@ -215,35 +223,35 @@ class ServiceIntegrationTestHelper {
 
   static DirectUploadService _createMockDirectUploadService() {
     final mock = MockDirectUploadService();
-    
+
     // Setup basic mock behavior
     when(() => mock.uploadVideo(
-      videoFile: any(named: 'videoFile'),
-      nostrPubkey: any(named: 'nostrPubkey'),
-      title: any(named: 'title'),
-      description: any(named: 'description'),
-      hashtags: any(named: 'hashtags'),
-      onProgress: any(named: 'onProgress'),
-    )).thenAnswer((_) async => DirectUploadResult(
-      success: true,
-      videoId: 'test-video-id',
-      cdnUrl: 'https://test.com/video.mp4',
-      thumbnailUrl: 'https://test.com/thumb.jpg',
-    ));
-    
+          videoFile: any(named: 'videoFile'),
+          nostrPubkey: any(named: 'nostrPubkey'),
+          title: any(named: 'title'),
+          description: any(named: 'description'),
+          hashtags: any(named: 'hashtags'),
+          onProgress: any(named: 'onProgress'),
+        )).thenAnswer((_) async => DirectUploadResult(
+          success: true,
+          videoId: 'test-video-id',
+          cdnUrl: 'https://test.com/video.mp4',
+          thumbnailUrl: 'https://test.com/thumb.jpg',
+        ));
+
     when(() => mock.activeUploads).thenReturn([]);
     when(() => mock.isUploading(any())).thenReturn(false);
     when(() => mock.getProgressStream(any())).thenReturn(null);
     when(() => mock.cancelUpload(any())).thenAnswer((_) async {});
     when(() => mock.dispose()).thenReturn(null);
-    
+
     return mock;
   }
 
   static Future<void> _cleanupHiveBoxes() async {
     // Clean up common Hive boxes used in tests
     final boxNames = ['pending_uploads', 'video_cache', 'user_profiles'];
-    
+
     for (final boxName in boxNames) {
       try {
         if (Hive.isBoxOpen(boxName)) {

@@ -133,7 +133,7 @@ class _VideoPlaybackWidgetState extends State<VideoPlaybackWidget>
       ),
     );
 
-      // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
+    // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
     _playbackController.events.listen(_onPlaybackEvent);
 
     _initializeVideo();
@@ -164,11 +164,7 @@ class _VideoPlaybackWidgetState extends State<VideoPlaybackWidget>
     }
   }
 
-  void _onPlaybackStateChange() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
+  // Removed unused _onPlaybackStateChange method
 
   void _onPlaybackEvent(VideoPlaybackEvent event) {
     if (event is VideoError) {
@@ -201,16 +197,16 @@ class _VideoPlaybackWidgetState extends State<VideoPlaybackWidget>
       _showPlayPauseIcon = true;
     });
 
+    // FIXED: Use animation completion instead of arbitrary delay
     _playPauseIconController.forward().then((_) {
-      _playPauseIconController.reverse();
-    });
-
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        setState(() {
-          _showPlayPauseIcon = false;
-        });
-      }
+      _playPauseIconController.reverse().then((_) {
+        // Hide icon after animation completes
+        if (mounted) {
+          setState(() {
+            _showPlayPauseIcon = false;
+          });
+        }
+      });
     });
   }
 
@@ -281,10 +277,10 @@ class _VideoPlaybackWidgetState extends State<VideoPlaybackWidget>
     final videoSize = controller.value.size;
     final isSmallVideo = videoSize.width <= 400 && videoSize.height <= 400;
     final isMac = defaultTargetPlatform == TargetPlatform.macOS;
-    
+
     // Double size for small videos on Mac to improve visibility
     final displayScale = (isMac && isSmallVideo) ? 2.0 : 1.0;
-    
+
     // Different behavior based on configuration
     if (widget.config == VideoPlaybackConfig.fullscreen) {
       // Fullscreen mode: fill the entire screen
@@ -306,7 +302,8 @@ class _VideoPlaybackWidgetState extends State<VideoPlaybackWidget>
             child: OverflowBox(
               alignment: Alignment.center,
               child: FittedBox(
-                fit: BoxFit.cover, // Cover the square area, cropping if necessary
+                fit: BoxFit
+                    .cover, // Cover the square area, cropping if necessary
                 child: Transform.scale(
                   scale: displayScale,
                   child: SizedBox(

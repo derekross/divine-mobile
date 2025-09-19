@@ -4,7 +4,6 @@
 import 'dart:convert';
 
 import 'package:nostr_sdk/event.dart';
-import 'package:nostr_sdk/filter.dart';
 import 'package:openvine/models/pending_upload.dart';
 import 'package:openvine/services/auth_service.dart';
 import 'package:openvine/services/blurhash_service.dart';
@@ -16,7 +15,7 @@ import 'package:openvine/utils/unified_logger.dart';
 
 /// Service for publishing processed videos to Nostr relays
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class VideoEventPublisher  {
+class VideoEventPublisher {
   VideoEventPublisher({
     required UploadManager uploadManager,
     required INostrService nostrService,
@@ -35,7 +34,6 @@ class VideoEventPublisher  {
   int _totalEventsPublished = 0;
   int _totalEventsFailed = 0;
   DateTime? _lastPublishTime;
-
 
   /// Initialize the publisher
   Future<void> initialize() async {
@@ -77,7 +75,7 @@ class VideoEventPublisher  {
           name: 'VideoEventPublisher', category: LogCategory.video);
       Log.info('  Is Signed: ${event.isSigned}',
           name: 'VideoEventPublisher', category: LogCategory.video);
-      
+
       // Log the raw JSON representation
       try {
         final eventMap = event.toJson();
@@ -94,14 +92,18 @@ class VideoEventPublisher  {
       // Use the existing Nostr service to broadcast
       final broadcastResult = await _nostrService.broadcastEvent(event);
 
-      Log.info('✅ Event broadcast completed with result: successful=${broadcastResult.successCount}, failed=${broadcastResult.failedRelays.length}',
-          name: 'VideoEventPublisher', category: LogCategory.video);
-      
+      Log.info(
+          '✅ Event broadcast completed with result: successful=${broadcastResult.successCount}, failed=${broadcastResult.failedRelays.length}',
+          name: 'VideoEventPublisher',
+          category: LogCategory.video);
+
       // Check if broadcast was successful
       if (broadcastResult.successCount > 0) {
-        Log.info('✅ Event successfully published to ${broadcastResult.successCount} relay(s)',
-            name: 'VideoEventPublisher', category: LogCategory.video);
-        
+        Log.info(
+            '✅ Event successfully published to ${broadcastResult.successCount} relay(s)',
+            name: 'VideoEventPublisher',
+            category: LogCategory.video);
+
         // Log any relay-specific errors
         if (broadcastResult.errors.isNotEmpty) {
           for (final entry in broadcastResult.errors.entries) {
@@ -109,7 +111,7 @@ class VideoEventPublisher  {
                 name: 'VideoEventPublisher', category: LogCategory.video);
           }
         }
-        
+
         return true;
       } else {
         Log.error('❌ Event broadcast failed to all relays',
@@ -127,14 +129,12 @@ class VideoEventPublisher  {
     }
   }
 
-
   /// Get publishing statistics
   Map<String, dynamic> get publishingStats => {
         'total_published': _totalEventsPublished,
         'total_failed': _totalEventsFailed,
         'last_publish_time': _lastPublishTime?.toIso8601String(),
       };
-
 
   /// Publish a video event with custom metadata
   Future<bool> publishVideoEvent({
@@ -173,38 +173,42 @@ class VideoEventPublisher  {
 
       // Generate unique identifier for the addressable event
       // Use videoId if available, otherwise generate from timestamp and random component
-      final dTag = upload.videoId ?? 
-        '${DateTime.now().millisecondsSinceEpoch}_${upload.id.substring(0, 8)}';
+      final dTag = upload.videoId ??
+          '${DateTime.now().millisecondsSinceEpoch}_${upload.id.substring(0, 8)}';
       tags.add(['d', dTag]);
 
       // Build imeta tag components
       final imetaComponents = <String>[];
       imetaComponents.add('url ${upload.cdnUrl!}');
       imetaComponents.add('m video/mp4');
-      
+
       // Add thumbnail to imeta if available
       if (upload.thumbnailPath != null && upload.thumbnailPath!.isNotEmpty) {
         imetaComponents.add('image ${upload.thumbnailPath!}');
         Log.verbose('Including thumbnail in imeta: ${upload.thumbnailPath}',
             name: 'VideoEventPublisher', category: LogCategory.video);
       }
-      
+
       // Generate blurhash from local video file
       if (upload.localVideoPath.isNotEmpty) {
         try {
           // Extract thumbnail bytes from the video at 500ms
-          final thumbnailBytes = await VideoThumbnailService.extractThumbnailBytes(
+          final thumbnailBytes =
+              await VideoThumbnailService.extractThumbnailBytes(
             videoPath: upload.localVideoPath,
             timeMs: 500, // Same as used in DirectUploadService
             quality: 80,
           );
-          
+
           if (thumbnailBytes != null) {
-            final blurhash = await BlurhashService.generateBlurhash(thumbnailBytes);
+            final blurhash =
+                await BlurhashService.generateBlurhash(thumbnailBytes);
             if (blurhash != null) {
               imetaComponents.add('blurhash $blurhash');
-              Log.info('Generated blurhash from video: ${blurhash.substring(0, 10)}...',
-                  name: 'VideoEventPublisher', category: LogCategory.video);
+              Log.info(
+                  'Generated blurhash from video: ${blurhash.substring(0, 10)}...',
+                  name: 'VideoEventPublisher',
+                  category: LogCategory.video);
             }
           }
         } catch (e) {
@@ -238,7 +242,10 @@ class VideoEventPublisher  {
       tags.add(['client', 'openvine']);
 
       // Add published_at tag (current timestamp)
-      tags.add(['published_at', (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString()]);
+      tags.add([
+        'published_at',
+        (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString()
+      ]);
 
       // Add duration tag if available
       if (upload.videoDuration != null) {

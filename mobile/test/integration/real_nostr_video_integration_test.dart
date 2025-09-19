@@ -31,24 +31,26 @@ void main() {
       await RealIntegrationTestHelper.cleanup();
     });
 
-    testWidgets('can fetch real video events from relay3.openvine.co relay', (tester) async {
+    testWidgets('can fetch real video events from relay3.openvine.co relay',
+        (tester) async {
       // This test uses REAL network connections to relay3.openvine.co
       // No mocking of NostrService, network, or relay connections
-      
+
       // Subscribe to video feed
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery, limit: 5);
-      
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery, limit: 5);
+
       // Wait for events to load
       await tester.binding.delayed(const Duration(seconds: 2));
-      
+
       // Get video events from cache
       final videoEvents = videoEventService.discoveryVideos;
-      
+
       // Should get real video events from the relay
       expect(videoEvents, isNotNull);
       // May be empty if no videos on relay, but should not error
       expect(videoEvents, isA<List<VideoEvent>>());
-      
+
       // If we got videos, they should be valid
       for (final video in videoEvents) {
         expect(video.id, isNotEmpty);
@@ -60,19 +62,20 @@ void main() {
     testWidgets('can subscribe to real video events', (tester) async {
       // Test real subscription to live relay
       int initialCount = videoEventService.discoveryVideos.length;
-      
+
       // Subscribe to video feed
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery, limit: 10);
-      
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery, limit: 10);
+
       // Wait a bit for any events
       await tester.binding.delayed(const Duration(seconds: 3));
-      
+
       // Check if we got any new events
       int finalCount = videoEventService.discoveryVideos.length;
-      
+
       // May not receive events immediately, but subscription should work
       expect(finalCount, greaterThanOrEqualTo(initialCount));
-      
+
       // Clean up subscription
       await videoEventService.unsubscribeFromVideoFeed();
     }, timeout: const Timeout(Duration(seconds: 15)));

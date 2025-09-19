@@ -23,18 +23,19 @@ class ProofModeKeyPair {
   final DateTime createdAt;
 
   Map<String, dynamic> toJson() => {
-    'publicKey': publicKey,
-    'privateKey': privateKey,
-    'fingerprint': fingerprint,
-    'createdAt': createdAt.toIso8601String(),
-  };
+        'publicKey': publicKey,
+        'privateKey': privateKey,
+        'fingerprint': fingerprint,
+        'createdAt': createdAt.toIso8601String(),
+      };
 
-  factory ProofModeKeyPair.fromJson(Map<String, dynamic> json) => ProofModeKeyPair(
-    publicKey: json['publicKey'] as String,
-    privateKey: json['privateKey'] as String,
-    fingerprint: json['fingerprint'] as String,
-    createdAt: DateTime.parse(json['createdAt'] as String),
-  );
+  factory ProofModeKeyPair.fromJson(Map<String, dynamic> json) =>
+      ProofModeKeyPair(
+        publicKey: json['publicKey'] as String,
+        privateKey: json['privateKey'] as String,
+        fingerprint: json['fingerprint'] as String,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
 }
 
 /// Proof signature result
@@ -50,16 +51,16 @@ class ProofSignature {
   final DateTime signedAt;
 
   Map<String, dynamic> toJson() => {
-    'signature': signature,
-    'publicKeyFingerprint': publicKeyFingerprint,
-    'signedAt': signedAt.toIso8601String(),
-  };
+        'signature': signature,
+        'publicKeyFingerprint': publicKeyFingerprint,
+        'signedAt': signedAt.toIso8601String(),
+      };
 
   factory ProofSignature.fromJson(Map<String, dynamic> json) => ProofSignature(
-    signature: json['signature'] as String,
-    publicKeyFingerprint: json['publicKeyFingerprint'] as String,
-    signedAt: DateTime.parse(json['signedAt'] as String),
-  );
+        signature: json['signature'] as String,
+        publicKeyFingerprint: json['publicKeyFingerprint'] as String,
+        signedAt: DateTime.parse(json['signedAt'] as String),
+      );
 }
 
 /// ProofMode PGP key management service
@@ -70,7 +71,8 @@ class ProofModeKeyService {
   static const String _fingerprintKey = '${_keyPrefix}fingerprint';
   static const String _createdAtKey = '${_keyPrefix}created_at';
 
-  static const FlutterSecureStorage _defaultSecureStorage = FlutterSecureStorage(
+  static const FlutterSecureStorage _defaultSecureStorage =
+      FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: true,
     ),
@@ -83,7 +85,7 @@ class ProofModeKeyService {
   ProofModeKeyPair? _cachedKeyPair;
 
   /// Create ProofModeKeyService with optional storage (for testing)
-  ProofModeKeyService({FlutterSecureStorage? secureStorage}) 
+  ProofModeKeyService({FlutterSecureStorage? secureStorage})
       : _secureStorage = secureStorage ?? _defaultSecureStorage;
 
   /// Initialize the key service and generate keys if needed
@@ -101,8 +103,10 @@ class ProofModeKeyService {
       // Check if keys already exist
       final existingKeyPair = await getKeyPair();
       if (existingKeyPair != null) {
-        Log.info('Found existing ProofMode keys, fingerprint: ${existingKeyPair.fingerprint}',
-            name: 'ProofModeKeyService', category: LogCategory.auth);
+        Log.info(
+            'Found existing ProofMode keys, fingerprint: ${existingKeyPair.fingerprint}',
+            name: 'ProofModeKeyService',
+            category: LogCategory.auth);
         return;
       }
 
@@ -125,10 +129,10 @@ class ProofModeKeyService {
     try {
       // For now, we'll use a simplified approach with basic crypto
       // In production, this would use proper PGP libraries like dart_pg
-      
+
       // Generate a simple key pair using crypto library
       final keyData = _generateSimpleKeyPair();
-      
+
       final keyPair = ProofModeKeyPair(
         publicKey: keyData['publicKey']!,
         privateKey: keyData['privateKey']!,
@@ -140,8 +144,10 @@ class ProofModeKeyService {
       await _storeKeyPair(keyPair);
       _cachedKeyPair = keyPair;
 
-      Log.info('Generated ProofMode key pair with fingerprint: ${keyPair.fingerprint}',
-          name: 'ProofModeKeyService', category: LogCategory.auth);
+      Log.info(
+          'Generated ProofMode key pair with fingerprint: ${keyPair.fingerprint}',
+          name: 'ProofModeKeyService',
+          category: LogCategory.auth);
 
       return keyPair;
     } catch (e) {
@@ -163,7 +169,10 @@ class ProofModeKeyService {
       final fingerprint = await _secureStorage.read(key: _fingerprintKey);
       final createdAtStr = await _secureStorage.read(key: _createdAtKey);
 
-      if (publicKey == null || privateKey == null || fingerprint == null || createdAtStr == null) {
+      if (publicKey == null ||
+          privateKey == null ||
+          fingerprint == null ||
+          createdAtStr == null) {
         Log.debug('No complete key pair found in secure storage',
             name: 'ProofModeKeyService', category: LogCategory.auth);
         return null;
@@ -231,14 +240,16 @@ class ProofModeKeyService {
   Future<bool> verifySignature(String data, ProofSignature signature) async {
     try {
       final keyPair = await getKeyPair();
-      if (keyPair == null || keyPair.fingerprint != signature.publicKeyFingerprint) {
+      if (keyPair == null ||
+          keyPair.fingerprint != signature.publicKeyFingerprint) {
         Log.warning('Key mismatch for signature verification',
             name: 'ProofModeKeyService', category: LogCategory.auth);
         return false;
       }
 
       // Verify signature (simplified approach)
-      final isValid = _verifyWithPublicKey(data, signature.signature, keyPair.publicKey);
+      final isValid =
+          _verifyWithPublicKey(data, signature.signature, keyPair.publicKey);
 
       Log.debug('Signature verification result: $isValid',
           name: 'ProofModeKeyService', category: LogCategory.auth);
@@ -278,29 +289,33 @@ class ProofModeKeyService {
   Future<void> _storeKeyPair(ProofModeKeyPair keyPair) async {
     await _secureStorage.write(key: _publicKeyKey, value: keyPair.publicKey);
     await _secureStorage.write(key: _privateKeyKey, value: keyPair.privateKey);
-    await _secureStorage.write(key: _fingerprintKey, value: keyPair.fingerprint);
-    await _secureStorage.write(key: _createdAtKey, value: keyPair.createdAt.toIso8601String());
+    await _secureStorage.write(
+        key: _fingerprintKey, value: keyPair.fingerprint);
+    await _secureStorage.write(
+        key: _createdAtKey, value: keyPair.createdAt.toIso8601String());
   }
 
   /// Generate a simple key pair (placeholder for proper PGP implementation)
   Map<String, String> _generateSimpleKeyPair() {
     // This is a simplified implementation
     // In production, use proper PGP libraries like dart_pg or platform channels
-    
+
     final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-    final entropy = List.generate(32, (i) => (timestamp.codeUnits[i % timestamp.length] + i) % 256);
-    
+    final entropy = List.generate(
+        32, (i) => (timestamp.codeUnits[i % timestamp.length] + i) % 256);
+
     // Generate mock keys (base64 encoded for storage)
     final privateKeyBytes = Uint8List.fromList(entropy);
     final publicKeyBytes = Uint8List.fromList(entropy.take(16).toList());
-    
+
     final privateKey = base64Encode(privateKeyBytes);
     final publicKey = base64Encode(publicKeyBytes);
-    
+
     // Generate fingerprint from public key
     final fingerprintHash = sha256.convert(publicKeyBytes);
-    final fingerprint = fingerprintHash.toString().substring(0, 16).toUpperCase();
-    
+    final fingerprint =
+        fingerprintHash.toString().substring(0, 16).toUpperCase();
+
     return {
       'privateKey': 'MOCK_PRIVATE_$privateKey',
       'publicKey': 'MOCK_PUBLIC_$publicKey',
@@ -323,8 +338,9 @@ class ProofModeKeyService {
     // Simplified verification - in production use proper PGP verification
     try {
       if (!signature.startsWith('MOCK_SIG_')) return false;
-      
-      final expectedSig = _signWithPrivateKey(data, 'MOCK_PRIVATE_${publicKey.replaceFirst('MOCK_PUBLIC_', '')}');
+
+      final expectedSig = _signWithPrivateKey(
+          data, 'MOCK_PRIVATE_${publicKey.replaceFirst('MOCK_PUBLIC_', '')}');
       return signature == expectedSig;
     } catch (e) {
       return false;

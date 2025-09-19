@@ -21,7 +21,7 @@ class HashtagData {
       percentage: (json['percentage'] as num).toDouble(),
     );
   }
-  
+
   final int rank;
   final String hashtag;
   final int count;
@@ -51,22 +51,24 @@ class TopHashtagsService {
           name: 'TopHashtagsService', category: LogCategory.storage);
 
       // Load the JSON file from assets
-      final jsonString = await rootBundle.loadString('assets/top_1000_hashtags.json');
+      final jsonString =
+          await rootBundle.loadString('assets/top_1000_hashtags.json');
       final jsonData = json.decode(jsonString) as Map<String, dynamic>;
-      
+
       final hashtagsList = jsonData['hashtags'] as List<dynamic>;
       _topHashtags = hashtagsList
           .map((item) => HashtagData.fromJson(item as Map<String, dynamic>))
           .toList();
-      
+
       _isLoaded = true;
-      
+
       Log.info('Loaded ${_topHashtags!.length} top hashtags',
           name: 'TopHashtagsService', category: LogCategory.storage);
-      
+
       // Log first few for debugging
       if (_topHashtags!.isNotEmpty) {
-        final preview = _topHashtags!.take(5).map((h) => '#${h.hashtag}').join(', ');
+        final preview =
+            _topHashtags!.take(5).map((h) => '#${h.hashtag}').join(', ');
         Log.debug('Top hashtags preview: $preview',
             name: 'TopHashtagsService', category: LogCategory.storage);
       }
@@ -81,20 +83,17 @@ class TopHashtagsService {
   /// Get top N hashtags
   List<String> getTopHashtags({int limit = 50}) {
     if (!_isLoaded || _topHashtags == null) return [];
-    
-    return _topHashtags!
-        .take(limit)
-        .map((h) => h.hashtag)
-        .toList();
+
+    return _topHashtags!.take(limit).map((h) => h.hashtag).toList();
   }
 
   /// Search hashtags by prefix or substring
   List<String> searchHashtags(String query, {int limit = 20}) {
     if (!_isLoaded || _topHashtags == null || query.isEmpty) return [];
-    
+
     final lowercase = query.toLowerCase();
     final results = <String>[];
-    
+
     // First add exact matches
     for (final hashtagData in _topHashtags!) {
       if (hashtagData.hashtag.toLowerCase() == lowercase) {
@@ -102,7 +101,7 @@ class TopHashtagsService {
         if (results.length >= limit) break;
       }
     }
-    
+
     // Then add prefix matches
     for (final hashtagData in _topHashtags!) {
       if (hashtagData.hashtag.toLowerCase().startsWith(lowercase) &&
@@ -111,7 +110,7 @@ class TopHashtagsService {
         if (results.length >= limit) break;
       }
     }
-    
+
     // Finally add substring matches
     for (final hashtagData in _topHashtags!) {
       if (hashtagData.hashtag.toLowerCase().contains(lowercase) &&
@@ -120,14 +119,14 @@ class TopHashtagsService {
         if (results.length >= limit) break;
       }
     }
-    
+
     return results;
   }
 
   /// Get hashtag statistics
   HashtagData? getHashtagStats(String hashtag) {
     if (!_isLoaded || _topHashtags == null) return null;
-    
+
     try {
       return _topHashtags!.firstWhere(
         (h) => h.hashtag.toLowerCase() == hashtag.toLowerCase(),

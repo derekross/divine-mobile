@@ -14,6 +14,7 @@ import 'package:openvine/services/video_sharing_service.dart';
 import 'package:openvine/theme/vine_theme.dart';
 import 'package:openvine/utils/unified_logger.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:openvine/widgets/user_avatar.dart';
 
 /// Comprehensive share menu for videos
 class ShareVideoMenu extends ConsumerStatefulWidget {
@@ -123,99 +124,104 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
         builder: (context, ref, child) {
           final curatedListServiceAsync = ref.watch(curatedListServiceProvider);
           final bookmarkServiceAsync = ref.watch(bookmarkServiceProvider);
-          
+
           return curatedListServiceAsync.when(
             data: (curatedListService) {
               return bookmarkServiceAsync.when(
                 data: (bookmarkService) {
-                  final listsContaining = curatedListService.getListsContainingVideo(widget.video.id);
-                  final bookmarkStatus = bookmarkService.getVideoBookmarkSummary(widget.video.id);
-          
-          final statusParts = <String>[];
-          
-          // Add curated lists status
-          if (listsContaining.isNotEmpty) {
-            if (listsContaining.length == 1) {
-              statusParts.add('In "${listsContaining.first.name}"');
-            } else if (listsContaining.length <= 3) {
-              final names = listsContaining.map((list) => '"${list.name}"').join(', ');
-              statusParts.add('In $names');
-            } else {
-              statusParts.add('In ${listsContaining.length} lists');
-            }
-          }
-          
-          // Add bookmark status
-          if (bookmarkStatus != 'Not bookmarked') {
-            statusParts.add(bookmarkStatus);
-          }
-          
-          if (statusParts.isEmpty) {
-            return const SizedBox.shrink(); // Hide if no status to show
-          }
-          
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade900,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade700),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.info_outline, color: VineTheme.vineGreen, size: 18),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Video Status',
-                      style: TextStyle(
-                        color: VineTheme.whiteText,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  final listsContaining = curatedListService
+                      .getListsContainingVideo(widget.video.id);
+                  final bookmarkStatus =
+                      bookmarkService.getVideoBookmarkSummary(widget.video.id);
+
+                  final statusParts = <String>[];
+
+                  // Add curated lists status
+                  if (listsContaining.isNotEmpty) {
+                    if (listsContaining.length == 1) {
+                      statusParts.add('In "${listsContaining.first.name}"');
+                    } else if (listsContaining.length <= 3) {
+                      final names = listsContaining
+                          .map((list) => '"${list.name}"')
+                          .join(', ');
+                      statusParts.add('In $names');
+                    } else {
+                      statusParts.add('In ${listsContaining.length} lists');
+                    }
+                  }
+
+                  // Add bookmark status
+                  if (bookmarkStatus != 'Not bookmarked') {
+                    statusParts.add(bookmarkStatus);
+                  }
+
+                  if (statusParts.isEmpty) {
+                    return const SizedBox.shrink(); // Hide if no status to show
+                  }
+
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade900,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade700),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ...statusParts.map((status) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 26), // Align with icon
-                      Expanded(
-                        child: Text(
-                          '• $status',
-                          style: const TextStyle(
-                            color: VineTheme.lightText,
-                            fontSize: 13,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline,
+                                color: VineTheme.vineGreen, size: 18),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Video Status',
+                              style: TextStyle(
+                                color: VineTheme.whiteText,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...statusParts.map((status) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 26), // Align with icon
+                                  Expanded(
+                                    child: Text(
+                                      '• $status',
+                                      style: const TextStyle(
+                                        color: VineTheme.lightText,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )),
+                        if (listsContaining.length > 3) ...[
+                          const SizedBox(height: 8),
+                          InkWell(
+                            onTap: () => _showAllListsDialog(listsContaining),
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 26),
+                              child: Text(
+                                'View all lists →',
+                                style: TextStyle(
+                                  color: VineTheme.vineGreen,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-                if (listsContaining.length > 3) ...[
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () => _showAllListsDialog(listsContaining),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 26),
-                      child: Text(
-                        'View all lists →',
-                        style: TextStyle(
-                          color: VineTheme.vineGreen,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                        ],
+                      ],
                     ),
-                  ),
-                ],
-              ],
-            ),
-          );
+                  );
                 },
                 loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
@@ -272,60 +278,61 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
   Widget _buildListSection() => Consumer(
         builder: (context, ref, child) {
           final listServiceAsync = ref.watch(curatedListServiceProvider);
-          
+
           return listServiceAsync.when(
             data: (listService) {
               final defaultList = listService.getDefaultList();
               final isInDefaultList = defaultList != null &&
                   listService.isVideoInDefaultList(widget.video.id);
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Add to List',
-                      style: TextStyle(
-                        color: VineTheme.whiteText,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Add to List',
+                    style: TextStyle(
+                      color: VineTheme.whiteText,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                  const SizedBox(height: 12),
 
-                    // Add to My List (default list)
-                    _buildActionTile(
-                      icon: isInDefaultList
-                          ? Icons.playlist_add_check
-                          : Icons.playlist_add,
-                      title:
-                          isInDefaultList ? 'Remove from My List' : 'Add to My List',
-                      subtitle: 'Your public curated list',
-                      iconColor: isInDefaultList ? VineTheme.vineGreen : null,
-                      onTap: () => _toggleDefaultList(isInDefaultList),
-                    ),
+                  // Add to My List (default list)
+                  _buildActionTile(
+                    icon: isInDefaultList
+                        ? Icons.playlist_add_check
+                        : Icons.playlist_add,
+                    title: isInDefaultList
+                        ? 'Remove from My List'
+                        : 'Add to My List',
+                    subtitle: 'Your public curated list',
+                    iconColor: isInDefaultList ? VineTheme.vineGreen : null,
+                    onTap: () => _toggleDefaultList(isInDefaultList),
+                  ),
 
+                  const SizedBox(height: 8),
+
+                  // Create new list or add to existing
+                  _buildActionTile(
+                    icon: Icons.create_new_folder,
+                    title: 'Create New List',
+                    subtitle: 'Start a new curated collection',
+                    onTap: _showCreateListDialog,
+                  ),
+
+                  // Show existing lists if any
+                  if (listService.lists.length > 1) ...[
                     const SizedBox(height: 8),
-
-                    // Create new list or add to existing
                     _buildActionTile(
-                      icon: Icons.create_new_folder,
-                      title: 'Create New List',
-                      subtitle: 'Start a new curated collection',
-                      onTap: _showCreateListDialog,
+                      icon: Icons.folder,
+                      title: 'Add to Other List',
+                      subtitle: '${listService.lists.length - 1} other lists',
+                      onTap: _showSelectListDialog,
                     ),
-
-                    // Show existing lists if any
-                    if (listService.lists.length > 1) ...[
-                      const SizedBox(height: 8),
-                      _buildActionTile(
-                        icon: Icons.folder,
-                        title: 'Add to Other List',
-                        subtitle: '${listService.lists.length - 1} other lists',
-                        onTap: _showSelectListDialog,
-                      ),
-                    ],
                   ],
-                );
+                ],
+              );
             },
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
@@ -416,34 +423,35 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
   Widget _buildReportSection() => Consumer(
         builder: (context, ref, child) {
           final reportServiceAsync = ref.watch(contentReportingServiceProvider);
-          
+
           return reportServiceAsync.when(
             data: (reportService) {
-              final hasReported = reportService.hasBeenReported(widget.video.id);
+              final hasReported =
+                  reportService.hasBeenReported(widget.video.id);
 
               return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Content Actions',
-                style: TextStyle(
-                  color: VineTheme.whiteText,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildActionTile(
-                icon: hasReported ? Icons.flag : Icons.flag_outlined,
-                title: hasReported ? 'Already Reported' : 'Report Content',
-                subtitle: hasReported
-                    ? 'You have reported this content'
-                    : 'Report for policy violations',
-                iconColor: hasReported ? Colors.red : Colors.orange,
-                onTap: hasReported ? null : _showReportDialog,
-              ),
-            ],
-          );
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Content Actions',
+                    style: TextStyle(
+                      color: VineTheme.whiteText,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActionTile(
+                    icon: hasReported ? Icons.flag : Icons.flag_outlined,
+                    title: hasReported ? 'Already Reported' : 'Report Content',
+                    subtitle: hasReported
+                        ? 'You have reported this content'
+                        : 'Report for policy violations',
+                    iconColor: hasReported ? Colors.red : Colors.orange,
+                    onTap: hasReported ? null : _showReportDialog,
+                  ),
+                ],
+              );
             },
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
@@ -499,11 +507,12 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
       final success = await bookmarkService.addVideoToGlobalBookmarks(
         widget.video.id,
       );
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? 'Added to bookmarks!' : 'Failed to add bookmark'),
+            content: Text(
+                success ? 'Added to bookmarks!' : 'Failed to add bookmark'),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -512,7 +521,7 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
     } catch (e) {
       Log.error('Failed to add bookmark: $e',
           name: 'ShareVideoMenu', category: LogCategory.ui);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -540,14 +549,16 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
   void _showCreateFollowSetDialog() {
     showDialog(
       context: context,
-      builder: (context) => _CreateFollowSetDialog(authorPubkey: widget.video.pubkey),
+      builder: (context) =>
+          _CreateFollowSetDialog(authorPubkey: widget.video.pubkey),
     );
   }
 
   void _showSelectFollowSetDialog() {
     showDialog(
       context: context,
-      builder: (context) => _SelectFollowSetDialog(authorPubkey: widget.video.pubkey),
+      builder: (context) =>
+          _SelectFollowSetDialog(authorPubkey: widget.video.pubkey),
     );
   }
 
@@ -751,7 +762,8 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
                     : null,
                 trailing: Text(
                   '${list.videoEventIds.length} videos',
-                  style: const TextStyle(color: VineTheme.lightText, fontSize: 12),
+                  style:
+                      const TextStyle(color: VineTheme.lightText, fontSize: 12),
                 ),
               );
             },
@@ -1085,13 +1097,10 @@ class _SendToUserDialogState extends ConsumerState<_SendToUserDialog> {
 
   /// Build a user tile for contacts or search results
   Widget _buildUserTile(ShareableUser user) => ListTile(
-        leading: CircleAvatar(
-          backgroundImage:
-              user.picture != null ? NetworkImage(user.picture!) : null,
-          backgroundColor: VineTheme.cardBackground,
-          child: user.picture == null
-              ? const Icon(Icons.person, color: VineTheme.secondaryText)
-              : null,
+        leading: UserAvatar(
+          imageUrl: user.picture,
+          name: user.displayName,
+          size: 40,
         ),
         title: Text(
           user.displayName ?? 'Anonymous',
@@ -1114,8 +1123,7 @@ class _SendToUserDialogState extends ConsumerState<_SendToUserDialog> {
     setState(() => _isSearching = true);
 
     try {
-      final userProfileService =
-          ref.read(userProfileServiceProvider);
+      final userProfileService = ref.read(userProfileServiceProvider);
       final searchResults = <ShareableUser>[];
 
       String? pubkeyToSearch;
@@ -1345,7 +1353,7 @@ class _SelectListDialog extends StatelessWidget {
   Widget build(BuildContext context) => Consumer(
         builder: (context, ref, child) {
           final listServiceAsync = ref.watch(curatedListServiceProvider);
-          
+
           return listServiceAsync.when(
             data: (listService) {
               final availableLists = listService.lists
@@ -1353,45 +1361,48 @@ class _SelectListDialog extends StatelessWidget {
                   .toList();
 
               return AlertDialog(
-            backgroundColor: VineTheme.cardBackground,
-            title: const Text('Add to List',
-                style: TextStyle(color: VineTheme.whiteText)),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 300,
-              child: ListView.builder(
-                itemCount: availableLists.length,
-                itemBuilder: (context, index) {
-                  final list = availableLists[index];
-                  final isInList = listService.isVideoInList(list.id, video.id);
+                backgroundColor: VineTheme.cardBackground,
+                title: const Text('Add to List',
+                    style: TextStyle(color: VineTheme.whiteText)),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  height: 300,
+                  child: ListView.builder(
+                    itemCount: availableLists.length,
+                    itemBuilder: (context, index) {
+                      final list = availableLists[index];
+                      final isInList =
+                          listService.isVideoInList(list.id, video.id);
 
-                  return ListTile(
-                    leading: Icon(
-                      isInList ? Icons.check_circle : Icons.playlist_play,
-                      color:
-                          isInList ? VineTheme.vineGreen : VineTheme.whiteText,
-                    ),
-                    title: Text(
-                      list.name,
-                      style: const TextStyle(color: VineTheme.whiteText),
-                    ),
-                    subtitle: Text(
-                      '${list.videoEventIds.length} videos',
-                      style: const TextStyle(color: VineTheme.secondaryText),
-                    ),
-                    onTap: () => _toggleVideoInList(
-                        context, listService, list, isInList),
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Done'),
-              ),
-            ],
-          );
+                      return ListTile(
+                        leading: Icon(
+                          isInList ? Icons.check_circle : Icons.playlist_play,
+                          color: isInList
+                              ? VineTheme.vineGreen
+                              : VineTheme.whiteText,
+                        ),
+                        title: Text(
+                          list.name,
+                          style: const TextStyle(color: VineTheme.whiteText),
+                        ),
+                        subtitle: Text(
+                          '${list.videoEventIds.length} videos',
+                          style:
+                              const TextStyle(color: VineTheme.secondaryText),
+                        ),
+                        onTap: () => _toggleVideoInList(
+                            context, listService, list, isInList),
+                      );
+                    },
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Done'),
+                  ),
+                ],
+              );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const Center(child: Text('Error loading lists')),
@@ -1435,7 +1446,8 @@ class _ReportContentDialog extends ConsumerStatefulWidget {
   final VideoEvent video;
 
   @override
-  ConsumerState<_ReportContentDialog> createState() => _ReportContentDialogState();
+  ConsumerState<_ReportContentDialog> createState() =>
+      _ReportContentDialogState();
 }
 
 class _ReportContentDialogState extends ConsumerState<_ReportContentDialog> {
@@ -1530,7 +1542,8 @@ class _ReportContentDialogState extends ConsumerState<_ReportContentDialog> {
     if (_selectedReason == null) return;
 
     try {
-      final reportService = await ref.read(contentReportingServiceProvider.future);
+      final reportService =
+          await ref.read(contentReportingServiceProvider.future);
       final result = await reportService.reportContent(
         eventId: widget.video.id,
         authorPubkey: widget.video.pubkey,
@@ -1573,10 +1586,12 @@ class _CreateFollowSetDialog extends ConsumerStatefulWidget {
   final String authorPubkey;
 
   @override
-  ConsumerState<_CreateFollowSetDialog> createState() => _CreateFollowSetDialogState();
+  ConsumerState<_CreateFollowSetDialog> createState() =>
+      _CreateFollowSetDialogState();
 }
 
-class _CreateFollowSetDialogState extends ConsumerState<_CreateFollowSetDialog> {
+class _CreateFollowSetDialogState
+    extends ConsumerState<_CreateFollowSetDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -1643,7 +1658,8 @@ class _CreateFollowSetDialogState extends ConsumerState<_CreateFollowSetDialog> 
         Navigator.of(context).pop(); // Close share menu
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Created follow set "$name" and added creator')),
+          SnackBar(
+              content: Text('Created follow set "$name" and added creator')),
         );
       }
     } catch (e) {
@@ -1682,12 +1698,14 @@ class _SelectFollowSetDialog extends StatelessWidget {
                 itemCount: followSets.length,
                 itemBuilder: (context, index) {
                   final set = followSets[index];
-                  final isInSet = socialService.isInFollowSet(set.id, authorPubkey);
+                  final isInSet =
+                      socialService.isInFollowSet(set.id, authorPubkey);
 
                   return ListTile(
                     leading: Icon(
                       isInSet ? Icons.check_circle : Icons.people,
-                      color: isInSet ? VineTheme.vineGreen : VineTheme.whiteText,
+                      color:
+                          isInSet ? VineTheme.vineGreen : VineTheme.whiteText,
                     ),
                     title: Text(
                       set.name,
@@ -1765,7 +1783,7 @@ class _EditVideoDialogState extends ConsumerState<_EditVideoDialog> {
     super.initState();
     _titleController = TextEditingController(text: widget.video.title ?? '');
     _descriptionController = TextEditingController(text: widget.video.content);
-    
+
     // Convert hashtags list to comma-separated string
     final hashtagsText = widget.video.hashtags.join(', ');
     _hashtagsController = TextEditingController(text: hashtagsText);
@@ -1873,69 +1891,69 @@ class _EditVideoDialogState extends ConsumerState<_EditVideoDialog> {
 
       // Create updated tags for the addressable event
       final tags = <List<String>>[];
-      
+
       // Required 'd' tag - must use the same identifier
       tags.add(['d', widget.video.vineId ?? widget.video.id]);
-      
+
       // Build imeta tag components (preserve existing media data)
       final imetaComponents = <String>[];
       if (widget.video.videoUrl != null) {
         imetaComponents.add('url ${widget.video.videoUrl!}');
       }
       imetaComponents.add('m video/mp4');
-      
+
       if (widget.video.thumbnailUrl != null) {
         imetaComponents.add('image ${widget.video.thumbnailUrl!}');
       }
-      
+
       if (widget.video.blurhash != null) {
         imetaComponents.add('blurhash ${widget.video.blurhash!}');
       }
-      
+
       if (widget.video.dimensions != null) {
         imetaComponents.add('dim ${widget.video.dimensions!}');
       }
-      
+
       if (widget.video.sha256 != null) {
         imetaComponents.add('x ${widget.video.sha256!}');
       }
-      
+
       if (widget.video.fileSize != null) {
         imetaComponents.add('size ${widget.video.fileSize!}');
       }
-      
+
       // Add the complete imeta tag
       if (imetaComponents.isNotEmpty) {
         tags.add(['imeta', ...imetaComponents]);
       }
-      
+
       // Add updated metadata
       final title = _titleController.text.trim();
       if (title.isNotEmpty) {
         tags.add(['title', title]);
       }
-      
+
       // Add hashtags
       for (final hashtag in hashtags) {
         tags.add(['t', hashtag]);
       }
-      
+
       // Preserve other original tags that shouldn't be changed
       if (widget.video.publishedAt != null) {
         tags.add(['published_at', widget.video.publishedAt!]);
       }
-      
+
       if (widget.video.duration != null) {
         tags.add(['duration', widget.video.duration.toString()]);
       }
-      
+
       if (widget.video.altText != null) {
         tags.add(['alt', widget.video.altText!]);
       }
-      
+
       // Add client tag
       tags.add(['client', 'openvine']);
-      
+
       // Create and sign the updated event
       final content = _descriptionController.text.trim();
       final event = await authService.createAndSignEvent(
@@ -1943,19 +1961,19 @@ class _EditVideoDialogState extends ConsumerState<_EditVideoDialog> {
         content: content,
         tags: tags,
       );
-      
+
       if (event == null) {
         throw Exception('Failed to create updated event');
       }
-      
+
       // Broadcast the updated event
       final nostrService = ref.read(nostrServiceProvider);
       await nostrService.broadcastEvent(event);
-      
+
       if (mounted) {
         Navigator.of(context).pop(); // Close edit dialog
         Navigator.of(context).pop(); // Close share menu
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Video updated successfully'),
@@ -1966,10 +1984,10 @@ class _EditVideoDialogState extends ConsumerState<_EditVideoDialog> {
     } catch (e) {
       Log.error('Failed to update video: $e',
           name: 'ShareVideoMenu', category: LogCategory.ui);
-      
+
       if (mounted) {
         setState(() => _isUpdating = false);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update video: $e'),

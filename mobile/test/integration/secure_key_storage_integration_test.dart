@@ -10,17 +10,17 @@ import 'dart:convert';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   group('NostrKeyManager with SecureKeyStorageService Integration', () {
     late NostrKeyManager keyManager;
 
     setUp(() async {
       // Initialize logger
       Log.info('Setting up test', name: 'Test', category: LogCategory.system);
-      
+
       // Set up mock SharedPreferences
       SharedPreferences.setMockInitialValues({});
-      
+
       keyManager = NostrKeyManager();
     });
 
@@ -31,7 +31,7 @@ void main() {
     test('should initialize with secure storage', () async {
       // Act
       await keyManager.initialize();
-      
+
       // Assert
       expect(keyManager.isInitialized, isTrue);
       expect(keyManager.hasKeys, isFalse);
@@ -40,10 +40,10 @@ void main() {
     test('should generate and store keys securely', () async {
       // Arrange
       await keyManager.initialize();
-      
+
       // Act
       final keyPair = await keyManager.generateKeys();
-      
+
       // Assert
       expect(keyManager.hasKeys, isTrue);
       expect(keyPair, isNotNull);
@@ -56,12 +56,12 @@ void main() {
     test('should import private key to secure storage', () async {
       // Arrange
       await keyManager.initialize();
-      const testPrivateKey = 
+      const testPrivateKey =
           '5dab4a6cf3b8c9b8d3c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7';
-      
+
       // Act
       final keyPair = await keyManager.importPrivateKey(testPrivateKey);
-      
+
       // Assert
       expect(keyManager.hasKeys, isTrue);
       expect(keyPair.private, equals(testPrivateKey));
@@ -71,25 +71,27 @@ void main() {
     test('should migrate legacy keys from SharedPreferences', () async {
       // Arrange - Set up legacy keys in SharedPreferences
       final legacyKeyData = {
-        'private': '5dab4a6cf3b8c9b8d3c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7',
-        'public': '8e4c3a5b6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3',
+        'private':
+            '5dab4a6cf3b8c9b8d3c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7',
+        'public':
+            '8e4c3a5b6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3',
         'created_at': DateTime.now().millisecondsSinceEpoch,
         'version': 1,
       };
-      
+
       SharedPreferences.setMockInitialValues({
         'nostr_keypair': jsonEncode(legacyKeyData),
         'nostr_key_version': 1,
       });
-      
+
       // Act
       await keyManager.initialize();
-      
+
       // Assert
       expect(keyManager.hasKeys, isTrue);
       expect(keyManager.privateKey, equals(legacyKeyData['private']));
       expect(keyManager.publicKey, equals(legacyKeyData['public']));
-      
+
       // Verify legacy keys are removed after migration
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('nostr_keypair'), isNull);
@@ -100,10 +102,10 @@ void main() {
       await keyManager.initialize();
       await keyManager.generateKeys();
       expect(keyManager.hasKeys, isTrue);
-      
+
       // Act
       await keyManager.clearKeys();
-      
+
       // Assert
       expect(keyManager.hasKeys, isFalse);
       expect(keyManager.privateKey, isNull);
@@ -114,10 +116,10 @@ void main() {
       // Arrange
       await keyManager.initialize();
       await keyManager.generateKeys();
-      
+
       // Act
       final exportedKey = keyManager.exportPrivateKey();
-      
+
       // Assert
       expect(exportedKey, isNotNull);
       expect(exportedKey.length, equals(64));
@@ -127,18 +129,18 @@ void main() {
     test('should validate private key format', () async {
       // Arrange
       await keyManager.initialize();
-      
+
       // Act & Assert - Invalid formats
       expect(
         () => keyManager.importPrivateKey('invalid'),
         throwsA(isA<NostrKeyException>()),
       );
-      
+
       expect(
         () => keyManager.importPrivateKey('xyz123'),
         throwsA(isA<NostrKeyException>()),
       );
-      
+
       expect(
         () => keyManager.importPrivateKey('5dab4a6cf3b8c9b8'), // Too short
         throwsA(isA<NostrKeyException>()),
@@ -151,11 +153,11 @@ void main() {
       final originalKeyPair = await keyManager.generateKeys();
       final originalPrivate = originalKeyPair.private;
       final originalPublic = originalKeyPair.public;
-      
+
       // Act - Create new instance and reload
       final newKeyManager = NostrKeyManager();
       await newKeyManager.initialize();
-      
+
       // Assert
       expect(newKeyManager.hasKeys, isTrue);
       expect(newKeyManager.privateKey, equals(originalPrivate));
@@ -167,9 +169,9 @@ void main() {
     late SecureKeyStorageService storageService;
 
     setUp(() async {
-      Log.info('Setting up SecureKeyStorageService test', 
+      Log.info('Setting up SecureKeyStorageService test',
           name: 'Test', category: LogCategory.system);
-      
+
       storageService = SecureKeyStorageService();
     });
 
@@ -180,7 +182,7 @@ void main() {
     test('should initialize with platform-appropriate security', () async {
       // Act
       await storageService.initialize();
-      
+
       // Assert
       expect(storageService.hasKeys(), completion(isFalse));
     });
@@ -188,15 +190,15 @@ void main() {
     test('should generate and store keys with hardware backing', () async {
       // Arrange
       await storageService.initialize();
-      
+
       // Act
       final keyContainer = await storageService.generateAndStoreKeys();
-      
+
       // Assert
       expect(keyContainer, isNotNull);
       expect(keyContainer.npub, isNotEmpty);
       expect(keyContainer.publicKeyHex, isNotEmpty);
-      
+
       // Clean up
       keyContainer.dispose();
     });
@@ -207,14 +209,14 @@ void main() {
       final originalContainer = await storageService.generateAndStoreKeys();
       final originalNpub = originalContainer.npub;
       originalContainer.dispose();
-      
+
       // Act
       final retrievedContainer = await storageService.getKeyContainer();
-      
+
       // Assert
       expect(retrievedContainer, isNotNull);
       expect(retrievedContainer!.npub, equals(originalNpub));
-      
+
       // Clean up
       retrievedContainer.dispose();
     });
@@ -223,8 +225,8 @@ void main() {
       // Arrange
       await storageService.initialize();
       // Note: In real implementation, use proper nsec format
-      const testNsec = 'nsec1test...'; 
-      
+      const testNsec = 'nsec1test...';
+
       // Act - This will fail without proper nsec encoding
       expect(
         () => storageService.importFromNsec(testNsec),
@@ -237,10 +239,10 @@ void main() {
       await storageService.initialize();
       await storageService.generateAndStoreKeys();
       expect(await storageService.hasKeys(), isTrue);
-      
+
       // Act
       await storageService.deleteKeys();
-      
+
       // Assert
       expect(await storageService.hasKeys(), isFalse);
     });

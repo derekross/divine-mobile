@@ -97,7 +97,8 @@ class MuteItem {
         value: json['value'],
         reason: json['reason'],
         createdAt: DateTime.parse(json['createdAt']),
-        expireAt: json['expireAt'] != null ? DateTime.parse(json['expireAt']) : null,
+        expireAt:
+            json['expireAt'] != null ? DateTime.parse(json['expireAt']) : null,
       );
 
   @override
@@ -130,11 +131,16 @@ class MuteService {
   bool _isInitialized = false;
 
   // Getters
-  List<MuteItem> get mutedItems => List.unmodifiable(_mutedItems.where((item) => !item.isExpired));
-  List<MuteItem> get mutedUsers => mutedItems.where((item) => item.type == MuteType.user).toList();
-  List<MuteItem> get mutedHashtags => mutedItems.where((item) => item.type == MuteType.hashtag).toList();
-  List<MuteItem> get mutedKeywords => mutedItems.where((item) => item.type == MuteType.keyword).toList();
-  List<MuteItem> get mutedThreads => mutedItems.where((item) => item.type == MuteType.thread).toList();
+  List<MuteItem> get mutedItems =>
+      List.unmodifiable(_mutedItems.where((item) => !item.isExpired));
+  List<MuteItem> get mutedUsers =>
+      mutedItems.where((item) => item.type == MuteType.user).toList();
+  List<MuteItem> get mutedHashtags =>
+      mutedItems.where((item) => item.type == MuteType.hashtag).toList();
+  List<MuteItem> get mutedKeywords =>
+      mutedItems.where((item) => item.type == MuteType.keyword).toList();
+  List<MuteItem> get mutedThreads =>
+      mutedItems.where((item) => item.type == MuteType.thread).toList();
   bool get isInitialized => _isInitialized;
 
   /// Initialize the service
@@ -150,9 +156,10 @@ class MuteService {
       _cleanupExpiredMutes();
 
       _isInitialized = true;
-      Log.info('Mute service initialized with ${_mutedItems.length} muted items',
-          name: 'MuteService', category: LogCategory.system);
-
+      Log.info(
+          'Mute service initialized with ${_mutedItems.length} muted items',
+          name: 'MuteService',
+          category: LogCategory.system);
     } catch (e) {
       Log.error('Failed to initialize mute service: $e',
           name: 'MuteService', category: LogCategory.system);
@@ -162,34 +169,42 @@ class MuteService {
   // === MUTE MANAGEMENT ===
 
   /// Mute a user by pubkey
-  Future<bool> muteUser(String pubkey, {String? reason, Duration? duration}) async {
+  Future<bool> muteUser(String pubkey,
+      {String? reason, Duration? duration}) async {
     return muteItem(MuteType.user, pubkey, reason: reason, duration: duration);
   }
 
   /// Mute a hashtag
-  Future<bool> muteHashtag(String hashtag, {String? reason, Duration? duration}) async {
+  Future<bool> muteHashtag(String hashtag,
+      {String? reason, Duration? duration}) async {
     // Normalize hashtag (remove # if present, convert to lowercase)
-    final normalizedHashtag = hashtag.startsWith('#') 
-        ? hashtag.substring(1).toLowerCase() 
+    final normalizedHashtag = hashtag.startsWith('#')
+        ? hashtag.substring(1).toLowerCase()
         : hashtag.toLowerCase();
-    return muteItem(MuteType.hashtag, normalizedHashtag, reason: reason, duration: duration);
+    return muteItem(MuteType.hashtag, normalizedHashtag,
+        reason: reason, duration: duration);
   }
 
   /// Mute a keyword or phrase
-  Future<bool> muteKeyword(String keyword, {String? reason, Duration? duration}) async {
-    return muteItem(MuteType.keyword, keyword.toLowerCase(), reason: reason, duration: duration);
+  Future<bool> muteKeyword(String keyword,
+      {String? reason, Duration? duration}) async {
+    return muteItem(MuteType.keyword, keyword.toLowerCase(),
+        reason: reason, duration: duration);
   }
 
   /// Mute an entire thread by event ID
-  Future<bool> muteThread(String eventId, {String? reason, Duration? duration}) async {
-    return muteItem(MuteType.thread, eventId, reason: reason, duration: duration);
+  Future<bool> muteThread(String eventId,
+      {String? reason, Duration? duration}) async {
+    return muteItem(MuteType.thread, eventId,
+        reason: reason, duration: duration);
   }
 
   /// Generic method to mute any type of item
-  Future<bool> muteItem(MuteType type, String value, {String? reason, Duration? duration}) async {
+  Future<bool> muteItem(MuteType type, String value,
+      {String? reason, Duration? duration}) async {
     try {
       final expireAt = duration != null ? DateTime.now().add(duration) : null;
-      
+
       final muteItem = MuteItem(
         type: type,
         value: value,
@@ -213,8 +228,10 @@ class MuteService {
         await _publishMuteListToNostr();
       }
 
-      Log.info('Muted ${type.value}: $value${duration != null ? ' (expires in ${duration.inHours}h)' : ' (permanent)'}',
-          name: 'MuteService', category: LogCategory.system);
+      Log.info(
+          'Muted ${type.value}: $value${duration != null ? ' (expires in ${duration.inHours}h)' : ' (permanent)'}',
+          name: 'MuteService',
+          category: LogCategory.system);
 
       return true;
     } catch (e) {
@@ -265,8 +282,8 @@ class MuteService {
 
   /// Unmute a hashtag
   Future<bool> unmuteHashtag(String hashtag) async {
-    final normalizedHashtag = hashtag.startsWith('#') 
-        ? hashtag.substring(1).toLowerCase() 
+    final normalizedHashtag = hashtag.startsWith('#')
+        ? hashtag.substring(1).toLowerCase()
         : hashtag.toLowerCase();
     return unmuteItem(MuteType.hashtag, normalizedHashtag);
   }
@@ -290,8 +307,8 @@ class MuteService {
 
   /// Check if a hashtag is muted
   bool isHashtagMuted(String hashtag) {
-    final normalizedHashtag = hashtag.startsWith('#') 
-        ? hashtag.substring(1).toLowerCase() 
+    final normalizedHashtag = hashtag.startsWith('#')
+        ? hashtag.substring(1).toLowerCase()
         : hashtag.toLowerCase();
     return _isItemMuted(MuteType.hashtag, normalizedHashtag);
   }
@@ -360,7 +377,7 @@ class MuteService {
   Future<bool> importMuteList(List<MuteItem> items) async {
     try {
       var importedCount = 0;
-      
+
       for (final item in items) {
         if (!_mutedItems.contains(item)) {
           _mutedItems.add(item);
@@ -370,7 +387,7 @@ class MuteService {
 
       if (importedCount > 0) {
         await _saveMutedItems();
-        
+
         // Publish to Nostr if authenticated
         if (_authService.isAuthenticated) {
           await _publishMuteListToNostr();
@@ -462,7 +479,7 @@ class MuteService {
     final before = _mutedItems.length;
     _mutedItems.removeWhere((item) => item.isExpired);
     final after = _mutedItems.length;
-    
+
     if (before != after) {
       Log.debug('Cleaned up ${before - after} expired mutes',
           name: 'MuteService', category: LogCategory.system);
@@ -476,9 +493,12 @@ class MuteService {
     return {
       'total': activeMutes.length,
       'users': activeMutes.where((item) => item.type == MuteType.user).length,
-      'hashtags': activeMutes.where((item) => item.type == MuteType.hashtag).length,
-      'keywords': activeMutes.where((item) => item.type == MuteType.keyword).length,
-      'threads': activeMutes.where((item) => item.type == MuteType.thread).length,
+      'hashtags':
+          activeMutes.where((item) => item.type == MuteType.hashtag).length,
+      'keywords':
+          activeMutes.where((item) => item.type == MuteType.keyword).length,
+      'threads':
+          activeMutes.where((item) => item.type == MuteType.thread).length,
       'temporary': activeMutes.where((item) => !item.isPermanent).length,
       'permanent': activeMutes.where((item) => item.isPermanent).length,
     };
@@ -494,8 +514,8 @@ class MuteService {
         final List<dynamic> itemsData = jsonDecode(mutedItemsJson);
         _mutedItems.clear();
         _mutedItems.addAll(
-          itemsData.map(
-              (json) => MuteItem.fromJson(json as Map<String, dynamic>)),
+          itemsData
+              .map((json) => MuteItem.fromJson(json as Map<String, dynamic>)),
         );
         Log.debug('Loaded ${_mutedItems.length} muted items from storage',
             name: 'MuteService', category: LogCategory.system);

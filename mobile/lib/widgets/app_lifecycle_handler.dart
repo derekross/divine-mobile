@@ -16,12 +16,14 @@ class AppLifecycleHandler extends ConsumerStatefulWidget {
   final Widget child;
 
   @override
-  ConsumerState<AppLifecycleHandler> createState() => _AppLifecycleHandlerState();
+  ConsumerState<AppLifecycleHandler> createState() =>
+      _AppLifecycleHandlerState();
 }
 
 class _AppLifecycleHandlerState extends ConsumerState<AppLifecycleHandler>
     with WidgetsBindingObserver {
   late final BackgroundActivityManager _backgroundManager;
+  bool _tickersEnabled = true;
 
   @override
   void initState() {
@@ -52,6 +54,9 @@ class _AppLifecycleHandlerState extends ConsumerState<AppLifecycleHandler>
           name: 'AppLifecycleHandler',
           category: LogCategory.system,
         );
+        if (!_tickersEnabled) {
+          setState(() => _tickersEnabled = true);
+        }
         visibilityManager.resumeVisibilityBasedPlayback();
 
       case AppLifecycleState.inactive:
@@ -62,7 +67,11 @@ class _AppLifecycleHandlerState extends ConsumerState<AppLifecycleHandler>
           name: 'AppLifecycleHandler',
           category: LogCategory.system,
         );
-        visibilityManager.pauseAllVideos();
+        if (_tickersEnabled) {
+          setState(() => _tickersEnabled = false);
+        }
+        // Execute async to prevent blocking scene update
+        Future.microtask(() => visibilityManager.pauseAllVideos());
 
       case AppLifecycleState.detached:
         // App is being terminated
@@ -71,5 +80,8 @@ class _AppLifecycleHandlerState extends ConsumerState<AppLifecycleHandler>
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) => TickerMode(
+        enabled: _tickersEnabled,
+        child: widget.child,
+      );
 }

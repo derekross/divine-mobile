@@ -144,7 +144,8 @@ void main() {
         expect(videoEvent, isNotNull);
         expect(videoEvent.id, isNotEmpty);
         expect(videoEvent.title, 'Video without URL');
-        expect(videoEvent.videoUrl, isNull); // URL should be null, not cause error
+        expect(
+            videoEvent.videoUrl, isNull); // URL should be null, not cause error
 
         // Cleanup
         await subscription.cancel();
@@ -187,7 +188,7 @@ void main() {
       test('should handle stream errors', () async {
         // ARRANGE
         final eventStreamController = StreamController<Event>.broadcast();
-        
+
         // Subscribe to error stream
         final errorCompleter = Completer<String>();
         final subscription = processor.errorStream.listen((error) {
@@ -322,16 +323,18 @@ void main() {
 
       test('should process multiple events in sequence', () async {
         // ARRANGE
-        final events = List.generate(3, (i) => Event(
-          '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-          32222,
-          [
-            ['d', 'sequence_test_vine_$i'], // Required for kind 32222
-            ['url', 'https://example.com/video$i.mp4'],
-            ['title', 'Video $i'],
-          ],
-          'Video content $i',
-        ));
+        final events = List.generate(
+            3,
+            (i) => Event(
+                  '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+                  32222,
+                  [
+                    ['d', 'sequence_test_vine_$i'], // Required for kind 32222
+                    ['url', 'https://example.com/video$i.mp4'],
+                    ['title', 'Video $i'],
+                  ],
+                  'Video content $i',
+                ));
 
         // Subscribe to video event stream
         final receivedEvents = <VideoEvent>[];

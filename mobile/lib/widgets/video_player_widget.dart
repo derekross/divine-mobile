@@ -1,8 +1,8 @@
-// ABOUTME: VideoPlayerWidget component for displaying videos with Chewie player integration
+// ABOUTME: VideoPlayerWidget component for displaying videos with video_player_media_kit backend
 // ABOUTME: Handles video initialization, controls, error states, and lifecycle management
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chewie/chewie.dart';
+import 'package:openvine/services/image_cache_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/utils/unified_logger.dart';
@@ -10,7 +10,7 @@ import 'package:video_player/video_player.dart';
 
 /// Video player widget with comprehensive state management
 ///
-/// This widget handles video display using Chewie for enhanced controls
+/// This widget handles video display using video_player with video_player_media_kit backend
 /// and provides proper lifecycle management including error handling,
 /// loading states, and memory cleanup.
 class VideoPlayerWidget extends StatefulWidget {
@@ -51,10 +51,10 @@ class VideoPlayerWidget extends StatefulWidget {
 }
 
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
-  ChewieController? _chewieController;
   bool _hasError = false;
   String? _errorMessage;
   bool _isInitializing = false;
+  bool _showControls = false;
 
   @override
   void initState() {
@@ -68,7 +68,6 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
     // Reinitialize if controller changed
     if (widget.controller != oldWidget.controller) {
-      _disposeChewieController();
       _initializePlayer();
     }
 
@@ -80,7 +79,6 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   @override
   void dispose() {
-    _disposeChewieController();
     super.dispose();
   }
 
@@ -107,11 +105,14 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         });
 
         // Listen for initialization
-      // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
+        widget.controller!.addListener(_onControllerUpdate);
         return;
       }
 
-      _createChewieController();
+      setState(() {
+        _isInitializing = false;
+        _hasError = false;
+      });
     } catch (e) {
       _handleError('Failed to initialize video player: $e');
     }
@@ -130,15 +131,19 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         return;
       }
 
-      if (controller.value.isInitialized && _chewieController == null) {
+      if (controller.value.isInitialized) {
         setState(() {
           _isInitializing = false;
+          _hasError = false;
         });
-        _createChewieController();
+
+        // Remove listener once initialized
+        controller.removeListener(_onControllerUpdate);
       }
 
       // Handle video end
-      if (controller.value.position >= controller.value.duration) {
+      if (controller.value.position >= controller.value.duration &&
+          controller.value.duration > Duration.zero) {
         widget.onVideoEnd?.call();
       }
     } catch (e) {
@@ -146,35 +151,15 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     }
   }
 
-  void _createChewieController() {
-    try {
-      _chewieController = ChewieController(
-        videoPlayerController: widget.controller!,
-        autoPlay: widget.isActive,
-        looping: false,
-        showControls: widget.showControls,
-        showControlsOnInitialize: false,
-        errorBuilder: (context, errorMessage) =>
-            _buildErrorWidget(errorMessage),
-      );
-
-      setState(() {
-        _isInitializing = false;
-        _hasError = false;
-      });
-    } catch (e) {
-      _handleError('Failed to create Chewie controller: $e');
-    }
-  }
-
   void _handleActiveStateChange() {
-    if (_chewieController == null) return;
+    final controller = widget.controller;
+    if (controller == null || !controller.value.isInitialized) return;
 
     try {
       if (widget.isActive) {
-        _chewieController!.play();
+        controller.play();
       } else {
-        _chewieController!.pause();
+        controller.pause();
       }
     } catch (e) {
       Log.error('Error handling active state change: $e',
@@ -194,26 +179,25 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         name: 'VideoPlayerWidget', category: LogCategory.ui);
   }
 
-  void _disposeChewieController() {
-    _chewieController?.dispose();
-    _chewieController = null;
-
-    // Remove listener if it was added
-    try {
-      // REFACTORED: Service no longer needs manual listener cleanup
-    } catch (e) {
-      // Ignore disposal errors
-    }
-  }
-
   void _onRetryTap() {
     widget.onVideoError?.call();
     _initializePlayer();
   }
 
+  void _toggleControls() {
+    if (widget.showControls) {
+      setState(() {
+        _showControls = !_showControls;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: widget.onVideoTap,
+        onTap: () {
+          widget.onVideoTap?.call();
+          _toggleControls();
+        },
         child: Container(
           width: double.infinity,
           height: double.infinity,
@@ -229,10 +213,14 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                 _buildErrorWidget(_errorMessage ?? 'Video failed to load')
               else if (_isInitializing || widget.controller == null)
                 _buildLoadingWidget()
-              else if (_chewieController != null)
+              else if (widget.controller?.value.isInitialized ?? false)
                 _buildVideoPlayer()
               else
                 _buildLoadingWidget(),
+
+              // Video controls overlay
+              if (_showControls && widget.showControls && !_hasError)
+                _buildControlsOverlay(),
             ],
           ),
         ),
@@ -241,6 +229,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   Widget _buildThumbnail() => CachedNetworkImage(
         imageUrl: widget.videoEvent.thumbnailUrl!,
         fit: BoxFit.cover,
+        cacheManager: openVineImageCache,
         placeholder: (context, url) => Container(
           color: Colors.grey[900],
         ),
@@ -249,7 +238,40 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         ),
       );
 
-  Widget _buildVideoPlayer() => Chewie(controller: _chewieController!);
+  Widget _buildVideoPlayer() => AspectRatio(
+        aspectRatio: widget.controller!.value.aspectRatio,
+        child: VideoPlayer(widget.controller!),
+      );
+
+  Widget _buildControlsOverlay() => Container(
+        color: Colors.black.withValues(alpha: 0.3),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              IconButton(
+                onPressed: () {
+                  final controller = widget.controller;
+                  if (controller?.value.isInitialized ?? false) {
+                    if (controller!.value.isPlaying) {
+                      controller.pause();
+                    } else {
+                      controller.play();
+                    }
+                  }
+                },
+                icon: Icon(
+                  (widget.controller?.value.isPlaying ?? false)
+                      ? Icons.pause
+                      : Icons.play_arrow,
+                  color: Colors.white,
+                  size: 48,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 
   Widget _buildLoadingWidget() => ColoredBox(
         color: Colors.black.withValues(alpha: 0.7),

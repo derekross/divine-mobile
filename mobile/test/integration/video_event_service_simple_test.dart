@@ -29,8 +29,8 @@ void main() {
 
     setUp(() async {
       // Enable logging for debugging
-      UnifiedLogger.setLogLevel(LogLevel.debug);
-      UnifiedLogger.enableCategories({
+      Log.setLogLevel(LogLevel.debug);
+      Log.enableCategories({
         LogCategory.system,
         LogCategory.relay,
         LogCategory.video,
@@ -44,7 +44,8 @@ void main() {
 
       // Mock basic properties
       when(mockNostrService.isInitialized).thenReturn(true);
-      when(mockNostrService.connectedRelays).thenReturn(['wss://relay3.openvine.co']);
+      when(mockNostrService.connectedRelays)
+          .thenReturn(['wss://relay3.openvine.co']);
       when(mockNostrService.hasKeys).thenReturn(true);
       when(mockNostrService.publicKey).thenReturn('test_pubkey');
       when(mockNostrService.connectedRelayCount).thenReturn(1);
@@ -95,11 +96,10 @@ void main() {
 
       // Subscribe to video feed - this should call the mock
       Log.info('📡 Subscribing to video feed...');
-      final subscriptionFuture =
-          videoEventService.subscribeToVideoFeed(
-            subscriptionType: SubscriptionType.discovery,
-            limit: 10,
-          );
+      final subscriptionFuture = videoEventService.subscribeToVideoFeed(
+        subscriptionType: SubscriptionType.discovery,
+        limit: 10,
+      );
 
       // Verify that subscribeToEvents was called on the mock
       await subscriptionFuture;
@@ -121,8 +121,10 @@ void main() {
 
       // Check if the event was processed
       Log.info('📊 Results after simulated event:');
-      Log.info('  - Events received: ${videoEventService.getEventCount(SubscriptionType.discovery)}');
-      Log.info('  - Has events: ${videoEventService.hasEvents(SubscriptionType.discovery)}');
+      Log.info(
+          '  - Events received: ${videoEventService.getEventCount(SubscriptionType.discovery)}');
+      Log.info(
+          '  - Has events: ${videoEventService.hasEvents(SubscriptionType.discovery)}');
 
       if (videoEventService.hasEvents(SubscriptionType.discovery)) {
         Log.info(
@@ -205,7 +207,10 @@ void main() {
         '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
         32222, // Kind 32222 for addressable video events
         [
-          ['d', 'filtered-test-video-id'], // Required 'd' tag for addressable events
+          [
+            'd',
+            'filtered-test-video-id'
+          ], // Required 'd' tag for addressable events
           ['url', 'https://example.com/filtered-test.mp4'],
           ['title', 'Filtered Test Video'],
         ],

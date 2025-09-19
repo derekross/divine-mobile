@@ -166,7 +166,7 @@ class NativeMacOSCamera {
     try {
       final result = await _channel.invokeMethod<List>('getAvailableCameras');
       if (result == null) return [];
-      
+
       // Safely convert each item to Map<String, dynamic>
       return result.map((item) {
         if (item is Map) {

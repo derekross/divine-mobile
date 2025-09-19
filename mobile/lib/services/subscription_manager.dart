@@ -10,11 +10,11 @@ import 'package:openvine/services/nostr_service_interface.dart';
 /// Manages Nostr subscriptions for video events and other content
 class SubscriptionManager {
   SubscriptionManager(this._nostrService);
-  
+
   final INostrService _nostrService;
   final Map<String, StreamSubscription<Event>> _activeSubscriptions = {};
   final Map<String, StreamController<Event>> _controllers = {};
-  
+
   bool _isDisposed = false;
 
   /// Creates a new subscription with the given parameters
@@ -28,21 +28,21 @@ class SubscriptionManager {
     int priority = 5,
   }) async {
     if (_isDisposed) throw StateError('SubscriptionManager is disposed');
-    
+
     final id = '${name}_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     // Create event stream from NostrService
     final eventStream = _nostrService.subscribeToEvents(filters: filters);
-    
+
     // Set up subscription
     final subscription = eventStream.listen(
       onEvent,
       onError: onError,
       onDone: onComplete,
     );
-    
+
     _activeSubscriptions[id] = subscription;
-    
+
     // Handle timeout if specified
     if (timeout != null) {
       Timer(timeout, () {
@@ -52,7 +52,7 @@ class SubscriptionManager {
         }
       });
     }
-    
+
     return id;
   }
 
@@ -60,7 +60,7 @@ class SubscriptionManager {
   Future<void> cancelSubscription(String subscriptionId) async {
     final subscription = _activeSubscriptions.remove(subscriptionId);
     await subscription?.cancel();
-    
+
     final controller = _controllers.remove(subscriptionId);
     if (controller != null && !controller.isClosed) {
       await controller.close();
@@ -71,14 +71,14 @@ class SubscriptionManager {
   Future<void> cancelAllSubscriptions() async {
     final subscriptions = List.from(_activeSubscriptions.values);
     _activeSubscriptions.clear();
-    
+
     for (final subscription in subscriptions) {
       await subscription.cancel();
     }
-    
+
     final controllers = List.from(_controllers.values);
     _controllers.clear();
-    
+
     for (final controller in controllers) {
       if (!controller.isClosed) {
         await controller.close();
@@ -87,7 +87,8 @@ class SubscriptionManager {
   }
 
   /// Gets the list of active subscription IDs
-  List<String> get activeSubscriptionIds => List.from(_activeSubscriptions.keys);
+  List<String> get activeSubscriptionIds =>
+      List.from(_activeSubscriptions.keys);
 
   /// Gets the count of active subscriptions
   int get activeSubscriptionCount => _activeSubscriptions.length;
@@ -102,7 +103,7 @@ class SubscriptionManager {
     final subscriptionsToCancel = _activeSubscriptions.keys
         .where((id) => id.contains(namePattern))
         .toList();
-    
+
     for (final subscriptionId in subscriptionsToCancel) {
       await cancelSubscription(subscriptionId);
     }
@@ -111,7 +112,7 @@ class SubscriptionManager {
   /// Disposes the subscription manager and all active subscriptions
   Future<void> dispose() async {
     if (_isDisposed) return;
-    
+
     await cancelAllSubscriptions();
     _isDisposed = true;
   }

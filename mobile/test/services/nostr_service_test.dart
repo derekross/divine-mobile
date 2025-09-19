@@ -221,7 +221,7 @@ void main() {
           'npub2def456',
           'npub3ghi789',
         ];
-        
+
         final filter = Filter(
           kinds: [32222], // Video events
           authors: followingPubkeys,
@@ -239,15 +239,15 @@ void main() {
         // This test verifies that our NostrService._convertToEmbeddedFilter
         // properly converts nostr_sdk filters to embedded relay filters
         // with the correct '#' prefix for tag filters
-        
+
         // Create a complex filter with multiple tag types
         final filter = Filter(
           kinds: [32222],
           authors: ['author1', 'author2'],
           t: ['bitcoin', 'lightning'], // hashtags -> #t
-          e: ['event1', 'event2'],      // event refs -> #e
-          p: ['pubkey1', 'pubkey2'],    // pubkey refs -> #p
-          d: ['id1', 'id2'],            // identifiers -> #d
+          e: ['event1', 'event2'], // event refs -> #e
+          p: ['pubkey1', 'pubkey2'], // pubkey refs -> #p
+          d: ['id1', 'id2'], // identifiers -> #d
           since: 1000,
           until: 2000,
           limit: 50,
@@ -261,7 +261,7 @@ void main() {
         //   '#p': ['pubkey1', 'pubkey2'],
         //   '#d': ['id1', 'id2']
         // }
-        
+
         expect(filter.kinds, equals([32222]));
         expect(filter.authors, equals(['author1', 'author2']));
         expect(filter.t, equals(['bitcoin', 'lightning']));

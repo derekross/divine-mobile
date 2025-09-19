@@ -13,7 +13,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
@@ -30,7 +31,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    
+
     super.dispose();
   }
 
@@ -359,11 +360,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     // Navigate to video feed and find this specific video
     Log.info('Navigating to video: $videoEventId',
         name: 'NotificationsScreen', category: LogCategory.ui);
-    
+
     // For now, navigate back to home screen where user can find the video
     // TODO: Implement direct navigation to specific video
     Navigator.of(context).popUntil((route) => route.isFirst);
-    
+
     // Show snackbar to indicate what video we're looking for
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -380,7 +381,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   void _navigateToProfile(BuildContext context, String userPubkey) {
     Log.info('Navigating to profile: $userPubkey',
         name: 'NotificationsScreen', category: LogCategory.ui);
-    
+
     // Import and navigate to profile screen
     Navigator.of(context).pushNamed(
       '/profile',

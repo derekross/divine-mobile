@@ -85,7 +85,7 @@ class FeatureFlagVariant {
 }
 
 /// Feature flag service for Flutter
-class FeatureFlagService  {
+class FeatureFlagService {
   FeatureFlagService({
     required this.apiBaseUrl,
     required this.prefs,
@@ -174,7 +174,6 @@ class FeatureFlagService  {
         // Track analytics
         _trackFlagEvaluation(flagName, decision, attributes);
 
-
         return decision;
       } else {
         Log.error('Feature flag API error: ${response.statusCode}',
@@ -227,7 +226,6 @@ class FeatureFlagService  {
       _decisionCache.clear();
       _cacheExpiry.clear();
     }
-
   }
 
   /// Preload feature flags for better performance
@@ -376,7 +374,6 @@ class FeatureFlagService  {
   void dispose() {
     _decisionCache.clear();
     _cacheExpiry.clear();
-    
   }
 }
 

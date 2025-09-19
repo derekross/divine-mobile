@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/services/hashtag_service.dart';
 import 'package:openvine/services/video_event_service.dart';
+import 'package:openvine/services/subscription_manager.dart';
 
 class MockVideoEventService extends Mock implements VideoEventService {
   @override
@@ -14,14 +15,41 @@ class MockVideoEventService extends Mock implements VideoEventService {
         Invocation.getter(#videoEvents),
       ) as List<VideoEvent>? ??
       <VideoEvent>[];
-      
+
   @override
   List<VideoEvent> get discoveryVideos =>
       super.noSuchMethod(
         Invocation.getter(#discoveryVideos),
       ) as List<VideoEvent>? ??
       <VideoEvent>[];
-      
+
+  @override
+  List<VideoEvent> get homeFeedVideos =>
+      super.noSuchMethod(
+        Invocation.getter(#homeFeedVideos),
+      ) as List<VideoEvent>? ??
+      <VideoEvent>[];
+
+  @override
+  List<VideoEvent> getVideoEventsByHashtags(List<String> hashtags) =>
+      super.noSuchMethod(
+        Invocation.method(#getVideoEventsByHashtags, [hashtags]),
+      ) as List<VideoEvent>? ??
+      <VideoEvent>[];
+
+  @override
+  int getEventCount(SubscriptionType type) =>
+      super.noSuchMethod(
+        Invocation.method(#getEventCount, [type]),
+      ) as int? ??
+      0;
+
+  @override
+  List<VideoEvent> getVideos(SubscriptionType type) =>
+      super.noSuchMethod(
+        Invocation.method(#getVideos, [type]),
+      ) as List<VideoEvent>? ??
+      <VideoEvent>[];
 }
 
 void main() {
@@ -40,6 +68,7 @@ void main() {
 
     test('should return empty list when no videos exist', () {
       when(() => mockVideoService.discoveryVideos).thenReturn([]);
+      when(() => mockVideoService.homeFeedVideos).thenReturn([]);
 
       final hashtags = hashtagService.allHashtags;
       final trending = hashtagService.getTrendingHashtags();
@@ -58,6 +87,7 @@ void main() {
       ];
 
       when(() => mockVideoService.discoveryVideos).thenReturn(videoEvents);
+      when(() => mockVideoService.homeFeedVideos).thenReturn([]);
 
       // Trigger stats update
       hashtagService.dispose();
@@ -83,6 +113,7 @@ void main() {
       ];
 
       when(() => mockVideoService.discoveryVideos).thenReturn(videoEvents);
+      when(() => mockVideoService.homeFeedVideos).thenReturn([]);
 
       // Trigger stats update
       hashtagService.dispose();
@@ -106,6 +137,7 @@ void main() {
       ];
 
       when(() => mockVideoService.discoveryVideos).thenReturn(videoEvents);
+      when(() => mockVideoService.homeFeedVideos).thenReturn([]);
 
       // Trigger stats update
       hashtagService.dispose();
@@ -150,6 +182,7 @@ void main() {
       ];
 
       when(() => mockVideoService.discoveryVideos).thenReturn(videoEvents);
+      when(() => mockVideoService.homeFeedVideos).thenReturn([]);
 
       // Trigger stats update
       hashtagService.dispose();
@@ -175,6 +208,7 @@ void main() {
       ];
 
       when(() => mockVideoService.discoveryVideos).thenReturn(videoEvents);
+      when(() => mockVideoService.homeFeedVideos).thenReturn([]);
 
       // Trigger stats update
       hashtagService.dispose();
@@ -186,7 +220,8 @@ void main() {
       expect(editorsPicks, isNot(contains('ethereum'))); // Only 2 authors < 3
     });
 
-    test('should subscribe to hashtag videos', () async {}, skip: 'Requires complex mocking setup');
+    test('should subscribe to hashtag videos', () async {},
+        skip: 'Requires complex mocking setup');
 
     test('should calculate trending score correctly', () {
       final now = DateTime.now();
@@ -208,6 +243,7 @@ void main() {
       ];
 
       when(() => mockVideoService.discoveryVideos).thenReturn(videoEvents);
+      when(() => mockVideoService.homeFeedVideos).thenReturn([]);
 
       // Trigger stats update
       hashtagService.dispose();

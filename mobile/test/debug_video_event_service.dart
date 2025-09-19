@@ -80,8 +80,8 @@ void main() {
 
   test('Debug: Trace VideoEventService event handling', () async {
     // Enable maximum logging
-    UnifiedLogger.setLogLevel(LogLevel.verbose);
-    UnifiedLogger.enableCategories({
+    Log.setLogLevel(LogLevel.verbose);
+    Log.enableCategories({
       LogCategory.system,
       LogCategory.relay,
       LogCategory.video,
@@ -109,11 +109,14 @@ void main() {
     // Tracking state changes via periodic checks instead of listeners
     void logServiceState(String context) {
       Log.info('📊 VideoEventService state ($context):', name: 'DebugTest');
-      Log.info('  - Event count: ${videoEventService.getEventCount(SubscriptionType.discovery)}',
+      Log.info(
+          '  - Event count: ${videoEventService.getEventCount(SubscriptionType.discovery)}',
           name: 'DebugTest');
-      Log.info('  - Has events: ${videoEventService.hasEvents(SubscriptionType.discovery)}',
+      Log.info(
+          '  - Has events: ${videoEventService.hasEvents(SubscriptionType.discovery)}',
           name: 'DebugTest');
-      Log.info('  - Is subscribed: ${videoEventService.isSubscribed(SubscriptionType.discovery)}',
+      Log.info(
+          '  - Is subscribed: ${videoEventService.isSubscribed(SubscriptionType.discovery)}',
           name: 'DebugTest');
     }
 
@@ -143,7 +146,8 @@ void main() {
 
     // Final check
     logServiceState('final');
-    Log.info('  - Note: Change notifications no longer available after ChangeNotifier removal',
+    Log.info(
+        '  - Note: Change notifications no longer available after ChangeNotifier removal',
         name: 'DebugTest');
 
     if (videoEventService.hasEvents(SubscriptionType.discovery)) {

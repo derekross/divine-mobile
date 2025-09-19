@@ -106,7 +106,7 @@ class ModerationResult {
 
 /// Content moderation service managing mute lists and filtering
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class ContentModerationService  {
+class ContentModerationService {
   ContentModerationService({
     required SharedPreferences prefs,
   }) : _prefs = prefs {
@@ -233,7 +233,6 @@ class ContentModerationService  {
 
     await _saveLocalMuteList();
 
-
     Log.debug('Added to mute list: $type:$value (${reason.name})',
         name: 'ContentModerationService', category: LogCategory.system);
   }
@@ -246,7 +245,6 @@ class ContentModerationService  {
         (entry) => entry.type == type && entry.value == value,
       );
       await _saveLocalMuteList();
-
     }
   }
 
@@ -280,7 +278,6 @@ class ContentModerationService  {
       await _subscribeToMuteList(listId);
       await _saveSubscribedLists();
 
-
       Log.verbose('Subscribed to mute list: $listId',
           name: 'ContentModerationService', category: LogCategory.system);
     } catch (e) {
@@ -296,7 +293,6 @@ class ContentModerationService  {
     _subscribedLists.remove(listId);
     _muteLists.remove(listId);
     await _saveSubscribedLists();
-
   }
 
   /// Update moderation settings
@@ -313,7 +309,6 @@ class ContentModerationService  {
     _autoHideLevel = autoHideLevel ?? _autoHideLevel;
 
     await _saveSettings();
-
   }
 
   /// Get moderation statistics
@@ -510,6 +505,5 @@ class ContentModerationService  {
 
   void dispose() {
     // Clean up any active subscriptions
-    
   }
 }

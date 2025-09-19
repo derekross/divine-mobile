@@ -32,7 +32,7 @@ class FailureEntry {
 
 /// Enhanced circuit breaker for video loading failures
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class VideoCircuitBreaker  {
+class VideoCircuitBreaker {
   VideoCircuitBreaker({
     int failureThreshold = 5,
     Duration openTimeout = const Duration(minutes: 2),
@@ -205,7 +205,6 @@ class VideoCircuitBreaker  {
 
     Log.debug('CircuitBreaker: Reset to closed state',
         name: 'CircuitBreakerService', category: LogCategory.system);
-
   }
 
   /// Clear permanently failed URLs (allow retry)
@@ -218,7 +217,6 @@ class VideoCircuitBreaker  {
 
   void dispose() {
     _recoveryTimer?.cancel();
-    
   }
 
   // Private methods
@@ -243,7 +241,6 @@ class VideoCircuitBreaker  {
 
     Log.debug('CircuitBreaker: Transitioned to OPEN state',
         name: 'CircuitBreakerService', category: LogCategory.system);
-
   }
 
   void _transitionToHalfOpen() {
@@ -261,7 +258,6 @@ class VideoCircuitBreaker  {
 
     Log.debug('CircuitBreaker: Transitioned to HALF-OPEN state',
         name: 'CircuitBreakerService', category: LogCategory.system);
-
   }
 
   void _transitionToClosed() {
@@ -272,7 +268,6 @@ class VideoCircuitBreaker  {
 
     Log.debug('CircuitBreaker: Transitioned to CLOSED state',
         name: 'CircuitBreakerService', category: LogCategory.system);
-
   }
 
   List<FailureEntry> _getRecentFailures(Duration timeWindow) {

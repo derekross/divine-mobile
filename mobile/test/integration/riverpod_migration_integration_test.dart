@@ -35,12 +35,15 @@ void main() {
               builder: (context, ref, child) {
                 // Try to access all critical providers to ensure they're available
                 final videoManager = ref.read(videoManagerProvider.notifier);
-                final contentDeletion = ref.read(contentDeletionServiceProvider);
-                final contentReporting = ref.read(contentReportingServiceProvider);
+                final contentDeletion =
+                    ref.read(contentDeletionServiceProvider);
+                final contentReporting =
+                    ref.read(contentReportingServiceProvider);
                 final curatedList = ref.read(curatedListServiceProvider);
                 final videoSharing = ref.read(videoSharingServiceProvider);
-                final videoVisibility = ref.read(videoVisibilityManagerProvider);
-                
+                final videoVisibility =
+                    ref.read(videoVisibilityManagerProvider);
+
                 return Scaffold(
                   body: Column(
                     children: [
@@ -63,11 +66,16 @@ void main() {
 
       // Verify all provider types are correct
       expect(find.textContaining('VideoManager:'), findsOneWidget);
-      expect(find.textContaining('ContentDeletion: ContentDeletionService'), findsOneWidget);
-      expect(find.textContaining('ContentReporting: ContentReportingService'), findsOneWidget);
-      expect(find.textContaining('CuratedList: CuratedListService'), findsOneWidget);
-      expect(find.textContaining('VideoSharing: VideoSharingService'), findsOneWidget);
-      expect(find.textContaining('VideoVisibility: VideoVisibilityManager'), findsOneWidget);
+      expect(find.textContaining('ContentDeletion: ContentDeletionService'),
+          findsOneWidget);
+      expect(find.textContaining('ContentReporting: ContentReportingService'),
+          findsOneWidget);
+      expect(find.textContaining('CuratedList: CuratedListService'),
+          findsOneWidget);
+      expect(find.textContaining('VideoSharing: VideoSharingService'),
+          findsOneWidget);
+      expect(find.textContaining('VideoVisibility: VideoVisibilityManager'),
+          findsOneWidget);
     });
 
     test('All required services are available through Riverpod providers', () {
@@ -94,7 +102,7 @@ void main() {
       final userProfileService = container.read(userProfileServiceProvider);
       final videoEventService = container.read(videoEventServiceProvider);
       final authService = container.read(authServiceProvider);
-      
+
       // Verify services are properly instantiated
       expect(socialService, isNotNull);
       expect(userProfileService, isNotNull);
@@ -114,7 +122,7 @@ void main() {
         container.read(userProfileServiceProvider);
         container.read(videoEventServiceProvider);
         container.read(authServiceProvider);
-        
+
         // If we get here, all providers work without Provider package
       } catch (e) {
         fail('Provider creation failed, indicating incomplete migration: $e');
@@ -124,7 +132,7 @@ void main() {
     test('No Provider package dependencies remaining in providers', () {
       // This test ensures that the provider container can create all services
       // without any Provider package dependencies
-      
+
       try {
         // Try to access all critical providers - should work without Provider
         container.read(videoManagerProvider.notifier);
@@ -137,7 +145,7 @@ void main() {
         container.read(userProfileServiceProvider);
         container.read(videoEventServiceProvider);
         container.read(authServiceProvider);
-        
+
         // If we get here, all providers work without Provider package
       } catch (e) {
         fail('Provider creation failed, indicating incomplete migration: $e');
@@ -159,7 +167,7 @@ void main() {
           container.read(videoEventServiceProvider),
           container.read(authServiceProvider),
         ];
-        
+
         // If we get here, all services were created successfully
         expect(services.length, equals(9));
         for (final service in services) {

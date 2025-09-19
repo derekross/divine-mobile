@@ -129,8 +129,8 @@ class CurationSet {
 enum CurationSetType {
   editorsPicks(
       'editors_picks', "Editor's Picks", 'Curated collection from divine'),
-  trending(
-      'trending', 'Trending', 'Videos getting the most likes and shares right now');
+  trending('trending', 'Trending',
+      'Videos getting the most likes and shares right now');
 
   const CurationSetType(this.id, this.displayName, this.description);
 

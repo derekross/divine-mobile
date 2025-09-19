@@ -56,7 +56,6 @@ class _InfiniteFeedScreenState extends ConsumerState<InfiniteFeedScreen>
     // Pause all videos when leaving
     _videoManager?.pauseAllVideos();
 
-    
     super.dispose();
   }
 
@@ -98,8 +97,10 @@ class _InfiniteFeedScreenState extends ConsumerState<InfiniteFeedScreen>
         }
       });
 
-      Log.info('InfiniteFeedScreen initialized for ${widget.feedType.displayName}',
-          name: 'InfiniteFeedScreen', category: LogCategory.ui);
+      Log.info(
+          'InfiniteFeedScreen initialized for ${widget.feedType.displayName}',
+          name: 'InfiniteFeedScreen',
+          category: LogCategory.ui);
     } catch (e) {
       Log.error('Failed to initialize InfiniteFeedScreen: $e',
           name: 'InfiniteFeedScreen', category: LogCategory.ui);
@@ -108,20 +109,22 @@ class _InfiniteFeedScreenState extends ConsumerState<InfiniteFeedScreen>
     }
   }
 
-
   void _updateVideosList() {
     final newVideos = _feedService.getVideosForFeed(widget.feedType);
     if (newVideos.length != _videos.length) {
       // Check if this is an append (videos added at the end) or prepend (videos added at start)
       final isInitialLoad = _videos.isEmpty;
       final oldLength = _videos.length;
-      final currentVideoId = _currentIndex < _videos.length ? _videos[_currentIndex].id : null;
-      
+      final currentVideoId =
+          _currentIndex < _videos.length ? _videos[_currentIndex].id : null;
+
       setState(() {
         _videos = newVideos;
-        
+
         // If videos were prepended and we're not on initial load, adjust position
-        if (!isInitialLoad && currentVideoId != null && newVideos.length > oldLength) {
+        if (!isInitialLoad &&
+            currentVideoId != null &&
+            newVideos.length > oldLength) {
           final newIndex = _videos.indexWhere((v) => v.id == currentVideoId);
           if (newIndex != -1 && newIndex != _currentIndex) {
             _currentIndex = newIndex;
@@ -159,7 +162,7 @@ class _InfiniteFeedScreenState extends ConsumerState<InfiniteFeedScreen>
   }
 
   void _loadMoreContent() {
-    if (_feedService.isLoadingFeed(widget.feedType) || 
+    if (_feedService.isLoadingFeed(widget.feedType) ||
         !_feedService.hasMoreContent(widget.feedType)) {
       return;
     }
@@ -178,8 +181,10 @@ class _InfiniteFeedScreenState extends ConsumerState<InfiniteFeedScreen>
     for (var i = preloadStart; i < preloadEnd; i++) {
       if (i < _videos.length) {
         _videoManager!.preloadVideo(_videos[i].id).catchError((error) {
-          Log.warning('Error preloading video ${_videos[i].id.substring(0, 8)}... - $error',
-              name: 'InfiniteFeedScreen', category: LogCategory.ui);
+          Log.warning(
+              'Error preloading video ${_videos[i].id.substring(0, 8)}... - $error',
+              name: 'InfiniteFeedScreen',
+              category: LogCategory.ui);
         });
       }
     }
@@ -225,17 +230,18 @@ class _InfiniteFeedScreenState extends ConsumerState<InfiniteFeedScreen>
 
   Future<void> _refreshFeed() async {
     // Remember the current video ID before refresh
-    final currentVideoId = _currentIndex < _videos.length ? _videos[_currentIndex].id : null;
-    
+    final currentVideoId =
+        _currentIndex < _videos.length ? _videos[_currentIndex].id : null;
+
     await _feedService.refreshFeed(widget.feedType);
-    
+
     // Update the video list
     final newVideos = _feedService.getVideosForFeed(widget.feedType);
-    
+
     if (mounted) {
       setState(() {
         _videos = newVideos;
-        
+
         // If we had a current video, find its new index
         if (currentVideoId != null) {
           final newIndex = _videos.indexWhere((v) => v.id == currentVideoId);
@@ -351,7 +357,8 @@ class _InfiniteFeedScreenState extends ConsumerState<InfiniteFeedScreen>
         controller: _pageController,
         scrollDirection: Axis.vertical,
         onPageChanged: _onPageChanged,
-        itemCount: _videos.length + (_feedService.hasMoreContent(widget.feedType) ? 1 : 0),
+        itemCount: _videos.length +
+            (_feedService.hasMoreContent(widget.feedType) ? 1 : 0),
         itemBuilder: (context, index) {
           // Show loading indicator at the end if we have more content
           if (index >= _videos.length) {

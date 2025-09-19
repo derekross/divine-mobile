@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 
 void main() {
   group('Analytics API Integration Tests', () {
-    
     group('Trending Endpoint (/analytics/trending/vines)', () {
       test('returns valid trending data structure', () async {
         final response = await http.get(
@@ -52,8 +51,9 @@ void main() {
             },
           ).timeout(const Duration(milliseconds: 100)); // Very short timeout
         } catch (e) {
-          // Should handle timeout gracefully - TimeoutException or contains 'timeout'  
-          expect(e.toString().toLowerCase(), anyOf(contains('timeout'), contains('timeoutexception')));
+          // Should handle timeout gracefully - TimeoutException or contains 'timeout'
+          expect(e.toString().toLowerCase(),
+              anyOf(contains('timeout'), contains('timeoutexception')));
         }
       });
     });
@@ -61,7 +61,8 @@ void main() {
     group('View Tracking Endpoint (/analytics/view)', () {
       test('accepts valid view tracking data', () async {
         final viewData = {
-          'eventId': 'test-event-id-for-integration-test-12345678901234567890123456789012',
+          'eventId':
+              'test-event-id-for-integration-test-12345678901234567890123456789012',
           'source': 'integration_test',
           'eventType': 'view_start',
           'creatorPubkey': 'test-creator-pubkey-for-integration-testing',
@@ -70,14 +71,16 @@ void main() {
           'timestamp': DateTime.now().toIso8601String(),
         };
 
-        final response = await http.post(
-          Uri.parse('https://api.openvine.co/analytics/view'),
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'OpenVine-Mobile-Test/1.0',
-          },
-          body: jsonEncode(viewData),
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .post(
+              Uri.parse('https://api.openvine.co/analytics/view'),
+              headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'OpenVine-Mobile-Test/1.0',
+              },
+              body: jsonEncode(viewData),
+            )
+            .timeout(const Duration(seconds: 10));
 
         // Should accept the data (200) or handle gracefully (other status codes)
         expect([200, 202, 400].contains(response.statusCode), isTrue);
@@ -92,37 +95,43 @@ void main() {
           // Missing required fields
         };
 
-        final response = await http.post(
-          Uri.parse('https://api.openvine.co/analytics/view'),
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'OpenVine-Mobile-Test/1.0',
-          },
-          body: jsonEncode(malformedData),
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .post(
+              Uri.parse('https://api.openvine.co/analytics/view'),
+              headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'OpenVine-Mobile-Test/1.0',
+              },
+              body: jsonEncode(malformedData),
+            )
+            .timeout(const Duration(seconds: 10));
 
         // Should handle malformed data gracefully (not crash)
         expect([400, 422, 500].contains(response.statusCode), isTrue);
 
         Log.info('✅ View tracking malformed data test passed');
-        Log.info('   Response status for malformed data: ${response.statusCode}');
+        Log.info(
+            '   Response status for malformed data: ${response.statusCode}');
       });
 
       test('handles view tracking with minimal data', () async {
         final minimalData = {
-          'eventId': 'minimal-test-event-id-for-integration-testing-123456789012',
+          'eventId':
+              'minimal-test-event-id-for-integration-testing-123456789012',
           'source': 'integration_test_minimal',
           'eventType': 'view_start',
         };
 
-        final response = await http.post(
-          Uri.parse('https://api.openvine.co/analytics/view'),
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'OpenVine-Mobile-Test/1.0',
-          },
-          body: jsonEncode(minimalData),
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .post(
+              Uri.parse('https://api.openvine.co/analytics/view'),
+              headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'OpenVine-Mobile-Test/1.0',
+              },
+              body: jsonEncode(minimalData),
+            )
+            .timeout(const Duration(seconds: 10));
 
         // Should handle minimal valid data
         expect([200, 202, 400].contains(response.statusCode), isTrue);
@@ -133,23 +142,27 @@ void main() {
 
       test('handles view tracking timeout gracefully', () async {
         final viewData = {
-          'eventId': 'timeout-test-event-id-for-integration-testing-123456789012',
+          'eventId':
+              'timeout-test-event-id-for-integration-testing-123456789012',
           'source': 'integration_test_timeout',
           'eventType': 'view_start',
         };
 
         try {
-          await http.post(
-            Uri.parse('https://api.openvine.co/analytics/view'),
-            headers: {
-              'Content-Type': 'application/json',
-              'User-Agent': 'OpenVine-Mobile-Test/1.0',
-            },
-            body: jsonEncode(viewData),
-          ).timeout(const Duration(milliseconds: 50)); // Very short timeout
+          await http
+              .post(
+                Uri.parse('https://api.openvine.co/analytics/view'),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'OpenVine-Mobile-Test/1.0',
+                },
+                body: jsonEncode(viewData),
+              )
+              .timeout(const Duration(milliseconds: 50)); // Very short timeout
         } catch (e) {
           // Should handle timeout gracefully - TimeoutException or contains 'timeout'
-          expect(e.toString().toLowerCase(), anyOf(contains('timeout'), contains('timeoutexception')));
+          expect(e.toString().toLowerCase(),
+              anyOf(contains('timeout'), contains('timeoutexception')));
         }
       });
     });
@@ -173,7 +186,8 @@ void main() {
         // Test with intentionally invalid domain
         try {
           await http.get(
-            Uri.parse('https://nonexistent-analytics-domain.invalid/analytics/trending/vines'),
+            Uri.parse(
+                'https://nonexistent-analytics-domain.invalid/analytics/trending/vines'),
             headers: {
               'Accept': 'application/json',
               'User-Agent': 'OpenVine-Mobile-Test/1.0',
@@ -191,7 +205,7 @@ void main() {
     group('API Health & Performance', () {
       test('trending endpoint responds within reasonable time', () async {
         final stopwatch = Stopwatch()..start();
-        
+
         final response = await http.get(
           Uri.parse('https://api.openvine.co/analytics/trending/vines'),
           headers: {
@@ -201,9 +215,10 @@ void main() {
         ).timeout(const Duration(seconds: 10));
 
         stopwatch.stop();
-        
+
         expect(response.statusCode, 200);
-        expect(stopwatch.elapsedMilliseconds, lessThan(5000)); // Should respond within 5 seconds
+        expect(stopwatch.elapsedMilliseconds,
+            lessThan(5000)); // Should respond within 5 seconds
 
         Log.info('✅ Trending API performance test passed');
         Log.info('   Response time: ${stopwatch.elapsedMilliseconds}ms');
@@ -211,26 +226,30 @@ void main() {
 
       test('view tracking endpoint responds within reasonable time', () async {
         final stopwatch = Stopwatch()..start();
-        
+
         final viewData = {
-          'eventId': 'perf-test-event-id-for-integration-testing-123456789012345',
+          'eventId':
+              'perf-test-event-id-for-integration-testing-123456789012345',
           'source': 'integration_test_performance',
           'eventType': 'view_start',
         };
 
-        final response = await http.post(
-          Uri.parse('https://api.openvine.co/analytics/view'),
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'OpenVine-Mobile-Test/1.0',
-          },
-          body: jsonEncode(viewData),
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .post(
+              Uri.parse('https://api.openvine.co/analytics/view'),
+              headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'OpenVine-Mobile-Test/1.0',
+              },
+              body: jsonEncode(viewData),
+            )
+            .timeout(const Duration(seconds: 10));
 
         stopwatch.stop();
-        
+
         // Should respond quickly for analytics
-        expect(stopwatch.elapsedMilliseconds, lessThan(3000)); // Should respond within 3 seconds
+        expect(stopwatch.elapsedMilliseconds,
+            lessThan(3000)); // Should respond within 3 seconds
 
         Log.info('✅ View tracking API performance test passed');
         Log.info('   Response time: ${stopwatch.elapsedMilliseconds}ms');

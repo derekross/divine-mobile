@@ -31,32 +31,32 @@ final performSearchProvider = Provider<Future<void> Function(String)>((ref) {
   return (String query) async {
     final searchNotifier = ref.read(searchStateProvider.notifier);
     final videoEventService = ref.read(videoEventServiceProvider);
-    
+
     if (query.trim().isEmpty) {
       searchNotifier.state = const SearchState.initial();
       return;
     }
-    
+
     try {
       searchNotifier.state = SearchState.loading(query);
-      
+
       Log.info('🔍 Starting search for: "$query"',
           name: 'SearchProvider', category: LogCategory.ui);
-      
+
       // Clear previous results
       videoEventService.clearSearchResults();
-      
+
       // Start search
       await videoEventService.searchVideos(query);
-      
+
       // Wait a moment for results to populate
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // Get results
       final results = videoEventService.searchResults;
-      
+
       searchNotifier.state = SearchState.success(results, query);
-      
+
       Log.info('🔍 Search completed. Found ${results.length} results',
           name: 'SearchProvider', category: LogCategory.ui);
     } catch (e) {
@@ -71,11 +71,12 @@ final clearSearchProvider = Provider<void Function()>((ref) {
   return () {
     final searchNotifier = ref.read(searchStateProvider.notifier);
     final videoEventService = ref.read(videoEventServiceProvider);
-    
+
     searchNotifier.state = const SearchState.initial();
     videoEventService.clearSearchResults();
-    
-    Log.debug('Search cleared', name: 'SearchProvider', category: LogCategory.ui);
+
+    Log.debug('Search cleared',
+        name: 'SearchProvider', category: LogCategory.ui);
   };
 });
 
@@ -86,59 +87,61 @@ class SearchNotifier extends _$SearchNotifier {
   SearchState build() {
     return const SearchState.initial();
   }
-  
+
   Future<void> search(String query) async {
     if (query.trim().isEmpty) {
       state = const SearchState.initial();
       return;
     }
-    
+
     final videoEventService = ref.read(videoEventServiceProvider);
-    
+
     try {
       state = SearchState.loading(query);
-      
+
       Log.info('🔍 SearchNotifier: Starting search for: "$query"',
           name: 'SearchProvider', category: LogCategory.ui);
-      
+
       // Clear previous results
       videoEventService.clearSearchResults();
-      
+
       // Start search
       await videoEventService.searchVideos(query);
-      
+
       // Wait for results to populate
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // Get results
       final results = videoEventService.searchResults;
-      
+
       state = SearchState.success(results, query);
-      
-      Log.info('🔍 SearchNotifier: Search completed. Found ${results.length} results',
-          name: 'SearchProvider', category: LogCategory.ui);
+
+      Log.info(
+          '🔍 SearchNotifier: Search completed. Found ${results.length} results',
+          name: 'SearchProvider',
+          category: LogCategory.ui);
     } catch (e) {
       Log.error('SearchNotifier: Search failed: $e',
           name: 'SearchProvider', category: LogCategory.ui);
       state = SearchState.error(e.toString(), query);
     }
   }
-  
+
   void clear() {
     final videoEventService = ref.read(videoEventServiceProvider);
-    
+
     state = const SearchState.initial();
     videoEventService.clearSearchResults();
-    
-    Log.debug('SearchNotifier: Search cleared', 
+
+    Log.debug('SearchNotifier: Search cleared',
         name: 'SearchProvider', category: LogCategory.ui);
   }
-  
+
   Future<void> searchByHashtag(String hashtag) async {
     final cleanHashtag = hashtag.startsWith('#') ? hashtag : '#$hashtag';
     await search(cleanHashtag);
   }
-  
+
   Future<void> searchWithFilters({
     required String query,
     List<String>? authors,
@@ -150,18 +153,18 @@ class SearchNotifier extends _$SearchNotifier {
       state = const SearchState.initial();
       return;
     }
-    
+
     final videoEventService = ref.read(videoEventServiceProvider);
-    
+
     try {
       state = SearchState.loading(query);
-      
+
       Log.info('🔍 SearchNotifier: Starting filtered search for: "$query"',
           name: 'SearchProvider', category: LogCategory.ui);
-      
+
       // Clear previous results
       videoEventService.clearSearchResults();
-      
+
       // Start filtered search
       await videoEventService.searchVideosWithFilters(
         query: query,
@@ -170,17 +173,19 @@ class SearchNotifier extends _$SearchNotifier {
         until: until,
         limit: limit,
       );
-      
+
       // Wait for results to populate
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // Get results
       final results = videoEventService.searchResults;
-      
+
       state = SearchState.success(results, query);
-      
-      Log.info('🔍 SearchNotifier: Filtered search completed. Found ${results.length} results',
-          name: 'SearchProvider', category: LogCategory.ui);
+
+      Log.info(
+          '🔍 SearchNotifier: Filtered search completed. Found ${results.length} results',
+          name: 'SearchProvider',
+          category: LogCategory.ui);
     } catch (e) {
       Log.error('SearchNotifier: Filtered search failed: $e',
           name: 'SearchProvider', category: LogCategory.ui);

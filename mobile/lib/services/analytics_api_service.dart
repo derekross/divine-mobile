@@ -96,10 +96,10 @@ class TopCreator {
 class AnalyticsApiService {
   static const String baseUrl = 'https://api.openvine.co';
   static const Duration cacheTimeout = Duration(minutes: 5);
-  
+
   final INostrService _nostrService;
   final VideoEventService _videoEventService;
-  
+
   // Cache for trending data
   List<TrendingVideo> _trendingVideosCache = [];
   List<TrendingHashtag> _trendingHashtagsCache = [];
@@ -107,15 +107,15 @@ class AnalyticsApiService {
   DateTime? _lastTrendingVideosFetch;
   DateTime? _lastTrendingHashtagsFetch;
   DateTime? _lastTopCreatorsFetch;
-  
+
   // Track missing videos to avoid repeated fetch attempts
   final Set<String> _missingVideoIds = {};
-  
+
   AnalyticsApiService({
     required INostrService nostrService,
     required VideoEventService videoEventService,
-  }) : _nostrService = nostrService,
-       _videoEventService = videoEventService;
+  })  : _nostrService = nostrService,
+        _videoEventService = videoEventService;
 
   /// Fetch trending videos with viral scoring
   Future<List<VideoEvent>> getTrendingVideos({
@@ -124,12 +124,14 @@ class AnalyticsApiService {
     bool forceRefresh = false,
   }) async {
     // Check cache
-    if (!forceRefresh && 
+    if (!forceRefresh &&
         _lastTrendingVideosFetch != null &&
         DateTime.now().difference(_lastTrendingVideosFetch!).inMinutes < 5 &&
         _trendingVideosCache.isNotEmpty) {
-      Log.debug('📊 Using cached trending videos (${_trendingVideosCache.length} items)',
-          name: 'AnalyticsApiService', category: LogCategory.video);
+      Log.debug(
+          '📊 Using cached trending videos (${_trendingVideosCache.length} items)',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
       return _trendingVideosCache
           .where((tv) => tv.localVideo != null)
           .map((tv) => tv.localVideo!)
@@ -137,13 +139,18 @@ class AnalyticsApiService {
     }
 
     try {
-      Log.info('📊 Fetching trending videos from API (window: $timeWindow, limit: $limit)',
-          name: 'AnalyticsApiService', category: LogCategory.video);
-      Log.info('📊 URL: $baseUrl/analytics/trending/vines?window=$timeWindow&limit=$limit',
-          name: 'AnalyticsApiService', category: LogCategory.video);
+      Log.info(
+          '📊 Fetching trending videos from API (window: $timeWindow, limit: $limit)',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
+      Log.info(
+          '📊 URL: $baseUrl/analytics/trending/vines?window=$timeWindow&limit=$limit',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
 
       final response = await http.get(
-        Uri.parse('$baseUrl/analytics/trending/vines?window=$timeWindow&limit=$limit'),
+        Uri.parse(
+            '$baseUrl/analytics/trending/vines?window=$timeWindow&limit=$limit'),
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'divine-Mobile/1.0',
@@ -155,7 +162,7 @@ class AnalyticsApiService {
         Log.debug('📊 Response data keys: ${data.keys}',
             name: 'AnalyticsApiService', category: LogCategory.video);
         final videosData = data['vines'] as List<dynamic>? ?? [];
-        
+
         Log.info('📊 Received ${videosData.length} trending videos from API',
             name: 'AnalyticsApiService', category: LogCategory.video);
         if (videosData.isNotEmpty) {
@@ -164,37 +171,42 @@ class AnalyticsApiService {
         }
 
         // Parse trending videos
-        _trendingVideosCache = videosData
-            .map((v) => TrendingVideo.fromJson(v))
-            .toList();
-        
+        _trendingVideosCache =
+            videosData.map((v) => TrendingVideo.fromJson(v)).toList();
+
         // Find local videos and fetch missing ones
         await _populateLocalVideos();
-        
+
         _lastTrendingVideosFetch = DateTime.now();
-        
+
         // Return only videos we have locally
         final localVideos = _trendingVideosCache
             .where((tv) => tv.localVideo != null)
             .map((tv) => tv.localVideo!)
             .toList();
-            
-        Log.info('✅ Returning ${localVideos.length} trending videos with local data',
-            name: 'AnalyticsApiService', category: LogCategory.video);
-            
+
+        Log.info(
+            '✅ Returning ${localVideos.length} trending videos with local data',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
+
         return localVideos;
       } else {
-        final url = '$baseUrl/analytics/trending/vines?window=$timeWindow&limit=$limit';
+        final url =
+            '$baseUrl/analytics/trending/vines?window=$timeWindow&limit=$limit';
         Log.error('❌ Failed to fetch trending videos: ${response.statusCode}',
             name: 'AnalyticsApiService', category: LogCategory.video);
         Log.error('   Request URL: $url',
             name: 'AnalyticsApiService', category: LogCategory.video);
-        Log.error('   Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
-            name: 'AnalyticsApiService', category: LogCategory.video);
+        Log.error(
+            '   Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
         return [];
       }
     } catch (e) {
-      final url = '$baseUrl/analytics/trending/vines?window=$timeWindow&limit=$limit';
+      final url =
+          '$baseUrl/analytics/trending/vines?window=$timeWindow&limit=$limit';
       Log.error('❌ Error fetching trending videos: $e',
           name: 'AnalyticsApiService', category: LogCategory.video);
       Log.error('   Request URL: $url',
@@ -210,21 +222,26 @@ class AnalyticsApiService {
     bool forceRefresh = false,
   }) async {
     // Check cache
-    if (!forceRefresh && 
+    if (!forceRefresh &&
         _lastTrendingHashtagsFetch != null &&
         DateTime.now().difference(_lastTrendingHashtagsFetch!).inMinutes < 5 &&
         _trendingHashtagsCache.isNotEmpty) {
-      Log.debug('📊 Using cached trending hashtags (${_trendingHashtagsCache.length} items)',
-          name: 'AnalyticsApiService', category: LogCategory.video);
+      Log.debug(
+          '📊 Using cached trending hashtags (${_trendingHashtagsCache.length} items)',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
       return _trendingHashtagsCache;
     }
 
     try {
-      Log.info('📊 Fetching trending hashtags from API (window: $timeWindow, limit: $limit)',
-          name: 'AnalyticsApiService', category: LogCategory.video);
+      Log.info(
+          '📊 Fetching trending hashtags from API (window: $timeWindow, limit: $limit)',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
 
       final response = await http.get(
-        Uri.parse('$baseUrl/analytics/trending/hashtags?window=$timeWindow&limit=$limit'),
+        Uri.parse(
+            '$baseUrl/analytics/trending/hashtags?window=$timeWindow&limit=$limit'),
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'divine-Mobile/1.0',
@@ -234,29 +251,34 @@ class AnalyticsApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final hashtagsData = data['hashtags'] as List<dynamic>? ?? [];
-        
-        Log.info('📊 Received ${hashtagsData.length} trending hashtags from API',
-            name: 'AnalyticsApiService', category: LogCategory.video);
 
-        _trendingHashtagsCache = hashtagsData
-            .map((h) => TrendingHashtag.fromJson(h))
-            .toList();
-        
+        Log.info(
+            '📊 Received ${hashtagsData.length} trending hashtags from API',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
+
+        _trendingHashtagsCache =
+            hashtagsData.map((h) => TrendingHashtag.fromJson(h)).toList();
+
         _lastTrendingHashtagsFetch = DateTime.now();
-        
+
         return _trendingHashtagsCache;
       } else {
-        final url = '$baseUrl/analytics/trending/hashtags?window=$timeWindow&limit=$limit';
+        final url =
+            '$baseUrl/analytics/trending/hashtags?window=$timeWindow&limit=$limit';
         Log.error('❌ Failed to fetch trending hashtags: ${response.statusCode}',
             name: 'AnalyticsApiService', category: LogCategory.video);
         Log.error('   Request URL: $url',
             name: 'AnalyticsApiService', category: LogCategory.video);
-        Log.error('   Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
-            name: 'AnalyticsApiService', category: LogCategory.video);
+        Log.error(
+            '   Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
         return [];
       }
     } catch (e) {
-      final url = '$baseUrl/analytics/trending/hashtags?window=$timeWindow&limit=$limit';
+      final url =
+          '$baseUrl/analytics/trending/hashtags?window=$timeWindow&limit=$limit';
       Log.error('❌ Error fetching trending hashtags: $e',
           name: 'AnalyticsApiService', category: LogCategory.video);
       Log.error('   Request URL: $url',
@@ -272,21 +294,26 @@ class AnalyticsApiService {
     bool forceRefresh = false,
   }) async {
     // Check cache
-    if (!forceRefresh && 
+    if (!forceRefresh &&
         _lastTopCreatorsFetch != null &&
         DateTime.now().difference(_lastTopCreatorsFetch!).inMinutes < 5 &&
         _topCreatorsCache.isNotEmpty) {
-      Log.debug('📊 Using cached top creators (${_topCreatorsCache.length} items)',
-          name: 'AnalyticsApiService', category: LogCategory.video);
+      Log.debug(
+          '📊 Using cached top creators (${_topCreatorsCache.length} items)',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
       return _topCreatorsCache;
     }
 
     try {
-      Log.info('📊 Fetching top creators from API (window: $timeWindow, limit: $limit)',
-          name: 'AnalyticsApiService', category: LogCategory.video);
+      Log.info(
+          '📊 Fetching top creators from API (window: $timeWindow, limit: $limit)',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
 
       final response = await http.get(
-        Uri.parse('$baseUrl/analytics/trending/creators?window=$timeWindow&limit=$limit'),
+        Uri.parse(
+            '$baseUrl/analytics/trending/creators?window=$timeWindow&limit=$limit'),
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'divine-Mobile/1.0',
@@ -296,29 +323,32 @@ class AnalyticsApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final creatorsData = data['creators'] as List<dynamic>? ?? [];
-        
+
         Log.info('📊 Received ${creatorsData.length} top creators from API',
             name: 'AnalyticsApiService', category: LogCategory.video);
 
-        _topCreatorsCache = creatorsData
-            .map((c) => TopCreator.fromJson(c))
-            .toList();
-        
+        _topCreatorsCache =
+            creatorsData.map((c) => TopCreator.fromJson(c)).toList();
+
         _lastTopCreatorsFetch = DateTime.now();
-        
+
         return _topCreatorsCache;
       } else {
-        final url = '$baseUrl/analytics/trending/creators?window=$timeWindow&limit=$limit';
+        final url =
+            '$baseUrl/analytics/trending/creators?window=$timeWindow&limit=$limit';
         Log.error('❌ Failed to fetch top creators: ${response.statusCode}',
             name: 'AnalyticsApiService', category: LogCategory.video);
         Log.error('   Request URL: $url',
             name: 'AnalyticsApiService', category: LogCategory.video);
-        Log.error('   Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
-            name: 'AnalyticsApiService', category: LogCategory.video);
+        Log.error(
+            '   Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
         return [];
       }
     } catch (e) {
-      final url = '$baseUrl/analytics/trending/creators?window=$timeWindow&limit=$limit';
+      final url =
+          '$baseUrl/analytics/trending/creators?window=$timeWindow&limit=$limit';
       Log.error('❌ Error fetching top creators: $e',
           name: 'AnalyticsApiService', category: LogCategory.video);
       Log.error('   Request URL: $url',
@@ -334,11 +364,14 @@ class AnalyticsApiService {
     int limit = 20,
   }) async {
     try {
-      Log.info('📊 Fetching related videos for $videoId (algorithm: $algorithm)',
-          name: 'AnalyticsApiService', category: LogCategory.video);
+      Log.info(
+          '📊 Fetching related videos for $videoId (algorithm: $algorithm)',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
 
       final response = await http.get(
-        Uri.parse('$baseUrl/analytics/vines/$videoId/related?algorithm=$algorithm&limit=$limit'),
+        Uri.parse(
+            '$baseUrl/analytics/vines/$videoId/related?algorithm=$algorithm&limit=$limit'),
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'divine-Mobile/1.0',
@@ -348,7 +381,7 @@ class AnalyticsApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final videosData = data['vines'] as List<dynamic>? ?? [];
-        
+
         Log.info('📊 Received ${videosData.length} related videos from API',
             name: 'AnalyticsApiService', category: LogCategory.video);
 
@@ -358,28 +391,34 @@ class AnalyticsApiService {
             .where((id) => id != null && id.isNotEmpty)
             .cast<String>()
             .toList();
-            
+
         if (relatedIds.isEmpty) return [];
-        
+
         // Find local videos and fetch missing ones
         final localVideos = await _fetchVideosByIds(relatedIds);
-        
-        Log.info('✅ Returning ${localVideos.length} related videos with local data',
-            name: 'AnalyticsApiService', category: LogCategory.video);
-            
+
+        Log.info(
+            '✅ Returning ${localVideos.length} related videos with local data',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
+
         return localVideos;
       } else {
-        final url = '$baseUrl/analytics/vines/$videoId/related?algorithm=$algorithm&limit=$limit';
+        final url =
+            '$baseUrl/analytics/vines/$videoId/related?algorithm=$algorithm&limit=$limit';
         Log.error('❌ Failed to fetch related videos: ${response.statusCode}',
             name: 'AnalyticsApiService', category: LogCategory.video);
         Log.error('   Request URL: $url',
             name: 'AnalyticsApiService', category: LogCategory.video);
-        Log.error('   Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
-            name: 'AnalyticsApiService', category: LogCategory.video);
+        Log.error(
+            '   Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
         return [];
       }
     } catch (e) {
-      final url = '$baseUrl/analytics/vines/$videoId/related?algorithm=$algorithm&limit=$limit';
+      final url =
+          '$baseUrl/analytics/vines/$videoId/related?algorithm=$algorithm&limit=$limit';
       Log.error('❌ Error fetching related videos: $e',
           name: 'AnalyticsApiService', category: LogCategory.video);
       Log.error('   Request URL: $url',
@@ -392,13 +431,13 @@ class AnalyticsApiService {
   Future<void> _populateLocalVideos() async {
     final allVideos = _videoEventService.discoveryVideos;
     final missingIds = <String>[];
-    
+
     // First pass: find local videos
     for (final trendingVideo in _trendingVideosCache) {
       if (_missingVideoIds.contains(trendingVideo.eventId)) {
         continue; // Skip known missing videos
       }
-      
+
       final localVideo = allVideos.firstWhere(
         (v) => v.id == trendingVideo.eventId,
         orElse: () => VideoEvent(
@@ -409,7 +448,7 @@ class AnalyticsApiService {
           timestamp: DateTime.now(),
         ),
       );
-      
+
       if (localVideo.id.isNotEmpty) {
         // Update cache with local video
         final index = _trendingVideosCache.indexOf(trendingVideo);
@@ -425,14 +464,16 @@ class AnalyticsApiService {
         missingIds.add(trendingVideo.eventId);
       }
     }
-    
+
     // Fetch missing videos from relays
     if (missingIds.isNotEmpty) {
-      Log.info('📡 Fetching ${missingIds.length} missing trending videos from relays',
-          name: 'AnalyticsApiService', category: LogCategory.video);
-      
+      Log.info(
+          '📡 Fetching ${missingIds.length} missing trending videos from relays',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
+
       final fetchedVideos = await _fetchVideosByIds(missingIds);
-      
+
       // Update cache with fetched videos
       for (final video in fetchedVideos) {
         final trendingVideo = _trendingVideosCache.firstWhere(
@@ -445,7 +486,7 @@ class AnalyticsApiService {
             viralScore: 0,
           ),
         );
-        
+
         if (trendingVideo.eventId.isNotEmpty) {
           final index = _trendingVideosCache.indexOf(trendingVideo);
           _trendingVideosCache[index] = TrendingVideo(
@@ -458,15 +499,18 @@ class AnalyticsApiService {
           );
         }
       }
-      
+
       // Mark permanently missing videos
       final fetchedIds = fetchedVideos.map((v) => v.id).toSet();
-      final actuallyMissing = missingIds.where((id) => !fetchedIds.contains(id));
+      final actuallyMissing =
+          missingIds.where((id) => !fetchedIds.contains(id));
       _missingVideoIds.addAll(actuallyMissing);
-      
+
       if (actuallyMissing.isNotEmpty) {
-        Log.warning('🚫 Marked ${actuallyMissing.length} videos as permanently missing',
-            name: 'AnalyticsApiService', category: LogCategory.video);
+        Log.warning(
+            '🚫 Marked ${actuallyMissing.length} videos as permanently missing',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
       }
     }
   }
@@ -474,51 +518,56 @@ class AnalyticsApiService {
   /// Fetch videos by IDs from relays
   Future<List<VideoEvent>> _fetchVideosByIds(List<String> ids) async {
     if (ids.isEmpty) return [];
-    
+
     Log.info('🔄 Attempting to fetch ${ids.length} videos from relays',
         name: 'AnalyticsApiService', category: LogCategory.video);
     Log.info('   First few IDs: ${ids.take(3).join(', ')}',
         name: 'AnalyticsApiService', category: LogCategory.video);
-    
+
     try {
       // Check relay connection status first
       final connectedRelays = _nostrService.connectedRelays;
       Log.info('📡 Connected relays: $connectedRelays',
           name: 'AnalyticsApiService', category: LogCategory.video);
-      
+
       if (!connectedRelays.contains('wss://relay3.openvine.co')) {
-        Log.warning('⚠️ Not connected to relay3.openvine.co - attempting to add',
-            name: 'AnalyticsApiService', category: LogCategory.video);
+        Log.warning(
+            '⚠️ Not connected to relay3.openvine.co - attempting to add',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
         await _nostrService.addRelay('wss://relay3.openvine.co');
       }
-      
+
       final filter = Filter(ids: ids);
       Log.info('📤 Creating subscription for event IDs',
           name: 'AnalyticsApiService', category: LogCategory.video);
-      
+
       final eventStream = _nostrService.subscribeToEvents(filters: [filter]);
-      
+
       final fetchedVideos = <VideoEvent>[];
       final completer = Completer<void>();
       late StreamSubscription<Event> subscription;
-      
+
       subscription = eventStream.listen(
         (event) {
           try {
             final video = VideoEvent.fromNostrEvent(event);
             fetchedVideos.add(video);
             _videoEventService.addVideoEvent(video); // Cache it
-            
-            Log.info('📹 Fetched video from relay: ${video.title ?? video.id.substring(0, 8)}',
-                name: 'AnalyticsApiService', category: LogCategory.video);
+
+            Log.info(
+                '📹 Fetched video from relay: ${video.title ?? video.id.substring(0, 8)}',
+                name: 'AnalyticsApiService',
+                category: LogCategory.video);
             Log.info('   Event ID: ${video.id}',
                 name: 'AnalyticsApiService', category: LogCategory.video);
             Log.info('   Thumbnail URL: ${video.thumbnailUrl}',
                 name: 'AnalyticsApiService', category: LogCategory.video);
             Log.info('   Blurhash: ${video.blurhash}',
                 name: 'AnalyticsApiService', category: LogCategory.video);
-            
-            if (fetchedVideos.length >= ids.length || fetchedVideos.length >= 10) {
+
+            if (fetchedVideos.length >= ids.length ||
+                fetchedVideos.length >= 10) {
               subscription.cancel();
               if (!completer.isCompleted) completer.complete();
             }
@@ -538,25 +587,31 @@ class AnalyticsApiService {
           if (!completer.isCompleted) completer.complete();
         },
       );
-      
+
       // Wait for completion or timeout (increase timeout for relay sync)
       await Future.any([
         completer.future,
         Future.delayed(const Duration(seconds: 10)), // Increased timeout
       ]);
-      
+
       await subscription.cancel();
-      
-      Log.info('✅ Fetched ${fetchedVideos.length}/${ids.length} videos from relays',
-          name: 'AnalyticsApiService', category: LogCategory.video);
-      
+
+      Log.info(
+          '✅ Fetched ${fetchedVideos.length}/${ids.length} videos from relays',
+          name: 'AnalyticsApiService',
+          category: LogCategory.video);
+
       if (fetchedVideos.isEmpty && ids.isNotEmpty) {
-        Log.error('❌ CRITICAL: No videos fetched despite having ${ids.length} IDs to fetch',
-            name: 'AnalyticsApiService', category: LogCategory.video);
-        Log.error('   This suggests the embedded relay is not syncing with external relays',
-            name: 'AnalyticsApiService', category: LogCategory.video);
+        Log.error(
+            '❌ CRITICAL: No videos fetched despite having ${ids.length} IDs to fetch',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
+        Log.error(
+            '   This suggests the embedded relay is not syncing with external relays',
+            name: 'AnalyticsApiService',
+            category: LogCategory.video);
       }
-      
+
       return fetchedVideos;
     } catch (e) {
       Log.error('Failed to fetch videos from relays: $e',
@@ -564,7 +619,7 @@ class AnalyticsApiService {
       return [];
     }
   }
-  
+
   /// Clear all caches
   void clearCache() {
     _trendingVideosCache.clear();
@@ -574,7 +629,7 @@ class AnalyticsApiService {
     _lastTrendingHashtagsFetch = null;
     _lastTopCreatorsFetch = null;
     _missingVideoIds.clear();
-    
+
     Log.info('🧹 Cleared all analytics cache',
         name: 'AnalyticsApiService', category: LogCategory.system);
   }

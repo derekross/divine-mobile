@@ -22,11 +22,11 @@ void main() {
 
     setUp(() {
       mockVideoEventService = MockVideoEventService();
-      
+
       // Setup basic mocks
       when(mockVideoEventService.searchResults).thenReturn([]);
       // Note: isSearching and searchQuery properties removed during embedded relay refactor
-      
+
       container = ProviderContainer(
         overrides: [
           videoEventServiceProvider.overrideWithValue(mockVideoEventService),
@@ -96,12 +96,12 @@ void main() {
         final loadingState = SearchState.loading('test');
         expect(loadingState.isLoading, isTrue);
         expect(loadingState.query, equals('test'));
-        
+
         final successState = SearchState.success([], 'test');
         expect(successState.hasResults, isTrue);
         expect(successState.query, equals('test'));
         expect(successState.results, isEmpty);
-        
+
         final errorState = SearchState.error('error', 'test');
         expect(errorState.hasError, isTrue);
         expect(errorState.query, equals('test'));

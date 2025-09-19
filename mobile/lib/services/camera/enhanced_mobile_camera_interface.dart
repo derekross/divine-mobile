@@ -14,12 +14,12 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
   List<CameraDescription> _availableCameras = [];
   int _currentCameraIndex = 0;
   bool _isRecording = false;
-  
+
   // Zoom and focus tracking
   double _currentZoomLevel = 1.0;
   double _minZoomLevel = 1.0;
   double _maxZoomLevel = 1.0;
-  
+
   // Flash mode tracking
   FlashMode _currentFlashMode = FlashMode.auto;
 
@@ -46,25 +46,27 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
 
     final camera = _availableCameras[_currentCameraIndex];
     _controller = CameraController(
-      camera, 
-      ResolutionPreset.high, 
+      camera,
+      ResolutionPreset.high,
       enableAudio: true,
       imageFormatGroup: ImageFormatGroup.yuv420,
     );
-    
+
     await _controller!.initialize();
     await _controller!.prepareForVideoRecording();
-    
+
     // Initialize zoom levels
     _minZoomLevel = await _controller!.getMinZoomLevel();
     _maxZoomLevel = await _controller!.getMaxZoomLevel();
     _currentZoomLevel = _minZoomLevel;
-    
+
     // Set initial flash mode
     await _controller!.setFlashMode(_currentFlashMode);
-    
-    Log.info('Enhanced camera initialized - Zoom range: $_minZoomLevel to $_maxZoomLevel',
-        name: 'EnhancedMobileCamera', category: LogCategory.system);
+
+    Log.info(
+        'Enhanced camera initialized - Zoom range: $_minZoomLevel to $_maxZoomLevel',
+        name: 'EnhancedMobileCamera',
+        category: LogCategory.system);
   }
 
   @override
@@ -141,7 +143,8 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
     _controller = null;
 
     try {
-      _currentCameraIndex = (_currentCameraIndex + 1) % _availableCameras.length;
+      _currentCameraIndex =
+          (_currentCameraIndex + 1) % _availableCameras.length;
       await _initializeCurrentCamera();
       await oldController?.dispose();
 
@@ -196,12 +199,12 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
   /// Set zoom level
   Future<void> setZoom(double zoomLevel) async {
     if (_controller == null || !_controller!.value.isInitialized) return;
-    
+
     try {
       final clampedZoom = zoomLevel.clamp(_minZoomLevel, _maxZoomLevel);
       await _controller!.setZoomLevel(clampedZoom);
       _currentZoomLevel = clampedZoom;
-      
+
       Log.debug('Set zoom level to ${clampedZoom.toStringAsFixed(1)}x',
           name: 'EnhancedMobileCamera', category: LogCategory.system);
     } catch (e) {
@@ -213,13 +216,15 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
   /// Set focus point
   Future<void> setFocusPoint(Offset point) async {
     if (_controller == null || !_controller!.value.isInitialized) return;
-    
+
     try {
       await _controller!.setFocusPoint(point);
       await _controller!.setExposurePoint(point);
-      
-      Log.debug('Set focus/exposure point to: (${point.dx.toStringAsFixed(2)}, ${point.dy.toStringAsFixed(2)})',
-          name: 'EnhancedMobileCamera', category: LogCategory.system);
+
+      Log.debug(
+          'Set focus/exposure point to: (${point.dx.toStringAsFixed(2)}, ${point.dy.toStringAsFixed(2)})',
+          name: 'EnhancedMobileCamera',
+          category: LogCategory.system);
     } catch (e) {
       Log.error('Failed to set focus point: $e',
           name: 'EnhancedMobileCamera', category: LogCategory.system);
@@ -229,14 +234,16 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
   /// Toggle flash mode
   Future<void> toggleFlash() async {
     if (_controller == null || !_controller!.value.isInitialized) return;
-    
+
     try {
       _currentFlashMode = _currentFlashMode == FlashMode.off
           ? FlashMode.auto
-          : (_currentFlashMode == FlashMode.auto ? FlashMode.torch : FlashMode.off);
-      
+          : (_currentFlashMode == FlashMode.auto
+              ? FlashMode.torch
+              : FlashMode.off);
+
       await _controller!.setFlashMode(_currentFlashMode);
-      
+
       Log.info('Flash mode changed to $_currentFlashMode',
           name: 'EnhancedMobileCamera', category: LogCategory.system);
     } catch (e) {
@@ -280,7 +287,7 @@ class _EnhancedCameraPreviewState extends State<EnhancedCameraPreview> {
       children: [
         // Camera preview
         CameraPreview(widget.controller),
-        
+
         // Gesture detector for zoom and focus
         Positioned.fill(
           child: GestureDetector(
@@ -304,14 +311,14 @@ class _EnhancedCameraPreviewState extends State<EnhancedCameraPreview> {
                 final size = box.size;
                 final x = offset.dx / size.width;
                 final y = offset.dy / size.height;
-                
+
                 widget.onFocusPoint(Offset(x, y));
-                
+
                 // Show focus indicator
                 setState(() {
                   _focusPoint = offset;
                 });
-                
+
                 // Hide focus indicator after 2 seconds
                 _focusTimer?.cancel();
                 _focusTimer = Timer(const Duration(seconds: 2), () {
@@ -328,7 +335,7 @@ class _EnhancedCameraPreviewState extends State<EnhancedCameraPreview> {
             ),
           ),
         ),
-        
+
         // Focus indicator
         if (_focusPoint != null)
           Positioned(
@@ -353,7 +360,7 @@ class _EnhancedCameraPreviewState extends State<EnhancedCameraPreview> {
               ),
             ),
           ),
-        
+
         // Zoom level indicator
         if ((widget.currentZoom - widget.minZoom).abs() > 0.01)
           Positioned(
@@ -362,7 +369,8 @@ class _EnhancedCameraPreviewState extends State<EnhancedCameraPreview> {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(20),

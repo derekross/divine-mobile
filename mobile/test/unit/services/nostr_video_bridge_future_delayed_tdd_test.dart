@@ -76,7 +76,7 @@ void main() {
     test('restart should coordinate stop/start through proper async patterns',
         () async {
       // ARRANGE: Track operations to ensure proper sequencing
-      final operations = <String>[];
+      <String>[]; // Track operations list
 
       // MockVideoManager will handle operations correctly without needing mocks
 

@@ -21,7 +21,7 @@ void main() {
     group('Search State Management', () {
       test('should initialize with correct default state', () {
         final searchState = container.read(searchStateProvider);
-        
+
         expect(searchState.isInitial, isTrue);
         expect(searchState.query, isNull);
         expect(searchState.results, isEmpty);
@@ -54,7 +54,7 @@ void main() {
     group('Search State Validation', () {
       test('should validate SearchState.initial() creates correct state', () {
         const state = SearchState.initial();
-        
+
         expect(state.isInitial, isTrue);
         expect(state.isLoading, isFalse);
         expect(state.hasResults, isFalse);
@@ -66,7 +66,7 @@ void main() {
 
       test('should validate SearchState.loading() creates correct state', () {
         const state = SearchState.loading('test query');
-        
+
         expect(state.isInitial, isFalse);
         expect(state.isLoading, isTrue);
         expect(state.hasResults, isFalse);
@@ -78,7 +78,7 @@ void main() {
 
       test('should validate SearchState.success() creates correct state', () {
         const state = SearchState.success([], 'test query');
-        
+
         expect(state.isInitial, isFalse);
         expect(state.isLoading, isFalse);
         expect(state.hasResults, isTrue);
@@ -90,7 +90,7 @@ void main() {
 
       test('should validate SearchState.error() creates correct state', () {
         const state = SearchState.error('error message', 'test query');
-        
+
         expect(state.isInitial, isFalse);
         expect(state.isLoading, isFalse);
         expect(state.hasResults, isFalse);
@@ -115,13 +115,15 @@ void main() {
     });
 
     group('Provider Integration', () {
-      test('should update searchResultsProvider when searchStateProvider changes', () {
+      test(
+          'should update searchResultsProvider when searchStateProvider changes',
+          () {
         // Initial state - empty results
         final initialResults = container.read(searchResultsProvider);
         expect(initialResults, isEmpty);
 
         // Update search state to success with results
-        container.read(searchStateProvider.notifier).state = 
+        container.read(searchStateProvider.notifier).state =
             const SearchState.success([], 'test');
 
         // Verify searchResultsProvider reflects the change
@@ -130,7 +132,8 @@ void main() {
       });
 
       test('should handle state transitions correctly', () {
-        final searchStateNotifier = container.read(searchStateProvider.notifier);
+        final searchStateNotifier =
+            container.read(searchStateProvider.notifier);
 
         // Test initial -> loading
         searchStateNotifier.state = const SearchState.loading('test');
@@ -153,19 +156,19 @@ void main() {
     group('Search Functionality Validation', () {
       test('should handle empty search query correctly', () async {
         final performSearch = container.read(performSearchProvider);
-        
+
         // Performing search with empty query should reset to initial state
         await performSearch('');
-        
+
         final searchState = container.read(searchStateProvider);
         expect(searchState.isInitial, isTrue);
       });
 
       test('should handle search clear correctly', () {
         // Set up a non-initial state
-        container.read(searchStateProvider.notifier).state = 
+        container.read(searchStateProvider.notifier).state =
             const SearchState.success([], 'test');
-        
+
         expect(container.read(searchStateProvider).hasResults, isTrue);
 
         // Clear search

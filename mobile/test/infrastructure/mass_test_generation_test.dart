@@ -1,5 +1,4 @@
 // ABOUTME: Test for verifying mass test generation capabilities
-import 'package:openvine/utils/unified_logger.dart';
 // ABOUTME: Ensures test generation scripts can create comprehensive test suites
 
 import 'dart:io';

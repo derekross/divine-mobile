@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service for tracking seen videos to prevent duplicates in feed
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class SeenVideosService  {
+class SeenVideosService {
   static const String _seenVideosKey = 'seen_video_ids';
   static const int _maxSeenVideos =
       1000; // Limit storage to prevent unbounded growth
@@ -99,7 +99,6 @@ class SeenVideosService  {
     await _saveSeenVideos();
 
     // Notify listeners that seen videos have changed
-
   }
 
   /// Mark multiple videos as seen (batch operation)
@@ -115,7 +114,6 @@ class SeenVideosService  {
 
     if (hasChanges) {
       await _saveSeenVideos();
-
     }
   }
 
@@ -128,8 +126,6 @@ class SeenVideosService  {
     if (_prefs != null) {
       await _prefs!.remove(_seenVideosKey);
     }
-
-
   }
 
   /// Remove a specific video from seen list (mark as unseen)
@@ -143,7 +139,6 @@ class SeenVideosService  {
     _seenVideoIds.remove(videoId);
 
     await _saveSeenVideos();
-
   }
 
   /// Get statistics about seen videos
@@ -157,6 +152,5 @@ class SeenVideosService  {
   void dispose() {
     // Save any pending changes before disposing
     _saveSeenVideos();
-    
   }
 }

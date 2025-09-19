@@ -21,8 +21,8 @@ void main() {
 
     setUp(() async {
       // Enable logging for debugging
-      UnifiedLogger.setLogLevel(LogLevel.debug);
-      UnifiedLogger.enableCategories({
+      Log.setLogLevel(LogLevel.debug);
+      Log.enableCategories({
         LogCategory.system,
         LogCategory.relay,
         LogCategory.video,
@@ -85,7 +85,8 @@ void main() {
         var waitAttempts = 0;
         const maxWaitAttempts = 30; // 15 seconds total (500ms * 30)
 
-        while (!videoEventService.hasEvents(SubscriptionType.discovery) && waitAttempts < maxWaitAttempts) {
+        while (!videoEventService.hasEvents(SubscriptionType.discovery) &&
+            waitAttempts < maxWaitAttempts) {
           await Future.delayed(const Duration(milliseconds: 500));
           waitAttempts++;
 
@@ -102,8 +103,10 @@ void main() {
 
         // Check results
         Log.info('📊 Final results after ${waitAttempts * 500}ms:');
-        Log.info('  - Events received: ${videoEventService.getEventCount(SubscriptionType.discovery)}');
-        Log.info('  - Has events: ${videoEventService.hasEvents(SubscriptionType.discovery)}');
+        Log.info(
+            '  - Events received: ${videoEventService.getEventCount(SubscriptionType.discovery)}');
+        Log.info(
+            '  - Has events: ${videoEventService.hasEvents(SubscriptionType.discovery)}');
         Log.info('  - Is subscribed: ${videoEventService.isSubscribed}');
         Log.info('  - Error: ${videoEventService.error}');
 
@@ -156,11 +159,10 @@ void main() {
       expect(videoEventService.isLoading, false);
 
       // Start subscription
-      final subscriptionFuture =
-          videoEventService.subscribeToVideoFeed(
-            subscriptionType: SubscriptionType.discovery,
-            limit: 5,
-          );
+      final subscriptionFuture = videoEventService.subscribeToVideoFeed(
+        subscriptionType: SubscriptionType.discovery,
+        limit: 5,
+      );
 
       // Should be loading
       expect(videoEventService.isLoading, true);

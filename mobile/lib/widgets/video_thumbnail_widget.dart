@@ -3,9 +3,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:openvine/models/video_event.dart';
-import 'package:openvine/services/thumbnail_api_service.dart' show ThumbnailSize;
+import 'package:openvine/services/thumbnail_api_service.dart'
+    show ThumbnailSize;
 import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/widgets/blurhash_display.dart';
+import 'package:openvine/widgets/video_frame_thumbnail.dart';
 import 'package:openvine/widgets/video_icon_placeholder.dart';
 
 /// Smart thumbnail widget that displays thumbnails with blurhash fallback
@@ -54,16 +56,16 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   }
 
   Future<void> _loadThumbnail() async {
-
     // Check if we have an existing thumbnail URL
-    if (widget.video.thumbnailUrl != null && widget.video.thumbnailUrl!.isNotEmpty) {
+    if (widget.video.thumbnailUrl != null &&
+        widget.video.thumbnailUrl!.isNotEmpty) {
       setState(() {
         _thumbnailUrl = widget.video.thumbnailUrl;
         _isLoading = false;
       });
       return;
     }
-    
+
     try {
       final generatedThumbnailUrl = await widget.video.getApiThumbnailUrl();
       if (generatedThumbnailUrl != null && generatedThumbnailUrl.isNotEmpty) {
@@ -76,7 +78,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
     } catch (e) {
       // Silently fail - will use blurhash or placeholder
     }
-    
+
     setState(() {
       _thumbnailUrl = null;
       _isLoading = false;
@@ -84,7 +86,6 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   }
 
   Widget _buildContent() {
-    
     // While determining what thumbnail to use, show blurhash if available
     if (_isLoading && widget.video.blurhash != null) {
       return Stack(
@@ -114,7 +115,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
         ],
       );
     }
-    
+
     if (_isLoading) {
       return VideoIconPlaceholder(
         width: widget.width,
@@ -166,10 +167,12 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
               );
             },
             errorBuilder: (context, error, stackTrace) {
-              Log.error('Failed to load thumbnail: $_thumbnailUrl', 
+              Log.error('Failed to load thumbnail: $_thumbnailUrl',
                   name: 'VideoThumbnailWidget', category: LogCategory.video);
-              Log.error('🐛 THUMBNAIL ERROR for ${widget.video.id.substring(0, 8)}: blurhash="${widget.video.blurhash}"', 
-                  name: 'VideoThumbnailWidget', category: LogCategory.video);
+              Log.error(
+                  '🐛 THUMBNAIL ERROR for ${widget.video.id.substring(0, 8)}: blurhash="${widget.video.blurhash}"',
+                  name: 'VideoThumbnailWidget',
+                  category: LogCategory.video);
               // On error, show blurhash or placeholder
               if (widget.video.blurhash != null) {
                 return BlurhashDisplay(
@@ -243,10 +246,47 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
         ],
       );
     }
+
+    // Try to use video first frame as fallback
+    if (widget.video.videoUrl != null && widget.video.videoUrl!.isNotEmpty) {
+      Log.debug(
+        '🖼️ No blurhash available - using video first frame',
+        name: 'VideoThumbnailWidget',
+        category: LogCategory.ui,
+      );
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          VideoFrameThumbnail(
+            videoUrl: widget.video.videoUrl!,
+            width: widget.width,
+            height: widget.height,
+            fit: widget.fit,
+            borderRadius: widget.borderRadius,
+          ),
+          if (widget.showPlayIcon)
+            Center(
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.play_arrow,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+            ),
+        ],
+      );
+    }
     
     // Final fallback - icon placeholder
     Log.debug(
-      '🖼️ No blurhash available - using icon placeholder',
+      '🖼️ No video URL available - using icon placeholder',
       name: 'VideoThumbnailWidget',
       category: LogCategory.ui,
     );

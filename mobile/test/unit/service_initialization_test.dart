@@ -10,10 +10,12 @@ class MockFailingAppInitializer extends ConsumerStatefulWidget {
   const MockFailingAppInitializer({super.key});
 
   @override
-  ConsumerState<MockFailingAppInitializer> createState() => _MockFailingAppInitializerState();
+  ConsumerState<MockFailingAppInitializer> createState() =>
+      _MockFailingAppInitializerState();
 }
 
-class _MockFailingAppInitializerState extends ConsumerState<MockFailingAppInitializer> {
+class _MockFailingAppInitializerState
+    extends ConsumerState<MockFailingAppInitializer> {
   bool _isInitialized = false;
   String _initializationStatus = 'Initializing...';
   bool _hasCriticalError = false;
@@ -26,7 +28,7 @@ class _MockFailingAppInitializerState extends ConsumerState<MockFailingAppInitia
 
   Future<void> _simulateServiceFailure() async {
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     try {
       // Simulate critical service failure (like Nostr service)
       throw Exception('Critical Nostr service initialization failed');
@@ -34,7 +36,8 @@ class _MockFailingAppInitializerState extends ConsumerState<MockFailingAppInitia
       if (mounted) {
         setState(() {
           // This is the PROBLEMATIC behavior - should NOT set _isInitialized = true on critical failures
-          _isInitialized = true; // BUG: Continue anyway with basic functionality
+          _isInitialized =
+              true; // BUG: Continue anyway with basic functionality
           _initializationStatus = 'Initialization completed with errors';
           _hasCriticalError = true;
         });
@@ -91,7 +94,8 @@ class MockServiceFailureHandler extends StatefulWidget {
   const MockServiceFailureHandler({super.key, required this.isCriticalFailure});
 
   @override
-  State<MockServiceFailureHandler> createState() => _MockServiceFailureHandlerState();
+  State<MockServiceFailureHandler> createState() =>
+      _MockServiceFailureHandlerState();
 }
 
 class _MockServiceFailureHandlerState extends State<MockServiceFailureHandler> {
@@ -106,7 +110,7 @@ class _MockServiceFailureHandlerState extends State<MockServiceFailureHandler> {
 
   Future<void> _simulateFailure() async {
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     if (widget.isCriticalFailure) {
       // Critical failure (e.g., Nostr service) - should block navigation
       setState(() {
@@ -124,20 +128,13 @@ class _MockServiceFailureHandlerState extends State<MockServiceFailureHandler> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized && !widget.isCriticalFailure) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(_status),
-            ],
-          ),
-        ),
+    if (_isInitialized) {
+      return const Scaffold(
+        body: Center(child: Text('App Initialized Successfully')),
       );
-    } else if (!_isInitialized && widget.isCriticalFailure) {
+    }
+
+    if (widget.isCriticalFailure) {
       return Scaffold(
         body: Center(
           child: Column(
@@ -157,8 +154,17 @@ class _MockServiceFailureHandlerState extends State<MockServiceFailureHandler> {
       );
     }
 
-    return const Scaffold(
-      body: Center(child: Text('App Initialized Successfully')),
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(_status),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -214,9 +220,11 @@ class _MockRetryableFailureState extends State<MockRetryableFailure> {
 
 void main() {
   group('Service Initialization TDD - Navigation Blocking Tests', () {
-    testWidgets('FAIL FIRST: AppInitializer should not allow navigation when critical services fail', (tester) async {
+    testWidgets(
+        'FAIL FIRST: AppInitializer should not allow navigation when critical services fail',
+        (tester) async {
       // This test WILL FAIL initially - proving navigation is allowed even with service failures!
-      
+
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -233,46 +241,63 @@ void main() {
 
       // Should show critical error screen, NOT navigation
       expect(find.text('Critical services failed'), findsOneWidget,
-        reason: 'Should show error screen when critical services fail');
+          reason: 'Should show error screen when critical services fail');
       expect(find.text('Main App - Navigation Allowed'), findsNothing,
-        reason: 'Should NOT allow navigation to main app when critical services fail');
+          reason:
+              'Should NOT allow navigation to main app when critical services fail');
     });
 
-    testWidgets('FAIL FIRST: AppInitializer should distinguish between critical and non-critical service failures', (tester) async {
+    testWidgets(
+        'FAIL FIRST: AppInitializer should distinguish between critical and non-critical service failures',
+        (tester) async {
       // This test WILL FAIL initially - no distinction between critical and non-critical failures
-      
+
       // Test critical failure scenario
       await tester.pumpWidget(
         MaterialApp(
-          home: const MockServiceFailureHandler(isCriticalFailure: true),
+          home: const MockServiceFailureHandler(
+            key: Key('critical'),
+            isCriticalFailure: true,
+          ),
         ),
       );
 
-      await tester.pumpAndSettle(const Duration(milliseconds: 200));
+      // Wait for the initialization delay
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      await tester.pump();
 
       expect(find.text('Critical failure - cannot continue'), findsOneWidget,
-        reason: 'Should show critical error message');
+          reason: 'Should show critical error message');
       expect(find.text('App Initialized Successfully'), findsNothing,
-        reason: 'Should NOT initialize app with critical failures');
+          reason: 'Should NOT initialize app with critical failures');
       expect(find.text('Retry'), findsOneWidget,
-        reason: 'Should provide retry option for critical failures');
+          reason: 'Should provide retry option for critical failures');
 
       // Test non-critical failure scenario
       await tester.pumpWidget(
         MaterialApp(
-          home: const MockServiceFailureHandler(isCriticalFailure: false),
+          home: const MockServiceFailureHandler(
+            key: Key('non-critical'),
+            isCriticalFailure: false,
+          ),
         ),
       );
 
-      await tester.pumpAndSettle(const Duration(milliseconds: 200));
+      // Wait for the initialization delay
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      await tester.pump();
 
       expect(find.text('App Initialized Successfully'), findsOneWidget,
-        reason: 'Should initialize app even with non-critical failures');
+          reason: 'Should initialize app even with non-critical failures');
     });
 
-    testWidgets('FAIL FIRST: AppInitializer should provide clear retry mechanism for critical failures', (tester) async {
+    testWidgets(
+        'FAIL FIRST: AppInitializer should provide clear retry mechanism for critical failures',
+        (tester) async {
       // This test WILL FAIL initially - no proper retry mechanism exists
-      
+
       await tester.pumpWidget(
         MaterialApp(home: const MockRetryableFailure()),
       );
@@ -280,21 +305,21 @@ void main() {
       // Should show error state initially
       expect(find.text('Failed to connect to Nostr network'), findsOneWidget);
       expect(find.text('Attempt 1'), findsOneWidget);
-      
+
       // Tap retry button
       await tester.tap(find.text('Retry Connection'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       // Should still show error (will succeed on second retry)
       expect(find.text('Attempt 2'), findsOneWidget);
-      
+
       // Tap retry again
       await tester.tap(find.text('Retry Connection'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       // Should now show success
       expect(find.text('Connected Successfully'), findsOneWidget,
-        reason: 'Should show success after successful retry');
+          reason: 'Should show success after successful retry');
     });
   });
 }

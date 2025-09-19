@@ -13,7 +13,7 @@ import 'package:openvine/utils/unified_logger.dart';
 /// engagement metrics. It supports real-time analytics and alerting for
 /// production deployments.
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class VideoPerformanceMonitor  {
+class VideoPerformanceMonitor {
   VideoPerformanceMonitor({
     required IVideoManager videoManager,
     Duration samplingInterval = const Duration(seconds: 30),
@@ -67,7 +67,6 @@ class VideoPerformanceMonitor  {
 
     Log.info('VideoPerformanceMonitor: Started monitoring',
         name: 'VideoPerformanceMonitor', category: LogCategory.video);
-
   }
 
   /// Stop performance monitoring
@@ -80,7 +79,6 @@ class VideoPerformanceMonitor  {
 
     Log.info('VideoPerformanceMonitor: Stopped monitoring',
         name: 'VideoPerformanceMonitor', category: LogCategory.video);
-
   }
 
   /// Record a video preload event
@@ -228,19 +226,16 @@ class VideoPerformanceMonitor  {
 
     Log.debug('VideoPerformanceMonitor: Cleared all data',
         name: 'VideoPerformanceMonitor', category: LogCategory.video);
-
   }
 
   /// Dismiss an active alert
   void dismissAlert(String alertId) {
     _activeAlerts.removeWhere((alert) => alert.id == alertId);
-
   }
 
   void dispose() {
     stopMonitoring();
     _alertController.close();
-    
   }
 
   // Private methods
@@ -268,8 +263,6 @@ class VideoPerformanceMonitor  {
 
     // Check for alerts
     _checkThresholds(sample);
-
-
   }
 
   void _checkThresholds(PerformanceSample sample) {

@@ -21,7 +21,7 @@ import 'package:openvine/utils/unified_logger.dart';
 /// 3. Adding them to the single VideoManagerService
 /// 4. Managing subscription lifecycle
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class NostrVideoBridge  {
+class NostrVideoBridge {
   NostrVideoBridge({
     required IVideoManager videoManager,
     required INostrService nostrService,
@@ -64,10 +64,12 @@ class NostrVideoBridge  {
         'processedEventIds': _processedEventIds.length,
         'lastEventReceived': _lastEventReceived?.toIso8601String(),
         'videoEventServiceStats': {
-          'isSubscribed': _videoEventService.isSubscribed(SubscriptionType.discovery),
+          'isSubscribed':
+              _videoEventService.isSubscribed(SubscriptionType.discovery),
           'isLoading': _videoEventService.isLoading,
           'hasEvents': _videoEventService.hasEvents,
-          'eventCount': _videoEventService.getEventCount(SubscriptionType.discovery),
+          'eventCount':
+              _videoEventService.getEventCount(SubscriptionType.discovery),
           'error': _videoEventService.error,
         },
       };
@@ -113,7 +115,6 @@ class NostrVideoBridge  {
 
       Log.info('NostrVideoBridge: Bridge started successfully',
           name: 'NostrVideoBridge', category: LogCategory.relay);
-
     } catch (e) {
       Log.error('NostrVideoBridge: Failed to start bridge: $e',
           name: 'NostrVideoBridge', category: LogCategory.relay);
@@ -142,7 +143,6 @@ class NostrVideoBridge  {
 
     Log.info('NostrVideoBridge: Bridge stopped',
         name: 'NostrVideoBridge', category: LogCategory.relay);
-
   }
 
   /// Restart the bridge (useful for configuration changes)
@@ -200,9 +200,11 @@ class NostrVideoBridge  {
         'bridge': processingStats,
         'videoManager': _videoManager.getDebugInfo(),
         'videoEventService': {
-          'isSubscribed': _videoEventService.isSubscribed(SubscriptionType.discovery),
+          'isSubscribed':
+              _videoEventService.isSubscribed(SubscriptionType.discovery),
           'isLoading': _videoEventService.isLoading,
-          'eventCount': _videoEventService.getEventCount(SubscriptionType.discovery),
+          'eventCount':
+              _videoEventService.getEventCount(SubscriptionType.discovery),
           'error': _videoEventService.error,
         },
         'connection':
@@ -211,12 +213,9 @@ class NostrVideoBridge  {
 
   void dispose() {
     stop();
-    
   }
 
   // Private methods
-
-
 
   Future<void> _processVideoEvent(VideoEvent event) async {
     try {

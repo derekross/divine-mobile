@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/providers/app_providers.dart';
+import 'package:openvine/widgets/user_avatar.dart';
 import 'package:openvine/providers/profile_stats_provider.dart';
 import 'package:openvine/providers/profile_videos_provider.dart';
 import 'package:openvine/screens/universal_camera_screen.dart';
@@ -28,7 +29,8 @@ class ProfileScreenScrollable extends ConsumerStatefulWidget {
       _ProfileScreenScrollableState();
 }
 
-class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollable>
+class _ProfileScreenScrollableState
+    extends ConsumerState<ProfileScreenScrollable>
     with TickerProviderStateMixin {
   late TabController _tabController;
   bool _isOwnProfile = true;
@@ -47,28 +49,29 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
 
   Future<void> _initializeProfile() async {
     final authService = ref.read(authServiceProvider);
-    
+
     // Wait for AuthService to be properly initialized
     if (!authService.isAuthenticated) {
       Log.warning('AuthService not ready, waiting for authentication',
           name: 'ProfileScreen', category: LogCategory.ui);
-      
+
       // Use proper async pattern instead of Future.delayed
       final completer = Completer<void>();
-      
+
       void checkAuth() {
-        if (authService.isAuthenticated && authService.currentPublicKeyHex != null) {
+        if (authService.isAuthenticated &&
+            authService.currentPublicKeyHex != null) {
           completer.complete();
         } else {
           // Check again on next frame
           WidgetsBinding.instance.addPostFrameCallback((_) => checkAuth());
         }
       }
-      
+
       checkAuth();
       await completer.future;
     }
-    
+
     final currentUserPubkey = authService.currentPublicKeyHex;
 
     setState(() {
@@ -103,7 +106,10 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
         name: 'ProfileScreen',
         category: LogCategory.ui);
     try {
-      ref.read(profileVideosNotifierProvider.notifier).loadVideosForUser(_targetPubkey!).then((_) {
+      ref
+          .read(profileVideosNotifierProvider.notifier)
+          .loadVideosForUser(_targetPubkey!)
+          .then((_) {
         Log.info(
             'Profile videos load completed for ${_targetPubkey!.substring(0, 8)}',
             name: 'ProfileScreen',
@@ -123,11 +129,13 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
   void _loadUserProfile() {
     if (_targetPubkey == null) return;
     final userProfileService = ref.read(userProfileServiceProvider);
-    
+
     // Only fetch if not already cached - show cached data immediately
     if (!userProfileService.hasProfile(_targetPubkey!)) {
-      Log.debug('📥 Fetching uncached profile: ${_targetPubkey!.substring(0, 8)}',
-          name: 'ProfileScreenScrollable', category: LogCategory.ui);
+      Log.debug(
+          '📥 Fetching uncached profile: ${_targetPubkey!.substring(0, 8)}',
+          name: 'ProfileScreenScrollable',
+          category: LogCategory.ui);
       userProfileService.fetchProfile(_targetPubkey!);
     } else {
       Log.debug('📋 Using cached profile: ${_targetPubkey!.substring(0, 8)}',
@@ -141,7 +149,7 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
   void dispose() {
     _tabController.dispose();
     _scrollController.dispose();
-    
+
     super.dispose();
   }
 
@@ -150,133 +158,132 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
     final authService = ref.watch(authServiceProvider);
     final userProfileService = ref.watch(userProfileServiceProvider);
     final socialService = ref.watch(socialServiceProvider);
-    
+
     // Get the current user's pubkey for stats/videos
     final targetPubkey = _targetPubkey ?? authService.currentPublicKeyHex ?? '';
     final profileStatsAsync = ref.watch(profileStatsProvider(targetPubkey));
     final profileVideosAsync = ref.watch(profileVideosProvider(targetPubkey));
-    
+
     final authProfile = _isOwnProfile ? authService.currentProfile : null;
     final cachedProfile = !_isOwnProfile
         ? userProfileService.getCachedProfile(_targetPubkey!)
         : null;
     final userName = authProfile?.displayName ??
         cachedProfile?.displayName ??
-              'Loading user information';
+        'Loading user information';
 
-          return Scaffold(
-            backgroundColor: VineTheme.backgroundColor,
-            body: Stack(
-              children: [
-                DefaultTabController(
-                  length: 3,
-                  child: NestedScrollView(
-                    controller: _scrollController,
-                    headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                      // App Bar
-                      SliverAppBar(
-                        backgroundColor: VineTheme.vineGreen,
-                        pinned: true,
-                        title: Row(
-                          children: [
-                            const Icon(Icons.lock_outline,
-                                color: VineTheme.whiteText, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              userName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                        actions: [
-                          if (_isOwnProfile) ...[
-                            IconButton(
-                              icon: const Icon(Icons.add_box_outlined,
-                                  color: Colors.white),
-                              onPressed: _createNewVine,
-                            ),
-                            Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                onTap: () {
-                                  Log.debug('📱 Hamburger menu tapped',
-                                      name: 'ProfileScreen',
-                                      category: LogCategory.ui);
-                                  _showOptionsMenu();
-                                },
-                                child: const Padding(
-                                  padding: EdgeInsets.all(12),
-                                  child: Icon(
-                                    Icons.menu,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ] else ...[
-                            IconButton(
-                              icon: const Icon(Icons.more_vert,
-                                  color: Colors.white),
-                              onPressed: _showUserOptions,
-                            ),
-                          ],
-                        ],
-                      ),
-
-                      // Profile Header
-                      SliverToBoxAdapter(
-                        child: _buildScrollableProfileHeader(authService,
-                            userProfileService, profileStatsAsync),
-                      ),
-
-                      // Stats Row
-                      SliverToBoxAdapter(
-                        child: _buildStatsRow(profileStatsAsync),
-                      ),
-
-                      // Action Buttons
-                      SliverToBoxAdapter(
-                        child: _buildActionButtons(socialService),
-                      ),
-
-                      // Sticky Tab Bar
-                      SliverPersistentHeader(
-                        pinned: true,
-                        delegate: _SliverAppBarDelegate(
-                          TabBar(
-                            controller: _tabController,
-                            indicatorColor: Colors.white,
-                            indicatorWeight: 2,
-                            labelColor: Colors.white,
-                            unselectedLabelColor: Colors.grey,
-                            tabs: const [
-                              Tab(icon: Icon(Icons.grid_on, size: 20)),
-                              Tab(icon: Icon(Icons.favorite_border, size: 20)),
-                              Tab(icon: Icon(Icons.repeat, size: 20)),
-                            ],
-                          ),
+    return Scaffold(
+      backgroundColor: VineTheme.backgroundColor,
+      body: Stack(
+        children: [
+          DefaultTabController(
+            length: 3,
+            child: NestedScrollView(
+              controller: _scrollController,
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                // App Bar
+                SliverAppBar(
+                  backgroundColor: VineTheme.vineGreen,
+                  pinned: true,
+                  title: Row(
+                    children: [
+                      const Icon(Icons.lock_outline,
+                          color: VineTheme.whiteText, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
                     ],
-                    body: TabBarView(
+                  ),
+                  actions: [
+                    if (_isOwnProfile) ...[
+                      IconButton(
+                        icon: const Icon(Icons.add_box_outlined,
+                            color: Colors.white),
+                        onPressed: _createNewVine,
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            Log.debug('📱 Hamburger menu tapped',
+                                name: 'ProfileScreen',
+                                category: LogCategory.ui);
+                            _showOptionsMenu();
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Icon(
+                              Icons.menu,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      IconButton(
+                        icon: const Icon(Icons.more_vert, color: Colors.white),
+                        onPressed: _showUserOptions,
+                      ),
+                    ],
+                  ],
+                ),
+
+                // Profile Header
+                SliverToBoxAdapter(
+                  child: _buildScrollableProfileHeader(
+                      authService, userProfileService, profileStatsAsync),
+                ),
+
+                // Stats Row
+                SliverToBoxAdapter(
+                  child: _buildStatsRow(profileStatsAsync),
+                ),
+
+                // Action Buttons
+                SliverToBoxAdapter(
+                  child: _buildActionButtons(socialService),
+                ),
+
+                // Sticky Tab Bar
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SliverAppBarDelegate(
+                    TabBar(
                       controller: _tabController,
-                      children: [
-                        _buildSliverVinesGrid(profileVideosAsync),
-                        _buildSliverLikedGrid(socialService),
-                        _buildSliverRepostsGrid(),
+                      indicatorColor: Colors.white,
+                      indicatorWeight: 2,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.grey,
+                      tabs: const [
+                        Tab(icon: Icon(Icons.grid_on, size: 20)),
+                        Tab(icon: Icon(Icons.favorite_border, size: 20)),
+                        Tab(icon: Icon(Icons.repeat, size: 20)),
                       ],
                     ),
                   ),
                 ),
               ],
+              body: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildSliverVinesGrid(profileVideosAsync),
+                  _buildSliverLikedGrid(socialService),
+                  _buildSliverRepostsGrid(),
+                ],
+              ),
             ),
-          );
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildScrollableProfileHeader(
@@ -376,16 +383,16 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
                   ),
                   border: Border.all(color: Colors.white, width: 2),
                 ),
-                child: CircleAvatar(
-                  radius: 40,
-                  backgroundColor: Colors.grey,
-                  backgroundImage:
-                      profilePictureUrl != null && profilePictureUrl.isNotEmpty
-                          ? NetworkImage(profilePictureUrl)
-                          : null,
-                  child: profilePictureUrl == null || profilePictureUrl.isEmpty
-                      ? const Icon(Icons.person, color: Colors.white, size: 40)
-                      : null,
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: UserAvatar(
+                      imageUrl: profilePictureUrl,
+                      name: null,
+                      size: 80,
+                    ),
+                  ),
                 ),
               ),
 
@@ -525,7 +532,8 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
     );
   }
 
-  Widget _buildSliverVinesGrid(AsyncValue<List<VideoEvent>> profileVideosAsync) {
+  Widget _buildSliverVinesGrid(
+      AsyncValue<List<VideoEvent>> profileVideosAsync) {
     if (profileVideosAsync.isLoading &&
         (profileVideosAsync.value?.isEmpty ?? true)) {
       return const SliverFillRemaining(
@@ -556,7 +564,9 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref.read(profileVideosNotifierProvider.notifier).refreshVideos(),
+                onPressed: () => ref
+                    .read(profileVideosNotifierProvider.notifier)
+                    .refreshVideos(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: VineTheme.vineGreen,
                   foregroundColor: VineTheme.whiteText,
@@ -604,7 +614,9 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
                       category: LogCategory.ui);
                   if (_targetPubkey != null) {
                     try {
-                      await ref.read(profileVideosNotifierProvider.notifier).refreshVideos();
+                      await ref
+                          .read(profileVideosNotifierProvider.notifier)
+                          .refreshVideos();
                       Log.info('Manual refresh completed',
                           name: 'ProfileScreen', category: LogCategory.ui);
                     } catch (e) {
@@ -674,61 +686,41 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
                 }
 
                 return DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: VineTheme.cardBackground,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Video thumbnail
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: videoEvent.thumbnailUrl != null &&
-                                    videoEvent.thumbnailUrl!.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: videoEvent.thumbnailUrl!,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(4),
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            VineTheme.vineGreen
-                                                .withValues(alpha: 0.3),
-                                            Colors.blue.withValues(alpha: 0.3),
-                                          ],
-                                        ),
-                                      ),
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          color: VineTheme.whiteText,
-                                          strokeWidth: 2,
-                                        ),
+                  decoration: BoxDecoration(
+                    color: VineTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Video thumbnail
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: videoEvent.thumbnailUrl != null &&
+                                  videoEvent.thumbnailUrl!.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: videoEvent.thumbnailUrl!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          VineTheme.vineGreen
+                                              .withValues(alpha: 0.3),
+                                          Colors.blue.withValues(alpha: 0.3),
+                                        ],
                                       ),
                                     ),
-                                    errorWidget: (context, url, error) =>
-                                        DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(4),
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            VineTheme.vineGreen
-                                                .withValues(alpha: 0.3),
-                                            Colors.blue.withValues(alpha: 0.3),
-                                          ],
-                                        ),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.play_circle_outline,
-                                          color: VineTheme.whiteText,
-                                          size: 24,
-                                        ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: VineTheme.whiteText,
+                                        strokeWidth: 2,
                                       ),
                                     ),
-                                  )
-                                : DecoratedBox(
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      DecoratedBox(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(4),
                                       gradient: LinearGradient(
@@ -747,43 +739,63 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
                                       ),
                                     ),
                                   ),
-                          ),
-                        ),
-
-                        // Play icon overlay
-                        const Center(
-                          child: Icon(
-                            Icons.play_circle_filled,
-                            color: Colors.white70,
-                            size: 32,
-                          ),
-                        ),
-
-                        // Duration indicator
-                        if (videoEvent.duration != null)
-                          Positioned(
-                            bottom: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                videoEvent.formattedDuration,
-                                style: const TextStyle(
-                                  color: VineTheme.whiteText,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                                )
+                              : DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        VineTheme.vineGreen
+                                            .withValues(alpha: 0.3),
+                                        Colors.blue.withValues(alpha: 0.3),
+                                      ],
+                                    ),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.play_circle_outline,
+                                      color: VineTheme.whiteText,
+                                      size: 24,
+                                    ),
+                                  ),
                                 ),
+                        ),
+                      ),
+
+                      // Play icon overlay
+                      const Center(
+                        child: Icon(
+                          Icons.play_circle_filled,
+                          color: Colors.white70,
+                          size: 32,
+                        ),
+                      ),
+
+                      // Duration indicator
+                      if (videoEvent.duration != null)
+                        Positioned(
+                          bottom: 4,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              videoEvent.formattedDuration,
+                              style: const TextStyle(
+                                color: VineTheme.whiteText,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                  );
+                        ),
+                    ],
+                  ),
+                );
               },
               childCount: profileVideosAsync.value?.length ?? 0,
             ),
@@ -902,7 +914,8 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
     }
   }
 
-  Widget _buildStatsRow(AsyncValue<ProfileStats> profileStatsAsync) => Container(
+  Widget _buildStatsRow(AsyncValue<ProfileStats> profileStatsAsync) =>
+      Container(
         margin: const EdgeInsets.symmetric(horizontal: 20),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -1107,7 +1120,6 @@ class _ProfileScreenScrollableState extends ConsumerState<ProfileScreenScrollabl
       const SnackBar(content: Text('Opening messages...')),
     );
   }
-
 
   Future<void> _copyNpubToClipboard() async {
     if (_targetPubkey == null) return;

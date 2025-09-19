@@ -8,9 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:openvine/models/curation_set.dart';
 import 'package:openvine/models/video_event.dart';
-import 'package:openvine/providers/curation_providers.dart';
-import 'package:openvine/providers/social_providers.dart' as social;
-import 'package:openvine/providers/user_profile_providers.dart';
+import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/providers/video_events_providers.dart';
 import 'package:openvine/providers/video_feed_provider.dart';
 import 'package:openvine/providers/video_manager_providers.dart';
@@ -37,14 +35,9 @@ class MockVideoFeedProvider extends VideoFeed {
   @override
   Future<VideoFeedState> build() async => VideoFeedState(
         videos: mockVideos,
-        feedMode: FeedMode.following,
-        isFollowingFeed: true,
         hasMoreContent: false,
-        primaryVideoCount: mockVideos.length,
         isLoadingMore: false,
-        feedContext: null,
         error: null,
-        lastUpdated: DateTime.now(),
       );
 }
 
@@ -94,9 +87,7 @@ void main() {
           nostrServiceProvider.overrideWithValue(mockNostrService2),
           subscriptionManagerProvider
               .overrideWithValue(MockSubscriptionManager()),
-          social.nostrServiceProvider.overrideWithValue(mockNostrService3),
-          social.subscriptionManagerProvider
-              .overrideWithValue(MockSubscriptionManager()),
+          // TODO: Update social provider overrides for new architecture
         ],
       );
     }

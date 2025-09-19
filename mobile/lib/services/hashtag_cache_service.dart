@@ -26,10 +26,8 @@ class HashtagCacheService {
       _hashtagBox = await Hive.openBox(_boxName);
       _isInitialized = true;
 
-      Log.info(
-          'HashtagCacheService initialized',
-          name: 'HashtagCacheService',
-          category: LogCategory.storage);
+      Log.info('HashtagCacheService initialized',
+          name: 'HashtagCacheService', category: LogCategory.storage);
     } catch (e) {
       Log.error('Failed to initialize HashtagCacheService: $e',
           name: 'HashtagCacheService', category: LogCategory.storage);
@@ -44,21 +42,20 @@ class HashtagCacheService {
     try {
       // Check if cache is expired
       final lastUpdate = _hashtagBox!.get(_lastUpdateKey) as DateTime?;
-      if (lastUpdate == null || 
+      if (lastUpdate == null ||
           DateTime.now().difference(lastUpdate) > _cacheExpiry) {
         Log.debug('Hashtag cache expired or not found',
             name: 'HashtagCacheService', category: LogCategory.storage);
         return null;
       }
 
-      final cachedHashtags = _hashtagBox!.get(_popularHashtagsKey) as List<dynamic>?;
+      final cachedHashtags =
+          _hashtagBox!.get(_popularHashtagsKey) as List<dynamic>?;
       if (cachedHashtags == null) return null;
 
       final hashtags = cachedHashtags.cast<String>().toList();
-      Log.debug(
-          'Retrieved ${hashtags.length} cached popular hashtags',
-          name: 'HashtagCacheService',
-          category: LogCategory.storage);
+      Log.debug('Retrieved ${hashtags.length} cached popular hashtags',
+          name: 'HashtagCacheService', category: LogCategory.storage);
       return hashtags;
     } catch (e) {
       Log.error('Error retrieving cached hashtags: $e',
@@ -74,11 +71,9 @@ class HashtagCacheService {
     try {
       await _hashtagBox!.put(_popularHashtagsKey, hashtags);
       await _hashtagBox!.put(_lastUpdateKey, DateTime.now());
-      
-      Log.info(
-          'Cached ${hashtags.length} popular hashtags',
-          name: 'HashtagCacheService',
-          category: LogCategory.storage);
+
+      Log.info('Cached ${hashtags.length} popular hashtags',
+          name: 'HashtagCacheService', category: LogCategory.storage);
     } catch (e) {
       Log.error('Error caching hashtags: $e',
           name: 'HashtagCacheService', category: LogCategory.storage);

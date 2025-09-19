@@ -8,14 +8,16 @@ import '../helpers/test_provider_overrides.dart';
 
 void main() {
   group('VideoOverlayModal TDD Baseline', () {
-    testWidgets('should build successfully with Riverpod providers', (WidgetTester tester) async {
-      // This test should pass because the widget now uses ref.read() instead of Provider.of() 
+    testWidgets('should build successfully with Riverpod providers',
+        (WidgetTester tester) async {
+      // This test should pass because the widget now uses ref.read() instead of Provider.of()
       // and we have ProviderScope with proper providers
-      
+
       final testVideo = VideoEvent(
         id: 'test-video',
         pubkey: 'test-pubkey',
-        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unix timestamp in seconds
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/
+            1000, // Unix timestamp in seconds
         content: 'Test video',
         timestamp: DateTime.now(),
       );
@@ -33,7 +35,7 @@ void main() {
 
       // This should pass because VideoOverlayModal uses ref.read(videoManagerProvider.notifier)
       await tester.pumpAndSettle();
-      
+
       expect(find.byType(VideoOverlayModal), findsOneWidget);
       expect(find.text('Test Context'), findsOneWidget);
     });

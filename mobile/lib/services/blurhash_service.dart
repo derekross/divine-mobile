@@ -24,8 +24,10 @@ class BlurhashService {
       // Use blurhash_dart library for encoding
       // Note: This requires image processing to get width, height, and pixel data
       // For now, return null as encoding is more complex and requires image decoding
-      Log.warning('BlurhashService.generateBlurhash not fully implemented - encoding requires image processing',
-          name: 'BlurhashService', category: LogCategory.system);
+      Log.warning(
+          'BlurhashService.generateBlurhash not fully implemented - encoding requires image processing',
+          name: 'BlurhashService',
+          category: LogCategory.system);
       return null;
     } catch (e) {
       Log.error('Failed to generate blurhash: $e',
@@ -70,13 +72,15 @@ class BlurhashService {
       // Use real blurhash_dart library to decode
       final blurHashObject = blurhash_dart.BlurHash.decode(blurhash);
       final image = blurHashObject.toImage(width, height);
-      
+
       // Convert image to RGBA pixels
-      final pixels = Uint8List.fromList(image.getBytes(order: img.ChannelOrder.rgba));
+      final pixels =
+          Uint8List.fromList(image.getBytes(order: img.ChannelOrder.rgba));
 
       // Extract colors from the decoded pixel data
       final colors = _extractColorsFromPixels(pixels, width, height);
-      final primaryColor = colors.isNotEmpty ? colors.first : const ui.Color(0xFF888888);
+      final primaryColor =
+          colors.isNotEmpty ? colors.first : const ui.Color(0xFF888888);
 
       return BlurhashData(
         blurhash: blurhash,
@@ -141,12 +145,11 @@ class BlurhashService {
     return validChars.hasMatch(blurhash);
   }
 
-
-
   /// Extract representative colors from decoded pixel data
-  static List<ui.Color> _extractColorsFromPixels(Uint8List pixels, int width, int height) {
+  static List<ui.Color> _extractColorsFromPixels(
+      Uint8List pixels, int width, int height) {
     final colors = <ui.Color>[];
-    
+
     if (pixels.isEmpty) return colors;
 
     // Sample a few pixels to get representative colors
@@ -156,13 +159,13 @@ class BlurhashService {
 
     for (var i = 0; i < sampleCount && i * step * 4 < pixels.length - 3; i++) {
       final pixelIndex = i * step * 4; // 4 bytes per pixel (RGBA)
-      
+
       if (pixelIndex + 3 < pixels.length) {
         final r = pixels[pixelIndex];
         final g = pixels[pixelIndex + 1];
         final b = pixels[pixelIndex + 2];
         final a = pixels[pixelIndex + 3];
-        
+
         colors.add(ui.Color.fromARGB(a, r, g, b));
       }
     }
@@ -175,7 +178,6 @@ class BlurhashService {
     return colors;
   }
 }
-
 
 /// Content types for vine classification
 enum VineContentType {

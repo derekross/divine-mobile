@@ -33,13 +33,13 @@ import 'package:openvine/services/secure_key_storage_service.dart';
 import 'package:openvine/services/seen_videos_service.dart';
 import 'package:openvine/services/social_service.dart';
 import 'package:openvine/services/hashtag_cache_service.dart';
+import 'package:openvine/services/blossom_upload_service.dart';
 import 'package:openvine/services/stream_upload_service.dart';
 import 'package:openvine/services/subscription_manager.dart';
 import 'package:openvine/services/upload_manager.dart';
 import 'package:openvine/services/user_profile_service.dart';
 import 'package:openvine/services/video_event_publisher.dart';
 import 'package:openvine/services/video_event_service.dart';
-import 'package:openvine/providers/video_manager_providers.dart';
 import 'package:openvine/services/video_sharing_service.dart';
 import 'package:openvine/services/video_visibility_manager.dart';
 import 'package:openvine/services/web_auth_service.dart';
@@ -69,16 +69,16 @@ VideoVisibilityManager videoVisibilityManager(Ref ref) {
 @Riverpod(keepAlive: true) // Keep alive to maintain singleton behavior
 AnalyticsService analyticsService(Ref ref) {
   final service = AnalyticsService();
-  
+
   // Ensure cleanup on disposal
   ref.onDispose(() {
     service.dispose();
   });
-  
+
   // Initialize asynchronously but don't block the provider
   // Use a microtask to avoid blocking the provider creation
   Future.microtask(() => service.initialize());
-  
+
   return service;
 }
 
@@ -95,7 +95,6 @@ AgeVerificationService ageVerificationService(Ref ref) {
 SecureKeyStorageService secureKeyStorageService(Ref ref) {
   return SecureKeyStorageService();
 }
-
 
 /// Web authentication service (for web platform only)
 @riverpod
@@ -138,7 +137,7 @@ HashtagCacheService hashtagCacheService(Ref ref) {
 PersonalEventCacheService personalEventCacheService(Ref ref) {
   final authService = ref.watch(authServiceProvider);
   final service = PersonalEventCacheService();
-  
+
   // Initialize with current user's pubkey when authenticated
   if (authService.isAuthenticated && authService.currentPublicKeyHex != null) {
     service.initialize(authService.currentPublicKeyHex!).catchError((e) {
@@ -146,7 +145,7 @@ PersonalEventCacheService personalEventCacheService(Ref ref) {
           name: 'AppProviders', error: e);
     });
   }
-  
+
   return service;
 }
 
@@ -168,11 +167,7 @@ Nip05Service nip05Service(Ref ref) {
   return Nip05Service();
 }
 
-/// Stream upload service for video streaming
-@riverpod
-StreamUploadService streamUploadService(Ref ref) {
-  return StreamUploadService();
-}
+// (Removed duplicate legacy provider for StreamUploadService)
 
 // =============================================================================
 // DEPENDENT SERVICES (With dependencies)
@@ -189,18 +184,18 @@ AuthService authService(Ref ref) {
 @Riverpod(keepAlive: true)
 INostrService nostrService(Ref ref) {
   final keyManager = ref.watch(nostrKeyManagerProvider);
-  
+
   // Use factory to create platform-appropriate service
   final service = NostrServiceFactory.create(keyManager);
-  
+
   // Initialize the service with appropriate parameters
   NostrServiceFactory.initialize(service);
-  
+
   // Cleanup on disposal
   ref.onDispose(() {
     service.dispose();
   });
-  
+
   return service;
 }
 
@@ -217,12 +212,12 @@ VideoEventService videoEventService(Ref ref) {
   final nostrService = ref.watch(nostrServiceProvider);
   final subscriptionManager = ref.watch(subscriptionManagerProvider);
   final blocklistService = ref.watch(contentBlocklistServiceProvider);
-  final videoManager = ref.watch(videoManagerProvider.notifier);
-  
+  final userProfileService = ref.watch(userProfileServiceProvider);
+
   final service = VideoEventService(
     nostrService,
     subscriptionManager: subscriptionManager,
-    videoManager: videoManager,
+    userProfileService: userProfileService,
   );
   service.setBlocklistService(blocklistService);
   return service;
@@ -242,7 +237,7 @@ UserProfileService userProfileService(Ref ref) {
   final nostrService = ref.watch(nostrServiceProvider);
   final subscriptionManager = ref.watch(subscriptionManagerProvider);
   final profileCache = ref.watch(profileCacheServiceProvider);
-  
+
   final service = UserProfileService(
     nostrService,
     subscriptionManager: subscriptionManager,
@@ -258,7 +253,7 @@ SocialService socialService(Ref ref) {
   final authService = ref.watch(authServiceProvider);
   final subscriptionManager = ref.watch(subscriptionManagerProvider);
   final personalEventCache = ref.watch(personalEventCacheServiceProvider);
-  
+
   return SocialService(
     nostrService,
     authService,
@@ -275,7 +270,7 @@ SocialService socialService(Ref ref) {
 @riverpod
 NotificationServiceEnhanced notificationServiceEnhanced(Ref ref) {
   final service = NotificationServiceEnhanced();
-  
+
   // Delay initialization until after critical path is loaded
   if (!kIsWeb) {
     // Initialize immediately on mobile
@@ -291,10 +286,8 @@ NotificationServiceEnhanced notificationServiceEnhanced(Ref ref) {
           videoService: videoService,
         );
       } catch (e) {
-        Log.error(
-            'Failed to initialize enhanced notification service: $e',
-            name: 'AppProviders',
-            category: LogCategory.system);
+        Log.error('Failed to initialize enhanced notification service: $e',
+            name: 'AppProviders', category: LogCategory.system);
       }
     });
   } else {
@@ -311,10 +304,8 @@ NotificationServiceEnhanced notificationServiceEnhanced(Ref ref) {
           videoService: videoService,
         );
       } catch (e) {
-        Log.error(
-            'Failed to initialize enhanced notification service: $e',
-            name: 'AppProviders',
-            category: LogCategory.system);
+        Log.error('Failed to initialize enhanced notification service: $e',
+            name: 'AppProviders', category: LogCategory.system);
       }
     });
   }
@@ -338,11 +329,30 @@ DirectUploadService directUploadService(Ref ref) {
   return DirectUploadService(authService: authService);
 }
 
-/// Upload manager depends on direct upload service
+/// Stream upload service (uses Cloudflare Stream)
+@riverpod
+StreamUploadService streamUploadService(Ref ref) {
+  final authService = ref.watch(nip98AuthServiceProvider);
+  return StreamUploadService(authService: authService);
+}
+
+/// Blossom upload service (uses user-configured Blossom server)
+@riverpod
+BlossomUploadService blossomUploadService(Ref ref) {
+  final authService = ref.watch(authServiceProvider);
+  final nostrService = ref.watch(nostrServiceProvider);
+  return BlossomUploadService(authService: authService, nostrService: nostrService);
+}
+
+/// Upload manager depends on direct upload service and optionally blossom service
 @Riverpod(keepAlive: true)
 UploadManager uploadManager(Ref ref) {
-  final uploadService = ref.watch(directUploadServiceProvider);
-  return UploadManager(uploadService: uploadService);
+  final directService = ref.watch(directUploadServiceProvider);
+  final blossomService = ref.watch(blossomUploadServiceProvider);
+  return UploadManager(
+    uploadService: directService,
+    blossomService: blossomService,
+  );
 }
 
 /// API service depends on auth service
@@ -359,7 +369,7 @@ VideoEventPublisher videoEventPublisher(Ref ref) {
   final nostrService = ref.watch(nostrServiceProvider);
   final authService = ref.watch(authServiceProvider);
   final personalEventCache = ref.watch(personalEventCacheServiceProvider);
-  
+
   return VideoEventPublisher(
     uploadManager: uploadManager,
     nostrService: nostrService,
@@ -374,7 +384,7 @@ CurationService curationService(Ref ref) {
   final nostrService = ref.watch(nostrServiceProvider);
   final videoEventService = ref.watch(videoEventServiceProvider);
   final socialService = ref.watch(socialServiceProvider);
-  
+
   return CurationService(
     nostrService: nostrService,
     videoEventService: videoEventService,
@@ -383,22 +393,21 @@ CurationService curationService(Ref ref) {
 }
 
 /// ExploreVideoManager - bridges CurationService with Riverpod VideoManager
+/// FIXED: Removed VideoManager dependency to break circular dependency
 @Riverpod(keepAlive: true)
 ExploreVideoManager exploreVideoManager(Ref ref) {
   final curationService = ref.watch(curationServiceProvider);
-  
-  // Use the main Riverpod VideoManager instead of separate VideoManagerService
-  final videoManagerNotifier = ref.watch(videoManagerProvider.notifier);
-  
+
+  // Create ExploreVideoManager without VideoManager to avoid circular dependency
+  // The VideoManager integration is now handled at the call site where needed
   final manager = ExploreVideoManager(
     curationService: curationService,
-    videoManager: videoManagerNotifier,
   );
-  
+
   return manager;
 }
 
-/// Content reporting service for NIP-56 compliance 
+/// Content reporting service for NIP-56 compliance
 @riverpod
 Future<ContentReportingService> contentReportingService(Ref ref) async {
   final nostrService = ref.watch(nostrServiceProvider);
@@ -415,7 +424,7 @@ Future<CuratedListService> curatedListService(Ref ref) async {
   final nostrService = ref.watch(nostrServiceProvider);
   final authService = ref.watch(authServiceProvider);
   final prefs = await ref.watch(sharedPreferencesProvider.future);
-  
+
   return CuratedListService(
     nostrService: nostrService,
     authService: authService,
@@ -429,7 +438,7 @@ Future<BookmarkService> bookmarkService(Ref ref) async {
   final nostrService = ref.watch(nostrServiceProvider);
   final authService = ref.watch(authServiceProvider);
   final prefs = await ref.watch(sharedPreferencesProvider.future);
-  
+
   return BookmarkService(
     nostrService: nostrService,
     authService: authService,
@@ -443,7 +452,7 @@ Future<MuteService> muteService(Ref ref) async {
   final nostrService = ref.watch(nostrServiceProvider);
   final authService = ref.watch(authServiceProvider);
   final prefs = await ref.watch(sharedPreferencesProvider.future);
-  
+
   return MuteService(
     nostrService: nostrService,
     authService: authService,
@@ -457,7 +466,7 @@ VideoSharingService videoSharingService(Ref ref) {
   final nostrService = ref.watch(nostrServiceProvider);
   final authService = ref.watch(authServiceProvider);
   final userProfileService = ref.watch(userProfileServiceProvider);
-  
+
   return VideoSharingService(
     nostrService: nostrService,
     authService: authService,
@@ -475,4 +484,3 @@ Future<ContentDeletionService> contentDeletionService(Ref ref) async {
     prefs: prefs,
   );
 }
-

@@ -23,7 +23,7 @@ class VideoVisibilityInfo {
 /// This service is the SINGLE SOURCE OF TRUTH for which videos should be playing.
 /// It uses actual visibility detection (not index-based assumptions) to ensure
 /// videos NEVER play when not visible on screen.
-/// 
+///
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
 class VideoVisibilityManager {
   /// Minimum visibility fraction required for a video to play (50%)
@@ -137,8 +137,7 @@ class VideoVisibilityManager {
     _visibilityStreamController.add(info);
 
     // Notify listeners if playability changed
-    if (wasPlayable != isNowPlayable) {
-    }
+    if (wasPlayable != isNowPlayable) {}
   }
 
   /// Remove a video from tracking (e.g., when widget is disposed)
@@ -266,6 +265,5 @@ class VideoVisibilityManager {
 
   void dispose() {
     _visibilityStreamController.close();
-    
   }
 }

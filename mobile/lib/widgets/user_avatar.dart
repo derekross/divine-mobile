@@ -3,6 +3,7 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:openvine/services/image_cache_manager.dart';
 
 class UserAvatar extends StatelessWidget {
   const UserAvatar({
@@ -35,6 +36,7 @@ class UserAvatar extends StatelessWidget {
                     width: size,
                     height: size,
                     fit: BoxFit.cover,
+                    cacheManager: openVineImageCache,
                     placeholder: (context, url) => _buildFallback(),
                     errorWidget: (context, url, error) => _buildFallback(),
                   )

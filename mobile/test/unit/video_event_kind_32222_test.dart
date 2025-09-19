@@ -7,7 +7,9 @@ import 'package:openvine/models/video_event.dart';
 
 void main() {
   group('VideoEvent Kind 32222 NIP-32222 Compliance', () {
-    test('should parse Kind 32222 addressable video event with all required tags', () {
+    test(
+        'should parse Kind 32222 addressable video event with all required tags',
+        () {
       // Create a NIP-32222 compliant event
       final event = Event(
         '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798', // Valid pubkey
@@ -18,7 +20,8 @@ void main() {
           ['published_at', '1698789234'],
           ['duration', '6'],
           ['alt', 'A person juggling in a perfect loop'],
-          ['imeta',
+          [
+            'imeta',
             'url https://api.openvine.co/media/video.mp4',
             'm video/mp4',
             'dim 480x480',
@@ -39,18 +42,21 @@ void main() {
       // Verify all fields are properly parsed
       expect(videoEvent.id, event.id);
       expect(videoEvent.pubkey, event.pubkey);
-      expect(videoEvent.vineId, 'unique-video-123', reason: 'd tag should be parsed as vineId');
+      expect(videoEvent.vineId, 'unique-video-123',
+          reason: 'd tag should be parsed as vineId');
       expect(videoEvent.title, 'Amazing Loop');
       expect(videoEvent.content, 'Check out this perfect juggling loop! 🔄');
       expect(videoEvent.duration, 6);
       expect(videoEvent.altText, 'A person juggling in a perfect loop');
       expect(videoEvent.hasVideo, true);
       expect(videoEvent.videoUrl, 'https://api.openvine.co/media/video.mp4');
-      expect(videoEvent.thumbnailUrl, 'https://api.openvine.co/media/thumb.jpg');
+      expect(
+          videoEvent.thumbnailUrl, 'https://api.openvine.co/media/thumb.jpg');
       expect(videoEvent.mimeType, 'video/mp4');
       expect(videoEvent.dimensions, '480x480');
       expect(videoEvent.blurhash, 'eVF\$^OI:\${M{%LRjWBoLoLaeR*');
-      expect(videoEvent.sha256, '3093509d1e0bc604ff60cb9286f4cd7c781553bc8991937befaacfdc28ec5cdc');
+      expect(videoEvent.sha256,
+          '3093509d1e0bc604ff60cb9286f4cd7c781553bc8991937befaacfdc28ec5cdc');
       expect(videoEvent.hashtags, contains('perfectloops'));
       expect(videoEvent.hashtags, contains('juggling'));
     });
@@ -107,7 +113,8 @@ void main() {
         32222,
         [
           ['d', 'test-video'],
-          ['imeta',
+          [
+            'imeta',
             'url https://video.host/test.mp4',
             'm video/mp4',
             'dim 1920x1080',
@@ -128,7 +135,8 @@ void main() {
       expect(videoEvent.dimensions, '1920x1080');
       expect(videoEvent.blurhash, 'L6PZfSi_.AyE_3t7t7R**0o#DgR4');
       expect(videoEvent.thumbnailUrl, 'https://video.host/thumb.jpg');
-      expect(videoEvent.sha256, 'e1d4f808dae475ed32fb23ce52ef8ac82e3cc760702fca10d62d382d2da3697d');
+      expect(videoEvent.sha256,
+          'e1d4f808dae475ed32fb23ce52ef8ac82e3cc760702fca10d62d382d2da3697d');
       expect(videoEvent.fileSize, 5242880);
       expect(videoEvent.width, 1920);
       expect(videoEvent.height, 1080);
@@ -140,17 +148,20 @@ void main() {
         32222,
         [
           ['d', 'multi-quality-video'],
-          ['imeta',
+          [
+            'imeta',
             'url https://video.host/1080p.mp4',
             'm video/mp4',
             'dim 1920x1080',
           ],
-          ['imeta',
+          [
+            'imeta',
             'url https://video.host/720p.mp4',
-            'm video/mp4', 
+            'm video/mp4',
             'dim 1280x720',
           ],
-          ['imeta',
+          [
+            'imeta',
             'url https://video.host/480p.mp4',
             'm video/mp4',
             'dim 854x480',
@@ -201,7 +212,7 @@ void main() {
 
       // The addressable reference should be in format: kind:pubkey:d-tag
       final addressableRef = '32222:${event.pubkey}:my-video-id';
-      
+
       // This might need to be added to VideoEvent model
       // For now, we verify the components are available
       expect(videoEvent.vineId, 'my-video-id');

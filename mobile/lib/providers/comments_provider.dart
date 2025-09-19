@@ -74,10 +74,10 @@ class CommentsNotifier extends _$CommentsNotifier {
   CommentsState build(String rootEventId, String rootAuthorPubkey) {
     _rootEventId = rootEventId;
     _rootAuthorPubkey = rootAuthorPubkey;
-    
+
     // Load comments on initialization
     Future.microtask(() => _loadComments());
-    
+
     return CommentsState(rootEventId: rootEventId);
   }
 
@@ -290,7 +290,7 @@ class CommentsNotifier extends _$CommentsNotifier {
 
       // Use the root author pubkey passed to the provider
       final socialService = ref.read(socialServiceProvider);
-      
+
       // Post the actual comment
       await socialService.postComment(
         content: content,

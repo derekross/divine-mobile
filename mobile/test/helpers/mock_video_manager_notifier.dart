@@ -14,7 +14,7 @@ class MockVideoManager extends VideoManager {
   Future<void> preloadVideo(String videoId,
       {PreloadPriority priority = PreloadPriority.nearby}) async {
     final currentState = state;
-    
+
     // For testing, we'll assume the video exists if we're asked to preload it
     // In a real implementation, this would check the _videoEvents map
     final videoEvent = VideoEvent(
@@ -33,7 +33,7 @@ class MockVideoManager extends VideoManager {
 
     // Create test controller instead of real one
     final controller = TestVideoPlayerController(videoEvent.videoUrl ?? '');
-    
+
     // Create states
     final videoState = VideoState(
       event: videoEvent,

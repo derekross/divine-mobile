@@ -19,7 +19,7 @@ class LatestVideos extends _$LatestVideos {
   final Set<String> _loadedVideoIds = {};
   int? _oldestTimestamp;
   bool _isLoadingMore = false;
-  
+
   @override
   Future<List<VideoEvent>> build() async {
     final isExploreActive = ref.watch(isExploreTabActiveProvider);
@@ -37,73 +37,79 @@ class LatestVideos extends _$LatestVideos {
         _fetchLatestVideos(isRefresh: true);
       }
     });
-    
+
     // Clean up on dispose
     ref.onDispose(() {
       _refreshTimer?.cancel();
       _subscription?.cancel();
     });
-    
+
     // Initial fetch
     return _fetchLatestVideos();
   }
-  
-  Future<List<VideoEvent>> _fetchLatestVideos({bool isRefresh = false, bool loadMore = false}) async {
+
+  Future<List<VideoEvent>> _fetchLatestVideos(
+      {bool isRefresh = false, bool loadMore = false}) async {
     try {
       if (_isLoadingMore && loadMore) {
         Log.info('⏳ Already loading more videos, skipping request',
             name: 'LatestVideosProvider', category: LogCategory.system);
         return state.value ?? [];
       }
-      
+
       if (loadMore) {
         _isLoadingMore = true;
       }
-      
-      Log.info('📡 Fetching ${loadMore ? "more" : isRefresh ? "refreshed" : "latest"} videos from relay...',
-          name: 'LatestVideosProvider', category: LogCategory.system);
-      
+
+      Log.info(
+          '📡 Fetching ${loadMore ? "more" : isRefresh ? "refreshed" : "latest"} videos from relay...',
+          name: 'LatestVideosProvider',
+          category: LogCategory.system);
+
       final nostrService = ref.read(nostrServiceProvider);
       final videoEventService = ref.read(videoEventServiceProvider);
-      
+
       // Cancel existing subscription if any
       await _subscription?.cancel();
-      
+
       // Create filter for latest videos
       Filter filter;
-      
+
       if (loadMore && _oldestTimestamp != null) {
         // Load older videos
         filter = Filter(
           kinds: [32222], // Video events
-          until: _oldestTimestamp! - 1, // Get videos older than the oldest we have
+          until:
+              _oldestTimestamp! - 1, // Get videos older than the oldest we have
           limit: 200, // Get 200 more videos
         );
-        
-        Log.debug('🔍 Loading more: kind=32222, until=${DateTime.fromMillisecondsSinceEpoch(_oldestTimestamp! * 1000).toIso8601String()}, limit=200',
-            name: 'LatestVideosProvider', category: LogCategory.system);
+
+        Log.debug(
+            '🔍 Loading more: kind=32222, until=${DateTime.fromMillisecondsSinceEpoch(_oldestTimestamp! * 1000).toIso8601String()}, limit=200',
+            name: 'LatestVideosProvider',
+            category: LogCategory.system);
       } else {
         // Initial load or refresh - just get the latest videos, no time limit
         filter = Filter(
           kinds: [32222], // Video events
           limit: 500, // Get up to 500 latest videos
         );
-        
+
         Log.debug('🔍 Filter: kind=32222, limit=500 (no time restrictions)',
             name: 'LatestVideosProvider', category: LogCategory.system);
       }
-      
+
       // Subscribe to events
       final eventStream = nostrService.subscribeToEvents(
         filters: [filter],
       );
-      
+
       final newVideos = <VideoEvent>[];
-      
+
       var receivedCount = 0;
       var hasReceivedInitialBatch = false;
       final completer = Completer<void>();
-      
+
       // Listen to the stream and process events immediately
       _subscription = eventStream.listen(
         (event) {
@@ -113,33 +119,40 @@ class LatestVideos extends _$LatestVideos {
               final video = VideoEvent.fromNostrEvent(event);
               newVideos.add(video);
               receivedCount++;
-              
+
               // Track oldest timestamp for pagination
-              if (_oldestTimestamp == null || video.createdAt < _oldestTimestamp!) {
+              if (_oldestTimestamp == null ||
+                  video.createdAt < _oldestTimestamp!) {
                 _oldestTimestamp = video.createdAt;
               }
-              
+
               // Also add to video service cache
               videoEventService.addVideoEvent(video);
-              
-              Log.verbose('📹 Found video $receivedCount: ${video.title ?? video.id.substring(0, 8)}',
-                  name: 'LatestVideosProvider', category: LogCategory.system);
-              
+
+              Log.verbose(
+                  '📹 Found video $receivedCount: ${video.title ?? video.id.substring(0, 8)}',
+                  name: 'LatestVideosProvider',
+                  category: LogCategory.system);
+
               // Update UI immediately with every video for progressive loading
               _updateStateWithVideos(newVideos, loadMore, isRefresh);
-              
+
               // Log progress periodically
               if (receivedCount % 10 == 0 || receivedCount <= 5) {
-                Log.info('📊 Progress: Received $receivedCount videos, UI updated',
-                    name: 'LatestVideosProvider', category: LogCategory.system);
+                Log.info(
+                    '📊 Progress: Received $receivedCount videos, UI updated',
+                    name: 'LatestVideosProvider',
+                    category: LogCategory.system);
               }
-              
+
               // Mark that we've received initial content - complete early for better UX
               if (!hasReceivedInitialBatch && receivedCount >= 5) {
                 hasReceivedInitialBatch = true;
-                Log.info('🚀 Got initial batch of $receivedCount videos, continuing to stream in background...',
-                    name: 'LatestVideosProvider', category: LogCategory.system);
-                
+                Log.info(
+                    '🚀 Got initial batch of $receivedCount videos, continuing to stream in background...',
+                    name: 'LatestVideosProvider',
+                    category: LogCategory.system);
+
                 // Complete the operation early so UI can show content immediately
                 if (!completer.isCompleted) {
                   completer.complete();
@@ -159,8 +172,10 @@ class LatestVideos extends _$LatestVideos {
           }
         },
         onDone: () {
-          Log.info('✅ Stream completed. Total ${newVideos.length} videos received',
-              name: 'LatestVideosProvider', category: LogCategory.system);
+          Log.info(
+              '✅ Stream completed. Total ${newVideos.length} videos received',
+              name: 'LatestVideosProvider',
+              category: LogCategory.system);
           // Stream ended - just complete if not already done
           if (!completer.isCompleted) {
             completer.complete();
@@ -168,34 +183,38 @@ class LatestVideos extends _$LatestVideos {
         },
         cancelOnError: false, // Keep listening even if there's an error
       );
-      
+
       // Wait for initial batch or reasonable timeout, but don't block the UI
       final timeout = loadMore ? 3 : 5; // Shorter timeouts for better UX
       await Future.any([
         completer.future,
         Future.delayed(Duration(seconds: timeout)),
       ]);
-      
+
       // Let the stream continue in the background to collect more videos
       // We don't cancel immediately anymore - let it continue streaming
       if (receivedCount > 0) {
-        Log.info('⚡ Early return with ${newVideos.length} videos for immediate UI update. Stream continues in background.',
-            name: 'LatestVideosProvider', category: LogCategory.system);
+        Log.info(
+            '⚡ Early return with ${newVideos.length} videos for immediate UI update. Stream continues in background.',
+            name: 'LatestVideosProvider',
+            category: LogCategory.system);
       } else {
-        Log.info('⏱️ Timeout reached with ${newVideos.length} videos after $timeout seconds',
-            name: 'LatestVideosProvider', category: LogCategory.system);
+        Log.info(
+            '⏱️ Timeout reached with ${newVideos.length} videos after $timeout seconds',
+            name: 'LatestVideosProvider',
+            category: LogCategory.system);
         // Cancel subscription if we got nothing after timeout
         await _subscription?.cancel();
         _subscription = null;
       }
-      
+
       return state.value ?? [];
     } catch (e, stack) {
       Log.error('❌ Failed to fetch latest videos: $e',
           name: 'LatestVideosProvider', category: LogCategory.system);
       Log.error('Stack: $stack',
           name: 'LatestVideosProvider', category: LogCategory.system);
-      
+
       // Return existing videos on error
       if (state.hasValue) {
         return state.value!;
@@ -207,8 +226,9 @@ class LatestVideos extends _$LatestVideos {
       }
     }
   }
-  
-  void _updateStateWithVideos(List<VideoEvent> newVideos, bool loadMore, bool isRefresh) {
+
+  void _updateStateWithVideos(
+      List<VideoEvent> newVideos, bool loadMore, bool isRefresh) {
     try {
       // Combine with existing videos if loading more
       List<VideoEvent> allVideos;
@@ -216,38 +236,43 @@ class LatestVideos extends _$LatestVideos {
         allVideos = [...state.value!, ...newVideos];
       } else if (isRefresh && state.hasValue) {
         // For refresh, prepend new videos to existing ones
-        allVideos = [...newVideos, ...state.value!.where((v) => !newVideos.any((nv) => nv.id == v.id))];
+        allVideos = [
+          ...newVideos,
+          ...state.value!.where((v) => !newVideos.any((nv) => nv.id == v.id))
+        ];
       } else {
         allVideos = newVideos;
       }
-      
+
       // Sort by creation time (newest first)
       allVideos.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       // Remove duplicates while preserving order
       final uniqueVideos = <String, VideoEvent>{};
       for (final video in allVideos) {
         uniqueVideos[video.id] = video;
       }
       allVideos = uniqueVideos.values.toList();
-      
-      Log.info('✅ State update: ${allVideos.length} total videos (was ${state.value?.length ?? 0})',
-          name: 'LatestVideosProvider', category: LogCategory.system);
-      
+
+      Log.info(
+          '✅ State update: ${allVideos.length} total videos (was ${state.value?.length ?? 0})',
+          name: 'LatestVideosProvider',
+          category: LogCategory.system);
+
       state = AsyncData(allVideos);
     } catch (e) {
       Log.error('Failed to update state: $e',
           name: 'LatestVideosProvider', category: LogCategory.system);
     }
   }
-  
+
   /// Manually refresh the latest videos
   Future<void> refresh() async {
     Log.info('🔄 Manual refresh requested',
         name: 'LatestVideosProvider', category: LogCategory.system);
     await _fetchLatestVideos();
   }
-  
+
   /// Load more (older) videos for pagination
   Future<void> loadMore() async {
     if (_isLoadingMore) {
@@ -255,18 +280,18 @@ class LatestVideos extends _$LatestVideos {
           name: 'LatestVideosProvider', category: LogCategory.system);
       return;
     }
-    
+
     if (!state.hasValue || state.value!.isEmpty) {
       Log.info('⚠️ No videos to paginate from',
           name: 'LatestVideosProvider', category: LogCategory.system);
       return;
     }
-    
+
     Log.info('📥 Loading more videos...',
         name: 'LatestVideosProvider', category: LogCategory.system);
     await _fetchLatestVideos(loadMore: true);
   }
-  
+
   /// Check if more videos are being loaded
   bool get isLoadingMore => _isLoadingMore;
 }

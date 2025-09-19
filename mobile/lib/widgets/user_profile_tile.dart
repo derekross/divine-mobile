@@ -1,7 +1,7 @@
 // ABOUTME: Reusable tile widget for displaying user profile information in lists
 // ABOUTME: Shows avatar, name, and follow button with tap handling for navigation
 
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:openvine/widgets/user_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openvine/providers/app_providers.dart';
@@ -26,12 +26,12 @@ class UserProfileTile extends ConsumerWidget {
     final userProfileService = ref.watch(userProfileServiceProvider);
     final authService = ref.watch(authServiceProvider);
     final isCurrentUser = pubkey == authService.currentPublicKeyHex;
-    
+
     return FutureBuilder(
       future: userProfileService.fetchProfile(pubkey),
       builder: (context, snapshot) {
         final profile = userProfileService.getCachedProfile(pubkey);
-        
+
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
@@ -44,19 +44,14 @@ class UserProfileTile extends ConsumerWidget {
               // Avatar
               GestureDetector(
                 onTap: onTap,
-                child: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Colors.grey[700],
-                  backgroundImage: profile?.picture != null && profile!.picture!.isNotEmpty
-                      ? CachedNetworkImageProvider(profile.picture!)
-                      : null,
-                  child: profile?.picture == null || profile!.picture!.isEmpty
-                      ? const Icon(Icons.person, color: Colors.white, size: 24)
-                      : null,
+                child: UserAvatar(
+                  imageUrl: profile?.picture,
+                  name: profile?.bestDisplayName,
+                  size: 48,
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Name and details
               Expanded(
                 child: GestureDetector(
@@ -86,20 +81,22 @@ class UserProfileTile extends ConsumerWidget {
                   ),
                 ),
               ),
-              
+
               // Follow button
               if (showFollowButton && !isCurrentUser) ...[
                 const SizedBox(width: 12),
                 Consumer(
                   builder: (context, ref, child) {
                     final isFollowing = ref.watch(isFollowingProvider(pubkey));
-                    
+
                     return SizedBox(
                       height: 32,
                       child: ElevatedButton(
-                        onPressed: () => _toggleFollow(ref, pubkey, isFollowing),
+                        onPressed: () =>
+                            _toggleFollow(ref, pubkey, isFollowing),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isFollowing ? Colors.grey[700] : Colors.purple,
+                          backgroundColor:
+                              isFollowing ? Colors.grey[700] : Colors.purple,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           shape: RoundedRectangleBorder(
@@ -122,7 +119,8 @@ class UserProfileTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _toggleFollow(WidgetRef ref, String pubkey, bool isCurrentlyFollowing) async {
+  Future<void> _toggleFollow(
+      WidgetRef ref, String pubkey, bool isCurrentlyFollowing) async {
     try {
       // Use optimistic follow methods so UI updates immediately via provider
       final optimisticMethods = ref.read(optimisticFollowMethodsProvider);
@@ -137,7 +135,7 @@ class UserProfileTile extends ConsumerWidget {
             name: 'UserProfileTile', category: LogCategory.ui);
       }
     } catch (e) {
-      Log.error('Failed to toggle follow: $e', 
+      Log.error('Failed to toggle follow: $e',
           name: 'UserProfileTile', category: LogCategory.ui);
     }
   }

@@ -89,7 +89,7 @@ class BunkerSigner implements WebSigner {
 
 /// Unified web authentication service
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class WebAuthService  {
+class WebAuthService {
   factory WebAuthService() => _instance;
   WebAuthService._internal();
   static final WebAuthService _instance = WebAuthService._internal();
@@ -177,7 +177,6 @@ class WebAuthService  {
       Log.info('NIP-07 authentication successful',
           name: 'WebAuthService', category: LogCategory.system);
 
-
       return WebAuthResult.success(WebAuthMethod.nip07, result.publicKey!);
     } catch (e) {
       Log.error('NIP-07 authentication error: $e',
@@ -231,7 +230,6 @@ class WebAuthService  {
     _nip07Service.disconnect();
     // await _bunkerService.disconnect(); // Temporarily disabled
 
-
     Log.info('Web authentication disconnected',
         name: 'WebAuthService', category: LogCategory.system);
   }
@@ -280,6 +278,5 @@ class WebAuthService  {
 
   void dispose() {
     disconnect();
-    
   }
 }

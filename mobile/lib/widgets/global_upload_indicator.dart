@@ -15,96 +15,96 @@ class GlobalUploadIndicator extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-          final uploadManager = ref.watch(uploadManagerProvider);
-          final uploadManagerNotifier = ref.read(uploadManagerProvider);
-          // Get active uploads (uploading, processing, or ready to publish)
-          final activeUploads = uploadManager.pendingUploads
-              .where(
-                (upload) =>
-                    upload.status == UploadStatus.uploading ||
-                    upload.status == UploadStatus.processing ||
-                    upload.status == UploadStatus.readyToPublish ||
-                    upload.status == UploadStatus.retrying,
-              )
-              .toList();
+    final uploadManager = ref.watch(uploadManagerProvider);
+    final uploadManagerNotifier = ref.read(uploadManagerProvider);
+    // Get active uploads (uploading, processing, or ready to publish)
+    final activeUploads = uploadManager.pendingUploads
+        .where(
+          (upload) =>
+              upload.status == UploadStatus.uploading ||
+              upload.status == UploadStatus.processing ||
+              upload.status == UploadStatus.readyToPublish ||
+              upload.status == UploadStatus.retrying,
+        )
+        .toList();
 
-          if (activeUploads.isEmpty) {
-            return const SizedBox.shrink();
-          }
+    if (activeUploads.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-          // Show the most recent upload
-          final latestUpload = activeUploads.first;
+    // Show the most recent upload
+    final latestUpload = activeUploads.first;
 
-          return Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 16,
-            right: 16,
-            child: SafeArea(
-              child: GestureDetector(
-                onTap: () => _showUploadDetails(context, activeUploads, uploadManagerNotifier),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Progress indicator
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          value: latestUpload.progressValue,
-                          strokeWidth: 2,
-                          backgroundColor: Colors.grey[600],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            latestUpload.status == UploadStatus.failed
-                                ? Colors.red
-                                : VineTheme.vineGreen,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
-                      // Status text
-                      Flexible(
-                        child: Text(
-                          _getStatusText(latestUpload, activeUploads.length),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-
-                      // Chevron if multiple uploads
-                      if (activeUploads.length > 1) ...[
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: Colors.white70,
-                          size: 16,
-                        ),
-                      ],
-                    ],
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 8,
+      left: 16,
+      right: 16,
+      child: SafeArea(
+        child: GestureDetector(
+          onTap: () =>
+              _showUploadDetails(context, activeUploads, uploadManagerNotifier),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Progress indicator
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    value: latestUpload.progressValue,
+                    strokeWidth: 2,
+                    backgroundColor: Colors.grey[600],
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      latestUpload.status == UploadStatus.failed
+                          ? Colors.red
+                          : VineTheme.vineGreen,
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 8),
+
+                // Status text
+                Flexible(
+                  child: Text(
+                    _getStatusText(latestUpload, activeUploads.length),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                // Chevron if multiple uploads
+                if (activeUploads.length > 1) ...[
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                ],
+              ],
             ),
-          );
+          ),
+        ),
+      ),
+    );
   }
 
   String _getStatusText(PendingUpload upload, int totalCount) {
@@ -130,7 +130,8 @@ class GlobalUploadIndicator extends ConsumerWidget {
     return baseText;
   }
 
-  void _showUploadDetails(BuildContext context, List<PendingUpload> uploads, UploadManager uploadManagerNotifier) {
+  void _showUploadDetails(BuildContext context, List<PendingUpload> uploads,
+      UploadManager uploadManagerNotifier) {
     showModalBottomSheet(
       context: context,
       backgroundColor: VineTheme.backgroundColor,

@@ -27,7 +27,7 @@ void main() {
     // Initialize Hive for testing
     tempDir = await Directory.systemTemp.createTemp('upload_real_test');
     Hive.init(tempDir.path);
-    
+
     // Register adapters if not already registered
     if (!Hive.isAdapterRegistered(1)) {
       Hive.registerAdapter(UploadStatusAdapter());
@@ -62,10 +62,12 @@ void main() {
     // Set up services with test key
     keyStorage = SecureKeyStorageService();
     authService = AuthService(keyStorage: keyStorage);
-    
+
     // Mock the platform channel for secure storage
-    const MethodChannel channel = MethodChannel('plugins.flutter.io/flutter_secure_storage');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel channel =
+        MethodChannel('plugins.flutter.io/flutter_secure_storage');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       channel,
       (MethodCall methodCall) async {
         if (methodCall.method == 'read') {
@@ -76,15 +78,15 @@ void main() {
         return null;
       },
     );
-    
+
     await authService.initialize();
-    
+
     // Create a test account if not authenticated
     if (!authService.isAuthenticated) {
       // Generate a random test key for this test run
       await authService.createNewIdentity();
     }
-    
+
     nip98AuthService = Nip98AuthService(authService: authService);
     uploadService = DirectUploadService(authService: nip98AuthService);
     uploadManager = UploadManager(uploadService: uploadService);
@@ -97,7 +99,9 @@ void main() {
   });
 
   group('UploadManager Real Integration Test', () {
-    test('should auto-initialize and create upload record without prior initialization', () async {
+    test(
+        'should auto-initialize and create upload record without prior initialization',
+        () async {
       // Skip if no auth (CI environment)
       if (!authService.isAuthenticated) {
         print('Skipping test - no authentication available');
@@ -105,9 +109,9 @@ void main() {
       }
 
       // Arrange
-      expect(uploadManager.isInitialized, false, 
+      expect(uploadManager.isInitialized, false,
           reason: 'Manager should not be initialized at start');
-      
+
       // Act - call startUpload without calling initialize first
       final upload = await uploadManager.startUpload(
         videoFile: testVideoFile,
@@ -116,12 +120,10 @@ void main() {
         description: 'Testing auto-initialization fix',
         hashtags: ['test', 'openvine'],
       );
-      
+
       // Assert
-      expect(upload, isNotNull, 
-          reason: 'Upload should be created');
-      expect(upload.id, isNotEmpty, 
-          reason: 'Upload should have an ID');
+      expect(upload, isNotNull, reason: 'Upload should be created');
+      expect(upload.id, isNotEmpty, reason: 'Upload should have an ID');
       expect(upload.localVideoPath, testVideoFile.path,
           reason: 'Upload should reference the correct file');
       expect(upload.nostrPubkey, authService.currentPublicKeyHex,
@@ -130,30 +132,32 @@ void main() {
       expect(upload.hashtags, containsAll(['test', 'openvine']));
       expect(upload.status, equals(UploadStatus.pending),
           reason: 'Upload should start in pending status');
-      
+
       // Verify manager is now initialized
       expect(uploadManager.isInitialized, true,
           reason: 'Manager should be auto-initialized after startUpload');
-      
+
       // Verify upload was persisted
       final retrievedUpload = uploadManager.getUpload(upload.id);
       expect(retrievedUpload, isNotNull,
           reason: 'Upload should be retrievable from storage');
       expect(retrievedUpload?.id, upload.id);
       expect(retrievedUpload?.title, upload.title);
-      
+
       // Verify we can get uploads by status
-      final pendingUploads = uploadManager.getUploadsByStatus(UploadStatus.pending);
+      final pendingUploads =
+          uploadManager.getUploadsByStatus(UploadStatus.pending);
       expect(pendingUploads, isNotEmpty,
           reason: 'Should have at least one pending upload');
       expect(pendingUploads.any((u) => u.id == upload.id), true,
           reason: 'Our upload should be in the pending list');
-      
+
       // Clean up - cancel the upload to prevent actual upload
       await uploadManager.cancelUpload(upload.id);
     });
 
-    test('should handle multiple consecutive uploads after auto-initialization', () async {
+    test('should handle multiple consecutive uploads after auto-initialization',
+        () async {
       // Skip if no auth (CI environment)
       if (!authService.isAuthenticated) {
         print('Skipping test - no authentication available');
@@ -165,27 +169,27 @@ void main() {
       final file2 = File(path.join(tempDir.path, 'video2.mov'));
       await file1.writeAsBytes([1, 2, 3, 4, 5]);
       await file2.writeAsBytes([6, 7, 8, 9, 10]);
-      
+
       // Act - upload first video without initialization
       final upload1 = await uploadManager.startUpload(
         videoFile: file1,
         nostrPubkey: authService.currentPublicKeyHex!,
         title: 'First Video',
       );
-      
+
       // Upload second video (should use already initialized manager)
       final upload2 = await uploadManager.startUpload(
         videoFile: file2,
         nostrPubkey: authService.currentPublicKeyHex!,
         title: 'Second Video',
       );
-      
+
       // Assert
       expect(upload1, isNotNull);
       expect(upload2, isNotNull);
       expect(upload1.id, isNot(equals(upload2.id)),
           reason: 'Each upload should have a unique ID');
-      
+
       // Verify both uploads are saved
       expect(uploadManager.pendingUploads.length, greaterThanOrEqualTo(2),
           reason: 'Should have at least 2 uploads');
@@ -193,7 +197,7 @@ void main() {
       expect(uploadManager.getUpload(upload2.id), isNotNull);
       expect(uploadManager.getUpload(upload1.id)?.title, 'First Video');
       expect(uploadManager.getUpload(upload2.id)?.title, 'Second Video');
-      
+
       // Clean up
       await uploadManager.cancelUpload(upload1.id);
       await uploadManager.cancelUpload(upload2.id);
@@ -212,26 +216,26 @@ void main() {
         nostrPubkey: authService.currentPublicKeyHex!,
         title: 'Persistent Test Video',
       );
-      
+
       final uploadId = upload.id;
       expect(uploadManager.getUpload(uploadId), isNotNull);
-      
+
       // Dispose the manager
       uploadManager.dispose();
-      
+
       // Create a new manager instance
       final newManager = UploadManager(uploadService: uploadService);
-      
+
       // Initialize it
       await newManager.initialize();
-      
+
       // Verify the upload persisted
       final retrievedUpload = newManager.getUpload(uploadId);
       expect(retrievedUpload, isNotNull,
           reason: 'Upload should persist across manager instances');
       expect(retrievedUpload?.title, 'Persistent Test Video');
       expect(retrievedUpload?.nostrPubkey, authService.currentPublicKeyHex);
-      
+
       // Clean up
       await newManager.deleteUpload(uploadId);
       newManager.dispose();

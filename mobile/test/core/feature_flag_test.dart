@@ -8,16 +8,17 @@ void main() {
   group('FeatureFlag enum', () {
     test('should have display names', () {
       expect(FeatureFlag.newCameraUI.displayName, equals('New Camera UI'));
-      expect(FeatureFlag.enhancedVideoPlayer.displayName, equals('Enhanced Video Player'));
+      expect(FeatureFlag.enhancedVideoPlayer.displayName,
+          equals('Enhanced Video Player'));
       expect(FeatureFlag.debugTools.displayName, equals('Debug Tools'));
     });
-    
+
     test('should have descriptions', () {
       expect(FeatureFlag.newCameraUI.description, isNotEmpty);
       expect(FeatureFlag.enhancedVideoPlayer.description, isNotEmpty);
       expect(FeatureFlag.debugTools.description, isNotEmpty);
     });
-    
+
     test('should have unique names', () {
       final names = FeatureFlag.values.map((f) => f.name).toSet();
       expect(names.length, equals(FeatureFlag.values.length));
@@ -39,8 +40,8 @@ void main() {
 
     test('should provide meaningful descriptions', () {
       for (final flag in FeatureFlag.values) {
-        expect(flag.description.length, greaterThan(10), 
-          reason: 'Flag ${flag.name} should have meaningful description');
+        expect(flag.description.length, greaterThan(10),
+            reason: 'Flag ${flag.name} should have meaningful description');
       }
     });
   });

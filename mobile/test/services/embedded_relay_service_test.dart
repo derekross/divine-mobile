@@ -6,15 +6,16 @@ import 'package:openvine/services/nostr_service.dart';
 import 'package:openvine/services/nostr_key_manager.dart';
 import 'package:nostr_sdk/event.dart';
 import 'package:nostr_sdk/filter.dart';
-import 'package:flutter_embedded_nostr_relay/flutter_embedded_nostr_relay.dart' as embedded;
+import 'package:flutter_embedded_nostr_relay/flutter_embedded_nostr_relay.dart'
+    as embedded;
 
 void main() {
   // Initialize Flutter bindings for tests that use platform channels
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   // Enable test mode for embedded relay to use in-memory database
   embedded.DatabaseHelper.enableTestMode();
-  
+
   group('NostrService', () {
     late NostrService service;
     late NostrKeyManager keyManager;
@@ -33,9 +34,9 @@ void main() {
     group('Initialization', () {
       test('should initialize embedded relay successfully', () async {
         expect(service.isInitialized, false);
-        
+
         await service.initialize();
-        
+
         expect(service.isInitialized, true);
         expect(service.isDisposed, false);
         expect(service.primaryRelay, 'ws://localhost:7447');
@@ -45,18 +46,19 @@ void main() {
       test('should handle multiple initialize calls gracefully', () async {
         await service.initialize();
         expect(service.isInitialized, true);
-        
+
         // Second call should not throw
         await service.initialize();
         expect(service.isInitialized, true);
       });
 
-      test('should initialize with OpenVine video-optimized configuration', () async {
+      test('should initialize with OpenVine video-optimized configuration',
+          () async {
         await service.initialize();
-        
+
         // Verify configuration is set for video optimization
         expect(service.isInitialized, true);
-        
+
         // Should be ready to handle video events (kind 32222)
         final stats = await service.getRelayStats();
         expect(stats, isNotNull);
@@ -74,7 +76,9 @@ void main() {
 
         // Subscribe to video events
         final stream = service.subscribeToEvents(
-          filters: [Filter(kinds: [32222])],
+          filters: [
+            Filter(kinds: [32222])
+          ],
         );
 
         stream.listen((event) {
@@ -98,12 +102,12 @@ void main() {
 
         // Publish the event
         final result = await service.broadcastEvent(testEvent);
-        
+
         expect(result.isSuccessful, true);
-        
+
         // Wait for event to be processed
         await Future.delayed(Duration(milliseconds: 100));
-        
+
         expect(receivedEvent, true);
         expect(capturedEvent?.kind, 32222);
         expect(capturedEvent?.content, 'Test video description');
@@ -111,10 +115,12 @@ void main() {
 
       test('should handle subscription to home feed (following)', () async {
         final followedPubkey = 'followed_user_pubkey';
-        
+
         // Subscribe to events from followed users
         final stream = service.subscribeToEvents(
-          filters: [Filter(kinds: [32222], authors: [followedPubkey])],
+          filters: [
+            Filter(kinds: [32222], authors: [followedPubkey])
+          ],
         );
 
         bool receivedEvent = false;
@@ -135,7 +141,7 @@ void main() {
 
         await service.broadcastEvent(followedUserEvent);
         await Future.delayed(Duration(milliseconds: 100));
-        
+
         expect(receivedEvent, true);
       });
     });
@@ -160,7 +166,7 @@ void main() {
         });
 
         final result = await service.broadcastEvent(testEvent);
-        
+
         expect(result, isNotNull);
         expect(result.isSuccessful, true);
         expect(result.successCount, 1);
@@ -176,16 +182,17 @@ void main() {
 
       test('should report correct relay status', () async {
         final status = service.getRelayStatus();
-        
+
         expect(status, isNotEmpty);
         expect(status['ws://localhost:7447'], true);
       });
 
-      test('should handle external relay addition for discoverability', () async {
+      test('should handle external relay addition for discoverability',
+          () async {
         final externalRelay = 'wss://example-relay.com';
-        
+
         final added = await service.addRelay(externalRelay);
-        
+
         expect(added, true);
         expect(service.relays, contains(externalRelay));
       });
@@ -208,25 +215,27 @@ void main() {
             'content': 'Performance test video $i',
             'sig': 'test_signature',
           });
-          
+
           await service.broadcastEvent(event);
         }
 
         // Measure query time
         final stopwatch = Stopwatch()..start();
-        
+
         final stream = service.subscribeToEvents(
-          filters: [Filter(kinds: [32222], limit: 10)],
+          filters: [
+            Filter(kinds: [32222], limit: 10)
+          ],
         );
 
         int eventCount = 0;
-        await for (final event in stream.take(10)) {
+        await for (final _ in stream.take(10)) {
           eventCount++;
           if (eventCount >= 10) break;
         }
 
         stopwatch.stop();
-        
+
         // Should be much faster than 100ms (target <10ms)
         expect(stopwatch.elapsedMilliseconds, lessThan(100));
         expect(eventCount, 10);
@@ -237,9 +246,9 @@ void main() {
       test('should dispose cleanly', () async {
         await service.initialize();
         expect(service.isInitialized, true);
-        
+
         service.dispose();
-        
+
         expect(service.isDisposed, true);
         expect(service.isInitialized, false);
       });

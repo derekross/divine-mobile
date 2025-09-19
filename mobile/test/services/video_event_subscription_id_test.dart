@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('VideoEventService Subscription ID Generation', () {
-    
     // Helper function that mimics the _generateSubscriptionId method
     String generateSubscriptionId({
       required String subscriptionType,
@@ -18,26 +17,26 @@ void main() {
       final parts = <String>[
         'type:$subscriptionType',
       ];
-      
+
       // Add sorted authors to ensure consistent ordering
       if (authors != null && authors.isNotEmpty) {
         final sortedAuthors = List<String>.from(authors)..sort();
         parts.add('authors:${sortedAuthors.join(",")}');
       }
-      
+
       // Add sorted hashtags to ensure consistent ordering
       if (hashtags != null && hashtags.isNotEmpty) {
         final sortedHashtags = List<String>.from(hashtags)..sort();
         parts.add('hashtags:${sortedHashtags.join(",")}');
       }
-      
+
       // Add other parameters
       if (group != null) parts.add('group:$group');
       if (since != null) parts.add('since:$since');
       if (until != null) parts.add('until:$until');
       if (limit != null) parts.add('limit:$limit');
       parts.add('reposts:$includeReposts');
-      
+
       // Create a hash of the combined parameters
       final paramString = parts.join('|');
       var hash = 0;
@@ -45,7 +44,7 @@ void main() {
         hash = ((hash << 5) - hash) + paramString.codeUnitAt(i);
         hash = hash & 0xFFFFFFFF; // Keep it 32-bit
       }
-      
+
       // Return subscription ID with type prefix for readability
       final hashStr = hash.abs().toString();
       return '${subscriptionType}_$hashStr';
@@ -57,13 +56,13 @@ void main() {
         limit: 100,
         includeReposts: false,
       );
-      
+
       final id2 = generateSubscriptionId(
         subscriptionType: 'discovery',
         limit: 100,
         includeReposts: false,
       );
-      
+
       expect(id1, equals(id2));
       expect(id1, startsWith('discovery_'));
     });
@@ -73,12 +72,12 @@ void main() {
         subscriptionType: 'discovery',
         limit: 100,
       );
-      
+
       final homeFeedId = generateSubscriptionId(
         subscriptionType: 'homeFeed',
         limit: 100,
       );
-      
+
       expect(discoveryId, isNot(equals(homeFeedId)));
       expect(discoveryId, startsWith('discovery_'));
       expect(homeFeedId, startsWith('homeFeed_'));
@@ -90,13 +89,13 @@ void main() {
         authors: ['author1', 'author2'],
         limit: 100,
       );
-      
+
       final id2 = generateSubscriptionId(
         subscriptionType: 'homeFeed',
         authors: ['author3', 'author4'],
         limit: 100,
       );
-      
+
       expect(id1, isNot(equals(id2)));
     });
 
@@ -106,13 +105,13 @@ void main() {
         authors: ['author1', 'author2', 'author3'],
         limit: 100,
       );
-      
+
       final id2 = generateSubscriptionId(
         subscriptionType: 'homeFeed',
         authors: ['author3', 'author1', 'author2'],
         limit: 100,
       );
-      
+
       expect(id1, equals(id2));
     });
 
@@ -122,13 +121,13 @@ void main() {
         hashtags: ['funny', 'music', 'art'],
         limit: 100,
       );
-      
+
       final id2 = generateSubscriptionId(
         subscriptionType: 'hashtag',
         hashtags: ['art', 'funny', 'music'],
         limit: 100,
       );
-      
+
       expect(id1, equals(id2));
     });
 
@@ -137,12 +136,12 @@ void main() {
         subscriptionType: 'discovery',
         limit: 50,
       );
-      
+
       final id2 = generateSubscriptionId(
         subscriptionType: 'discovery',
         limit: 100,
       );
-      
+
       expect(id1, isNot(equals(id2)));
     });
 
@@ -152,13 +151,13 @@ void main() {
         limit: 100,
         includeReposts: true,
       );
-      
+
       final id2 = generateSubscriptionId(
         subscriptionType: 'discovery',
         limit: 100,
         includeReposts: false,
       );
-      
+
       expect(id1, isNot(equals(id2)));
     });
 
@@ -168,13 +167,13 @@ void main() {
         limit: 100,
         since: 1234567890,
       );
-      
+
       final id2 = generateSubscriptionId(
         subscriptionType: 'discovery',
         limit: 100,
         since: 1234567900,
       );
-      
+
       expect(id1, isNot(equals(id2)));
     });
 
@@ -189,7 +188,7 @@ void main() {
         'limit': 100,
         'includeReposts': true,
       };
-      
+
       // Generate ID multiple times with same parameters
       final id1 = generateSubscriptionId(
         subscriptionType: params['subscriptionType'] as String,
@@ -201,7 +200,7 @@ void main() {
         limit: params['limit'] as int,
         includeReposts: params['includeReposts'] as bool,
       );
-      
+
       final id2 = generateSubscriptionId(
         subscriptionType: params['subscriptionType'] as String,
         authors: params['authors'] as List<String>,
@@ -212,7 +211,7 @@ void main() {
         limit: params['limit'] as int,
         includeReposts: params['includeReposts'] as bool,
       );
-      
+
       expect(id1, equals(id2));
       expect(id1, startsWith('homeFeed_'));
     });
@@ -221,7 +220,7 @@ void main() {
       final id = generateSubscriptionId(
         subscriptionType: 'discovery',
       );
-      
+
       expect(id, isNotEmpty);
       expect(id, startsWith('discovery_'));
       expect(id, matches(RegExp(r'^discovery_\d+$')));

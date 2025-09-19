@@ -1,29 +1,28 @@
 // ABOUTME: Comprehensive widget test helper to fix UI validation failures across test suite
 // ABOUTME: Provides proper mocking for Riverpod providers, video management, and platform channels
 
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:matcher/matcher.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/models/video_state.dart';
 import 'package:openvine/providers/app_providers.dart';
-import 'package:openvine/providers/video_manager_providers.dart';
 import 'package:openvine/services/social_service.dart';
 import 'package:openvine/services/video_manager_interface.dart';
 import 'package:openvine/services/nostr_service_interface.dart';
 import 'package:openvine/services/video_event_service.dart';
 import 'package:openvine/theme/vine_theme.dart';
-import 'package:video_player/video_player.dart';
 
 /// Mock classes for testing
 class MockSocialService extends Mock implements SocialService {}
+
 class MockIVideoManager extends Mock implements IVideoManager {}
+
 class MockNostrService extends Mock implements INostrService {}
+
 class MockVideoEventService extends Mock implements VideoEventService {}
 
 /// Configuration for widget test setup
@@ -33,10 +32,10 @@ class WidgetTestConfig {
   final bool mockNostrService;
   final bool mockPlatformChannels;
   final List<VideoEvent> preloadedVideos;
-  
+
   const WidgetTestConfig({
     this.mockVideoManager = true,
-    this.mockSocialService = true, 
+    this.mockSocialService = true,
     this.mockNostrService = true,
     this.mockPlatformChannels = true,
     this.preloadedVideos = const [],
@@ -53,9 +52,9 @@ class WidgetTestHelper {
   /// Initialize platform channel mocking to prevent UnimplementedError
   static void initializePlatformChannels() {
     // Mock video_player channel to prevent initialization errors
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('flutter.io/videoPlayer'),
-      (call) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('flutter.io/videoPlayer'),
+            (call) async {
       switch (call.method) {
         case 'init':
           return null;
@@ -82,10 +81,10 @@ class WidgetTestHelper {
       }
     });
 
-    // Mock camera channel to prevent camera-related errors  
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/camera'),
-      (call) async {
+    // Mock camera channel to prevent camera-related errors
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/camera'), (call) async {
       switch (call.method) {
         case 'availableCameras':
           return [];
@@ -99,9 +98,10 @@ class WidgetTestHelper {
     });
 
     // Mock path_provider for file operations
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (call) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/path_provider'),
+            (call) async {
       switch (call.method) {
         case 'getTemporaryDirectory':
           return '/tmp';
@@ -123,19 +123,19 @@ class WidgetTestHelper {
     } else {
       _mockSocialService = MockSocialService();
     }
-    
+
     if (_mockVideoManager != null) {
       reset(_mockVideoManager!);
     } else {
       _mockVideoManager = MockIVideoManager();
     }
-    
+
     if (_mockNostrService != null) {
       reset(_mockNostrService!);
     } else {
       _mockNostrService = MockNostrService();
     }
-    
+
     if (_mockVideoEventService != null) {
       reset(_mockVideoEventService!);
     } else {
@@ -146,7 +146,7 @@ class WidgetTestHelper {
     when(_mockVideoManager!.videos).thenReturn([]);
     when(_mockVideoManager!.readyVideos).thenReturn([]);
 
-    // Configure nostr service defaults  
+    // Configure nostr service defaults
     when(_mockNostrService!.isInitialized).thenReturn(true);
     when(_mockNostrService!.initialize()).thenAnswer((_) async {});
   }
@@ -174,7 +174,8 @@ class WidgetTestHelper {
   }
 
   /// Create video state for a given video event
-  static VideoState createTestVideoState(VideoEvent video, {
+  static VideoState createTestVideoState(
+    VideoEvent video, {
     VideoLoadingState loadingState = VideoLoadingState.ready,
   }) {
     return VideoState(
@@ -186,12 +187,12 @@ class WidgetTestHelper {
   /// Setup video manager to properly handle a specific video
   static void setupVideoManagerForVideo(VideoEvent video) {
     final videoState = createTestVideoState(video);
-    
+
     // Ensure video manager knows about this video
     when(_mockVideoManager!.getVideoState(video.id)).thenReturn(videoState);
     when(_mockVideoManager!.preloadVideo(video.id)).thenAnswer((_) async {});
     when(_mockVideoManager!.addVideoEvent(video)).thenAnswer((_) async {});
-    
+
     // Mock the video being available in manager state
     when(_mockVideoManager!.videos).thenReturn([video]);
     when(_mockVideoManager!.readyVideos).thenReturn([video]);
@@ -205,7 +206,8 @@ class WidgetTestHelper {
     final overrides = <Override>[];
 
     if (config.mockSocialService) {
-      overrides.add(socialServiceProvider.overrideWithValue(_mockSocialService!));
+      overrides
+          .add(socialServiceProvider.overrideWithValue(_mockSocialService!));
     }
 
     if (config.mockVideoManager) {
@@ -263,12 +265,15 @@ class WidgetTestHelper {
   /// Clean up after tests - call this in tearDown() if needed
   static void tearDown() {
     // Clear method channel handlers
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('flutter.io/videoPlayer'), null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/camera'), null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'), null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('flutter.io/videoPlayer'), null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/camera'), null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/path_provider'), null);
   }
 
   /// Create a widget test wrapper that handles common test scenarios
@@ -299,9 +304,9 @@ class WidgetTestHelper {
       config: config,
       preloadedVideos: preloadedVideos,
     );
-    
+
     await tester.pumpWidget(testApp);
-    
+
     // Allow frames to settle but with timeout to prevent hanging
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
   }
@@ -310,5 +315,6 @@ class WidgetTestHelper {
   static MockSocialService get mockSocialService => _mockSocialService!;
   static MockIVideoManager get mockVideoManager => _mockVideoManager!;
   static MockNostrService get mockNostrService => _mockNostrService!;
-  static MockVideoEventService get mockVideoEventService => _mockVideoEventService!;
+  static MockVideoEventService get mockVideoEventService =>
+      _mockVideoEventService!;
 }

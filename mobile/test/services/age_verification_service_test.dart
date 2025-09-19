@@ -97,7 +97,7 @@ void main() {
       // service.addListener(() {
       //   notificationCount++;
       // });
-      
+
       // Skip the listener test - just verify the state changes work
 
       await service.setAgeVerified(true);

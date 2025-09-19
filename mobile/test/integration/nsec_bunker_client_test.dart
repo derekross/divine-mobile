@@ -9,15 +9,15 @@ import 'package:openvine/utils/unified_logger.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   group('NsecBunkerClient Integration Tests', () {
     late NsecBunkerClient bunkerClient;
     const testEndpoint = 'https://bunker.example.com/auth';
-    
+
     setUp(() {
-      Log.info('Setting up bunker client test', 
+      Log.info('Setting up bunker client test',
           name: 'Test', category: LogCategory.system);
-      
+
       bunkerClient = NsecBunkerClient(authEndpoint: testEndpoint);
     });
 
@@ -30,7 +30,7 @@ void main() {
         // Arrange
         const username = 'testuser';
         const password = 'testpass';
-        
+
         final mockResponse = {
           'bunker': {
             'relay_url': 'wss://relay.bunker.com',
@@ -40,16 +40,16 @@ void main() {
           },
           'pubkey': '1234abcd' * 8, // 64 chars
         };
-        
+
         // Note: In real test, we'd need to inject the http client
         // For now, this is a structure test
-        
+
         // Act
         final result = await bunkerClient.authenticate(
           username: username,
           password: password,
         );
-        
+
         // Assert - Will fail without real server
         expect(result.success, isFalse); // Expected to fail without real server
       });
@@ -58,13 +58,13 @@ void main() {
         // Arrange
         const username = 'wronguser';
         const password = 'wrongpass';
-        
+
         // Act
         final result = await bunkerClient.authenticate(
           username: username,
           password: password,
         );
-        
+
         // Assert
         expect(result.success, isFalse);
         expect(result.error, isNotNull);
@@ -80,10 +80,10 @@ void main() {
           'secret': 'secret123',
           'permissions': ['sign_event', 'get_public_key'],
         };
-        
+
         // Act
         final config = BunkerConfig.fromJson(json);
-        
+
         // Assert
         expect(config.relayUrl, equals('wss://relay.bunker.com'));
         expect(config.bunkerPubkey, equals('abcd1234' * 8));
@@ -97,7 +97,7 @@ void main() {
       test('should not connect without authentication', () async {
         // Act
         final connected = await bunkerClient.connect();
-        
+
         // Assert
         expect(connected, isFalse);
         expect(bunkerClient.isConnected, isFalse);
@@ -112,7 +112,7 @@ void main() {
       test('should disconnect cleanly', () {
         // Act
         bunkerClient.disconnect();
-        
+
         // Assert
         expect(bunkerClient.isConnected, isFalse);
       });
@@ -127,10 +127,10 @@ void main() {
           'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
           'tags': [],
         };
-        
+
         // Act
         final signedEvent = await bunkerClient.signEvent(event);
-        
+
         // Assert
         expect(signedEvent, isNull);
       });
@@ -143,7 +143,7 @@ void main() {
           'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
           'tags': [],
         };
-        
+
         // The request should follow NIP-46 format
         expect(event['kind'], equals(1));
         expect(event['content'], isNotEmpty);
@@ -156,7 +156,7 @@ void main() {
       test('should not get pubkey without connection', () async {
         // Act
         final pubkey = await bunkerClient.getPublicKey();
-        
+
         // Assert
         expect(pubkey, isNull);
       });
@@ -185,7 +185,7 @@ void main() {
         bunkerPubkey: 'pubkey123',
         secret: 'secret123',
       );
-      
+
       // Assert
       expect(config.relayUrl, equals('wss://relay.test.com'));
       expect(config.bunkerPubkey, equals('pubkey123'));
@@ -201,7 +201,7 @@ void main() {
         secret: 'secret123',
         permissions: ['sign_event', 'nip04_encrypt', 'nip04_decrypt'],
       );
-      
+
       // Assert
       expect(config.permissions.length, equals(3));
       expect(config.permissions, contains('sign_event'));
@@ -218,14 +218,14 @@ void main() {
         bunkerPubkey: 'pubkey123',
         secret: 'secret123',
       );
-      
+
       // Act
       const result = BunkerAuthResult(
         success: true,
         config: config,
         userPubkey: 'user_pubkey_123',
       );
-      
+
       // Assert
       expect(result.success, isTrue);
       expect(result.config, isNotNull);
@@ -239,7 +239,7 @@ void main() {
         success: false,
         error: 'Invalid credentials',
       );
-      
+
       // Assert
       expect(result.success, isFalse);
       expect(result.error, equals('Invalid credentials'));

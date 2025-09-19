@@ -175,7 +175,7 @@ class VideoNetworkService {
           Log.error('Error querying video by ID: $error',
               name: 'VideoNetworkService', category: LogCategory.video);
           timeoutTimer.cancel();
-          subscription?.cancel(); 
+          subscription?.cancel();
           if (!completer.isCompleted) {
             completer.complete(null);
           }
@@ -184,8 +184,10 @@ class VideoNetworkService {
           timeoutTimer.cancel();
           // Only complete with null if we haven't found the video yet
           if (!completer.isCompleted) {
-            Log.debug('Video query stream closed without finding video: $vineId',
-                name: 'VideoNetworkService', category: LogCategory.video);
+            Log.debug(
+                'Video query stream closed without finding video: $vineId',
+                name: 'VideoNetworkService',
+                category: LogCategory.video);
             completer.complete(null);
           }
         },

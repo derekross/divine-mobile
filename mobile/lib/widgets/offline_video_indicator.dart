@@ -11,7 +11,7 @@ class OfflineVideoIndicator extends StatelessWidget {
   final OfflineVideoService offlineService;
   final bool showLabel;
   final double size;
-  
+
   const OfflineVideoIndicator({
     super.key,
     required this.eventId,
@@ -70,11 +70,7 @@ class OfflineVideoIndicator extends StatelessWidget {
   ) {
     switch (status) {
       case VideoOfflineStatus.fullyCached:
-        return (
-          Icons.offline_pin,
-          VineTheme.vineGreen,
-          'Cached'
-        );
+        return (Icons.offline_pin, VineTheme.vineGreen, 'Cached');
       case VideoOfflineStatus.metadataOnly:
         return (
           Icons.cloud_download_outlined,
@@ -95,7 +91,7 @@ class OfflineVideoIndicator extends StatelessWidget {
 class ConnectivityIndicator extends StatelessWidget {
   final OfflineVideoService offlineService;
   final bool showLabel;
-  
+
   const ConnectivityIndicator({
     super.key,
     required this.offlineService,
@@ -108,7 +104,7 @@ class ConnectivityIndicator extends StatelessWidget {
       listenable: offlineService,
       builder: (context, child) {
         final isOnline = offlineService.isOnline;
-        
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -147,7 +143,7 @@ class ConnectivityIndicator extends StatelessWidget {
 /// Widget for displaying video cache statistics
 class VideoCacheStats extends StatelessWidget {
   final OfflineVideoService offlineService;
-  
+
   const VideoCacheStats({
     super.key,
     required this.offlineService,
@@ -159,7 +155,7 @@ class VideoCacheStats extends StatelessWidget {
       listenable: offlineService,
       builder: (context, child) {
         final stats = offlineService.getOfflineStats();
-        
+
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -223,9 +219,9 @@ class VideoCacheStats extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
           ),
         ],
       ),

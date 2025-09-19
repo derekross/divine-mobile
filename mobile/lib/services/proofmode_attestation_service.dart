@@ -29,24 +29,25 @@ class DeviceAttestation {
   final Map<String, dynamic>? metadata;
 
   Map<String, dynamic> toJson() => {
-    'token': token,
-    'platform': platform,
-    'deviceId': deviceId,
-    'isHardwareBacked': isHardwareBacked,
-    'createdAt': createdAt.toIso8601String(),
-    'challenge': challenge,
-    'metadata': metadata,
-  };
+        'token': token,
+        'platform': platform,
+        'deviceId': deviceId,
+        'isHardwareBacked': isHardwareBacked,
+        'createdAt': createdAt.toIso8601String(),
+        'challenge': challenge,
+        'metadata': metadata,
+      };
 
-  factory DeviceAttestation.fromJson(Map<String, dynamic> json) => DeviceAttestation(
-    token: json['token'] as String,
-    platform: json['platform'] as String,
-    deviceId: json['deviceId'] as String,
-    isHardwareBacked: json['isHardwareBacked'] as bool,
-    createdAt: DateTime.parse(json['createdAt'] as String),
-    challenge: json['challenge'] as String?,
-    metadata: json['metadata'] as Map<String, dynamic>?,
-  );
+  factory DeviceAttestation.fromJson(Map<String, dynamic> json) =>
+      DeviceAttestation(
+        token: json['token'] as String,
+        platform: json['platform'] as String,
+        deviceId: json['deviceId'] as String,
+        isHardwareBacked: json['isHardwareBacked'] as bool,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        challenge: json['challenge'] as String?,
+        metadata: json['metadata'] as Map<String, dynamic>?,
+      );
 }
 
 /// Device information for attestation
@@ -70,20 +71,20 @@ class DeviceInfo {
   final Map<String, dynamic>? metadata;
 
   Map<String, dynamic> toJson() => {
-    'platform': platform,
-    'model': model,
-    'version': version,
-    'deviceId': deviceId,
-    'manufacturer': manufacturer,
-    'isPhysicalDevice': isPhysicalDevice,
-    'metadata': metadata,
-  };
+        'platform': platform,
+        'model': model,
+        'version': version,
+        'deviceId': deviceId,
+        'manufacturer': manufacturer,
+        'isPhysicalDevice': isPhysicalDevice,
+        'metadata': metadata,
+      };
 }
 
 /// ProofMode device attestation service
 class ProofModeAttestationService {
   static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
-  
+
   DeviceInfo? _cachedDeviceInfo;
 
   /// Initialize the attestation service
@@ -100,8 +101,10 @@ class ProofModeAttestationService {
     try {
       // Cache device info
       _cachedDeviceInfo = await _getDeviceInfo();
-      Log.info('Device attestation initialized for ${_cachedDeviceInfo?.platform} ${_cachedDeviceInfo?.model}',
-          name: 'ProofModeAttestationService', category: LogCategory.auth);
+      Log.info(
+          'Device attestation initialized for ${_cachedDeviceInfo?.platform} ${_cachedDeviceInfo?.model}',
+          name: 'ProofModeAttestationService',
+          category: LogCategory.auth);
     } catch (e) {
       Log.error('Failed to initialize device attestation: $e',
           name: 'ProofModeAttestationService', category: LogCategory.auth);
@@ -116,12 +119,14 @@ class ProofModeAttestationService {
       return null;
     }
 
-    Log.info('Generating device attestation for challenge: ${challenge.substring(0, 8)}...',
-        name: 'ProofModeAttestationService', category: LogCategory.auth);
+    Log.info(
+        'Generating device attestation for challenge: ${challenge.substring(0, 8)}...',
+        name: 'ProofModeAttestationService',
+        category: LogCategory.auth);
 
     try {
       final deviceInfo = _cachedDeviceInfo ?? await _getDeviceInfo();
-      
+
       if (Platform.isIOS) {
         return await _generateiOSAttestation(challenge, deviceInfo);
       } else if (Platform.isAndroid) {
@@ -164,7 +169,8 @@ class ProofModeAttestationService {
   }
 
   /// Verify an attestation token (basic validation)
-  Future<bool> verifyAttestation(DeviceAttestation attestation, String originalChallenge) async {
+  Future<bool> verifyAttestation(
+      DeviceAttestation attestation, String originalChallenge) async {
     try {
       // Basic validation
       if (attestation.challenge != originalChallenge) {
@@ -183,9 +189,9 @@ class ProofModeAttestationService {
 
       // Platform-specific validation would go here
       // For now, just check if token looks valid
-      final isValid = attestation.token.isNotEmpty && 
-                     attestation.deviceId.isNotEmpty &&
-                     attestation.platform.isNotEmpty;
+      final isValid = attestation.token.isNotEmpty &&
+          attestation.deviceId.isNotEmpty &&
+          attestation.platform.isNotEmpty;
 
       Log.debug('Attestation verification result: $isValid',
           name: 'ProofModeAttestationService', category: LogCategory.auth);
@@ -250,13 +256,14 @@ class ProofModeAttestationService {
   }
 
   /// Generate iOS App Attest attestation
-  Future<DeviceAttestation> _generateiOSAttestation(String challenge, DeviceInfo deviceInfo) async {
+  Future<DeviceAttestation> _generateiOSAttestation(
+      String challenge, DeviceInfo deviceInfo) async {
     Log.info('Generating iOS App Attest attestation',
         name: 'ProofModeAttestationService', category: LogCategory.auth);
 
     // TODO: Implement actual iOS App Attest API integration
     // For now, generate a mock attestation
-    
+
     final attestationData = {
       'challenge': challenge,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
@@ -281,13 +288,14 @@ class ProofModeAttestationService {
   }
 
   /// Generate Android Play Integrity attestation
-  Future<DeviceAttestation> _generateAndroidAttestation(String challenge, DeviceInfo deviceInfo) async {
+  Future<DeviceAttestation> _generateAndroidAttestation(
+      String challenge, DeviceInfo deviceInfo) async {
     Log.info('Generating Android Play Integrity attestation',
         name: 'ProofModeAttestationService', category: LogCategory.auth);
 
     // TODO: Implement actual Play Integrity API integration
     // For now, generate a mock attestation
-    
+
     final attestationData = {
       'challenge': challenge,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
@@ -312,7 +320,8 @@ class ProofModeAttestationService {
   }
 
   /// Generate fallback attestation for unsupported platforms
-  Future<DeviceAttestation> _generateFallbackAttestation(String challenge, DeviceInfo deviceInfo) async {
+  Future<DeviceAttestation> _generateFallbackAttestation(
+      String challenge, DeviceInfo deviceInfo) async {
     Log.info('Generating fallback attestation for ${deviceInfo.platform}',
         name: 'ProofModeAttestationService', category: LogCategory.auth);
 
@@ -349,7 +358,7 @@ class ProofModeAttestationService {
 
     final payloadBytes = utf8.encode(jsonEncode(payload));
     final hash = sha256.convert(payloadBytes);
-    
+
     return 'MOCK_ATTESTATION_${type.toUpperCase()}_${base64Encode(hash.bytes)}';
   }
 }

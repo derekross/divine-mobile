@@ -78,7 +78,8 @@ class PersonalEventCacheService {
 
       // Update metadata for quick queries
       final kindKey = 'kind_${event.kind}';
-      final kindEvents = _metadataBox!.get(kindKey, defaultValue: <String, dynamic>{})!;
+      final kindEvents =
+          _metadataBox!.get(kindKey, defaultValue: <String, dynamic>{})!;
       kindEvents[event.id] = {
         'created_at': event.createdAt,
         'cached_at': DateTime.now().millisecondsSinceEpoch,
@@ -103,8 +104,9 @@ class PersonalEventCacheService {
 
     try {
       final kindKey = 'kind_$kind';
-      final kindEvents = _metadataBox!.get(kindKey, defaultValue: <String, dynamic>{})!;
-      
+      final kindEvents =
+          _metadataBox!.get(kindKey, defaultValue: <String, dynamic>{})!;
+
       final events = <Event>[];
       for (final eventId in kindEvents.keys) {
         final eventData = _eventsBox!.get(eventId);
@@ -118,10 +120,10 @@ class PersonalEventCacheService {
 
       // Sort by creation time (newest first)
       events.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       Log.debug('📋 Retrieved ${events.length} cached events of kind $kind',
           name: 'PersonalEventCache', category: LogCategory.storage);
-      
+
       return events;
     } catch (e) {
       Log.error('Failed to get events by kind $kind: $e',
@@ -147,10 +149,10 @@ class PersonalEventCacheService {
 
       // Sort by creation time (newest first)
       events.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       Log.debug('📋 Retrieved ${events.length} total cached personal events',
           name: 'PersonalEventCache', category: LogCategory.storage);
-      
+
       return events;
     } catch (e) {
       Log.error('Failed to get all personal events: $e',
@@ -202,7 +204,8 @@ class PersonalEventCacheService {
     for (final kindKey in _metadataBox!.keys) {
       if (kindKey.startsWith('kind_')) {
         final kind = kindKey.substring(5);
-        final kindEvents = _metadataBox!.get(kindKey, defaultValue: <String, dynamic>{})!;
+        final kindEvents =
+            _metadataBox!.get(kindKey, defaultValue: <String, dynamic>{})!;
         stats['by_kind'][kind] = kindEvents.length;
       }
     }
@@ -213,16 +216,16 @@ class PersonalEventCacheService {
   /// Log cache statistics for debugging
   void _logCacheStatistics() {
     final stats = getCacheStats();
-    Log.info('📊 Personal Event Cache Statistics:', 
+    Log.info('📊 Personal Event Cache Statistics:',
         name: 'PersonalEventCache', category: LogCategory.storage);
     Log.info('  - Total events: ${stats['total_events']}',
         name: 'PersonalEventCache', category: LogCategory.storage);
     Log.info('  - User: ${stats['user_pubkey']}',
         name: 'PersonalEventCache', category: LogCategory.storage);
-    
+
     final byKind = stats['by_kind'] as Map<String, int>;
     if (byKind.isNotEmpty) {
-      Log.info('  - By kind:', 
+      Log.info('  - By kind:',
           name: 'PersonalEventCache', category: LogCategory.storage);
       for (final entry in byKind.entries) {
         final kindName = _getKindName(int.tryParse(entry.key) ?? 0);
@@ -239,16 +242,17 @@ class PersonalEventCacheService {
         eventData['pubkey'] as String,
         eventData['kind'] as int,
         (eventData['tags'] as List<dynamic>)
-            .map((tag) => (tag as List<dynamic>).map((item) => item.toString()).toList())
+            .map((tag) =>
+                (tag as List<dynamic>).map((item) => item.toString()).toList())
             .toList(),
         eventData['content'] as String,
         createdAt: eventData['created_at'] as int,
       );
-      
+
       // Manually set the id and signature since these are not constructor parameters
       event.id = eventData['id'] as String;
       event.sig = eventData['sig'] as String;
-      
+
       return event;
     } catch (e) {
       Log.error('Failed to convert event data to Event: $e',
@@ -260,15 +264,24 @@ class PersonalEventCacheService {
   /// Get human-readable name for event kind
   String _getKindName(int kind) {
     switch (kind) {
-      case 0: return 'Profile';
-      case 1: return 'Text Note';
-      case 3: return 'Contact List';
-      case 6: return 'Repost';
-      case 7: return 'Reaction/Like';
-      case 22: return 'Video';
-      case 30000: return 'Follow Set';
-      case 5: return 'Deletion';
-      default: return 'Unknown';
+      case 0:
+        return 'Profile';
+      case 1:
+        return 'Text Note';
+      case 3:
+        return 'Contact List';
+      case 6:
+        return 'Repost';
+      case 7:
+        return 'Reaction/Like';
+      case 22:
+        return 'Video';
+      case 30000:
+        return 'Follow Set';
+      case 5:
+        return 'Deletion';
+      default:
+        return 'Unknown';
     }
   }
 
@@ -281,7 +294,7 @@ class PersonalEventCacheService {
     try {
       await _eventsBox!.clear();
       await _metadataBox!.clear();
-      
+
       Log.info('🧹 Cleared all personal event cache',
           name: 'PersonalEventCache', category: LogCategory.storage);
     } catch (e) {
@@ -296,7 +309,7 @@ class PersonalEventCacheService {
     _metadataBox?.close();
     _isInitialized = false;
     _currentUserPubkey = null;
-    
+
     Log.debug('📱 PersonalEventCacheService disposed',
         name: 'PersonalEventCache', category: LogCategory.storage);
   }

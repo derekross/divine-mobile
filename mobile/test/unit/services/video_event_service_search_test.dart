@@ -25,12 +25,12 @@ void main() {
     setUp(() {
       mockNostrService = MockINostrService();
       mockSubscriptionManager = MockSubscriptionManager();
-      
+
       // Setup basic mocks
       when(mockNostrService.isInitialized).thenReturn(true);
       when(mockNostrService.hasKeys).thenReturn(true);
       when(mockNostrService.publicKey).thenReturn('test_pubkey');
-      
+
       videoEventService = VideoEventService(
         mockNostrService,
         subscriptionManager: mockSubscriptionManager,
@@ -44,56 +44,59 @@ void main() {
     group('Search Method Tests', () {
       test('should call searchVideos and handle empty query', () {
         final searchQuery = '';
-        
-        expect(() => videoEventService.searchVideos(searchQuery), 
-               throwsA(isA<ArgumentError>()));
+
+        expect(() => videoEventService.searchVideos(searchQuery),
+            throwsA(isA<ArgumentError>()));
       });
 
       test('should call searchVideosByHashtag with valid hashtag', () async {
         // Mock the nostr service to return an empty stream
-        when(mockNostrService.searchVideos(any, 
-            authors: anyNamed('authors'),
-            since: anyNamed('since'),
-            until: anyNamed('until'),
-            limit: anyNamed('limit')))
-          .thenAnswer((_) => Stream<Event>.empty());
+        when(mockNostrService.searchVideos(any,
+                authors: anyNamed('authors'),
+                since: anyNamed('since'),
+                until: anyNamed('until'),
+                limit: anyNamed('limit')))
+            .thenAnswer((_) => Stream<Event>.empty());
 
         final hashtag = '#bitcoin';
-        
+
         // Should not throw and should complete successfully
         await videoEventService.searchVideosByHashtag(hashtag);
-        
+
         // Verify the service was called with the correct search query
         verify(mockNostrService.searchVideos('#bitcoin',
-            authors: anyNamed('authors'),
-            since: anyNamed('since'),
-            until: anyNamed('until'),
-            limit: anyNamed('limit'))).called(1);
+                authors: anyNamed('authors'),
+                since: anyNamed('since'),
+                until: anyNamed('until'),
+                limit: anyNamed('limit')))
+            .called(1);
       });
 
-      test('should call searchVideosWithFilters with correct parameters', () async {
+      test('should call searchVideosWithFilters with correct parameters',
+          () async {
         // Mock the nostr service to return an empty stream
-        when(mockNostrService.searchVideos(any, 
-            authors: anyNamed('authors'),
-            since: anyNamed('since'),
-            until: anyNamed('until'),
-            limit: anyNamed('limit')))
-          .thenAnswer((_) => Stream<Event>.empty());
+        when(mockNostrService.searchVideos(any,
+                authors: anyNamed('authors'),
+                since: anyNamed('since'),
+                until: anyNamed('until'),
+                limit: anyNamed('limit')))
+            .thenAnswer((_) => Stream<Event>.empty());
 
         final searchQuery = 'nostr';
         final authors = ['author1', 'author2'];
-        
+
         await videoEventService.searchVideosWithFilters(
           query: searchQuery,
           authors: authors,
         );
-        
+
         // Verify the service was called with correct parameters
         verify(mockNostrService.searchVideos(searchQuery,
-            authors: authors,
-            since: anyNamed('since'),
-            until: anyNamed('until'),
-            limit: anyNamed('limit'))).called(1);
+                authors: authors,
+                since: anyNamed('since'),
+                until: anyNamed('until'),
+                limit: anyNamed('limit')))
+            .called(1);
       });
     });
 
@@ -106,7 +109,7 @@ void main() {
       test('should clear search results and reset state', () {
         // Call clearSearchResults method
         videoEventService.clearSearchResults();
-        
+
         // Verify state is cleared
         expect(videoEventService.searchResults, isEmpty);
       });
@@ -115,68 +118,73 @@ void main() {
     group('Search Event Processing', () {
       test('should process empty search results', () {
         final mockEvents = <Event>[];
-        
+
         final results = videoEventService.processSearchResults(mockEvents);
-        
+
         expect(results, isEmpty);
       });
 
       test('should deduplicate empty search results', () {
         final mockVideoEvents = <VideoEvent>[];
-        
-        final results = videoEventService.deduplicateSearchResults(mockVideoEvents);
-        
+
+        final results =
+            videoEventService.deduplicateSearchResults(mockVideoEvents);
+
         expect(results, isEmpty);
       });
     });
 
     group('Advanced Search Features', () {
-      test('should call searchVideosWithTimeRange with correct parameters', () async {
+      test('should call searchVideosWithTimeRange with correct parameters',
+          () async {
         // Mock the nostr service to return an empty stream
-        when(mockNostrService.searchVideos(any, 
-            authors: anyNamed('authors'),
-            since: anyNamed('since'),
-            until: anyNamed('until'),
-            limit: anyNamed('limit')))
-          .thenAnswer((_) => Stream<Event>.empty());
+        when(mockNostrService.searchVideos(any,
+                authors: anyNamed('authors'),
+                since: anyNamed('since'),
+                until: anyNamed('until'),
+                limit: anyNamed('limit')))
+            .thenAnswer((_) => Stream<Event>.empty());
 
         final searchQuery = 'bitcoin';
         final since = DateTime.now().subtract(Duration(days: 7));
         final until = DateTime.now();
-        
+
         await videoEventService.searchVideosWithTimeRange(
           query: searchQuery,
           since: since,
           until: until,
         );
-        
+
         // Verify the underlying search was called with time parameters
         verify(mockNostrService.searchVideos(searchQuery,
-            authors: anyNamed('authors'),
-            since: since,
-            until: until,
-            limit: anyNamed('limit'))).called(1);
+                authors: anyNamed('authors'),
+                since: since,
+                until: until,
+                limit: anyNamed('limit')))
+            .called(1);
       });
 
-      test('should call searchVideosWithExtensions with query extensions', () async {
+      test('should call searchVideosWithExtensions with query extensions',
+          () async {
         // Mock the nostr service to return an empty stream
-        when(mockNostrService.searchVideos(any, 
-            authors: anyNamed('authors'),
-            since: anyNamed('since'),
-            until: anyNamed('until'),
-            limit: anyNamed('limit')))
-          .thenAnswer((_) => Stream<Event>.empty());
+        when(mockNostrService.searchVideos(any,
+                authors: anyNamed('authors'),
+                since: anyNamed('since'),
+                until: anyNamed('until'),
+                limit: anyNamed('limit')))
+            .thenAnswer((_) => Stream<Event>.empty());
 
         final searchQuery = 'music language:en nsfw:false';
-        
+
         await videoEventService.searchVideosWithExtensions(searchQuery);
-        
+
         // Verify the search was called with the extensions query
         verify(mockNostrService.searchVideos(searchQuery,
-            authors: anyNamed('authors'),
-            since: anyNamed('since'),
-            until: anyNamed('until'),
-            limit: anyNamed('limit'))).called(1);
+                authors: anyNamed('authors'),
+                since: anyNamed('since'),
+                until: anyNamed('until'),
+                limit: anyNamed('limit')))
+            .called(1);
       });
     });
   });

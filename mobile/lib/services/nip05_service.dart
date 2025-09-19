@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class Nip05Service  {
+class Nip05Service {
   Nip05Service({http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
   static const String _baseUrl =
@@ -34,7 +34,6 @@ class Nip05Service  {
     _isChecking = true;
     _error = null;
 
-
     try {
       final response = await _httpClient.get(
         Uri.parse('$_baseUrl/.well-known/nostr.json?name=$username'),
@@ -48,7 +47,6 @@ class Nip05Service  {
         final isAvailable = names == null || !names.containsKey(username);
 
         _isChecking = false;
-
 
         return isAvailable;
       } else {
@@ -79,7 +77,6 @@ class Nip05Service  {
 
     _isChecking = true;
     _error = null;
-
 
     try {
       final response = await _httpClient.post(
@@ -144,7 +141,6 @@ class Nip05Service  {
     _isChecking = true;
     _error = null;
 
-
     try {
       final response = await _httpClient.get(
         Uri.parse('https://$domain/.well-known/nostr.json?name=$username'),
@@ -194,8 +190,6 @@ class Nip05Service  {
       _currentUsername = null;
       _isVerified = false;
     }
-
-
   }
 
   /// Validate username format
@@ -218,6 +212,5 @@ class Nip05Service  {
     _isVerified = false;
     _isChecking = false;
     _error = null;
-
   }
 }

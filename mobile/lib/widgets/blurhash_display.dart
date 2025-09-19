@@ -17,7 +17,7 @@ class BlurhashDisplay extends StatefulWidget {
     this.height,
     this.fit = BoxFit.cover,
   });
-  
+
   final String blurhash;
   final double? width;
   final double? height;
@@ -29,13 +29,13 @@ class BlurhashDisplay extends StatefulWidget {
 
 class _BlurhashDisplayState extends State<BlurhashDisplay> {
   BlurhashData? _blurhashData;
-  
+
   @override
   void initState() {
     super.initState();
     _decodeBlurhash();
   }
-  
+
   @override
   void didUpdateWidget(BlurhashDisplay oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -43,7 +43,7 @@ class _BlurhashDisplayState extends State<BlurhashDisplay> {
       _decodeBlurhash();
     }
   }
-  
+
   void _decodeBlurhash() {
     try {
       Log.debug(
@@ -51,13 +51,13 @@ class _BlurhashDisplayState extends State<BlurhashDisplay> {
         name: 'BlurhashDisplay',
         category: LogCategory.ui,
       );
-      
+
       final data = BlurhashService.decodeBlurhash(
         widget.blurhash,
-        width: 32,  // Small size for performance
+        width: 32, // Small size for performance
         height: 32,
       );
-      
+
       if (mounted && data != null) {
         setState(() {
           _blurhashData = data;
@@ -71,18 +71,20 @@ class _BlurhashDisplayState extends State<BlurhashDisplay> {
       );
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     // Use actual decoded image if available
     if (_blurhashData?.pixels != null) {
       return FutureBuilder<ui.Image?>(
-        future: _createImageFromPixels(_blurhashData!.pixels!, _blurhashData!.width, _blurhashData!.height),
+        future: _createImageFromPixels(_blurhashData!.pixels!,
+            _blurhashData!.width, _blurhashData!.height),
         builder: (context, snapshot) {
           if (snapshot.hasData && snapshot.data != null) {
             return CustomPaint(
               painter: _BlurhashImagePainter(snapshot.data!),
-              size: Size(widget.width ?? double.infinity, widget.height ?? double.infinity),
+              size: Size(widget.width ?? double.infinity,
+                  widget.height ?? double.infinity),
             );
           }
           // Fall back to gradient while image is being created
@@ -90,12 +92,12 @@ class _BlurhashDisplayState extends State<BlurhashDisplay> {
         },
       );
     }
-    
+
     // Use gradient from blurhash data if available
     if (_blurhashData != null) {
       return _buildGradientFallback();
     }
-    
+
     // Fallback gradient while decoding
     return Container(
       width: widget.width,
@@ -122,26 +124,28 @@ class _BlurhashDisplayState extends State<BlurhashDisplay> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: colors.isNotEmpty 
-            ? (colors.length >= 2 
-                ? [
-                    Color(colors[0].toARGB32()),
-                    Color(colors[1].toARGB32()),
-                  ]
-                : [
-                    Color(colors[0].toARGB32()),
-                    Color(colors[0].toARGB32()).withValues(alpha: 0.7),
-                  ])
-            : [
-                Color(_blurhashData!.primaryColor.toARGB32()),
-                Color(_blurhashData!.primaryColor.toARGB32()).withValues(alpha: 0.7),
-              ],
+          colors: colors.isNotEmpty
+              ? (colors.length >= 2
+                  ? [
+                      Color(colors[0].toARGB32()),
+                      Color(colors[1].toARGB32()),
+                    ]
+                  : [
+                      Color(colors[0].toARGB32()),
+                      Color(colors[0].toARGB32()).withValues(alpha: 0.7),
+                    ])
+              : [
+                  Color(_blurhashData!.primaryColor.toARGB32()),
+                  Color(_blurhashData!.primaryColor.toARGB32())
+                      .withValues(alpha: 0.7),
+                ],
         ),
       ),
     );
   }
 
-  Future<ui.Image?> _createImageFromPixels(Uint8List pixels, int width, int height) async {
+  Future<ui.Image?> _createImageFromPixels(
+      Uint8List pixels, int width, int height) async {
     try {
       final completer = Completer<ui.Image>();
       ui.decodeImageFromPixels(
@@ -155,7 +159,7 @@ class _BlurhashDisplayState extends State<BlurhashDisplay> {
       );
       return await completer.future;
     } catch (e) {
-      Log.error('Failed to create image from pixels: $e', 
+      Log.error('Failed to create image from pixels: $e',
           name: 'BlurhashDisplay', category: LogCategory.ui);
       return null;
     }
@@ -165,17 +169,18 @@ class _BlurhashDisplayState extends State<BlurhashDisplay> {
 /// Custom painter for rendering decoded blurhash image
 class _BlurhashImagePainter extends CustomPainter {
   _BlurhashImagePainter(this.image);
-  
+
   final ui.Image image;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..filterQuality = FilterQuality.low;
-    
+
     // Scale the image to fit the widget size
-    final src = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+    final src =
+        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
     final dst = Rect.fromLTWH(0, 0, size.width, size.height);
-    
+
     canvas.drawImageRect(image, src, dst, paint);
   }
 
@@ -197,7 +202,7 @@ class BlurhashImage extends StatelessWidget {
     this.fadeInDuration = const Duration(milliseconds: 300),
     this.errorBuilder,
   });
-  
+
   final String imageUrl;
   final String? blurhash;
   final double? width;
@@ -205,7 +210,7 @@ class BlurhashImage extends StatelessWidget {
   final BoxFit fit;
   final Duration fadeInDuration;
   final Widget Function(BuildContext, Object, StackTrace?)? errorBuilder;
-  
+
   @override
   Widget build(BuildContext context) {
     // If no blurhash, just show the image with fade in
@@ -233,7 +238,7 @@ class BlurhashImage extends StatelessWidget {
         ),
       );
     }
-    
+
     // Show blurhash while loading, then fade in the image
     return SizedBox(
       width: width,

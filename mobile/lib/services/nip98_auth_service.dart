@@ -58,7 +58,7 @@ class Nip98Token {
 
 /// Service for creating NIP-98 HTTP authentication tokens
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class Nip98AuthService  {
+class Nip98AuthService {
   Nip98AuthService({required AuthService authService})
       : _authService = authService {
     // Start periodic cache cleanup
@@ -325,7 +325,5 @@ class Nip98AuthService  {
 
     _cleanupTimer?.cancel();
     _tokenCache.clear();
-
-    
   }
 }

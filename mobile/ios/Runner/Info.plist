@@ -2,6 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>AVInitialRouteSharingPolicy</key>
+	<string>LongFormAudio</string>
+	<key>AVAudioSessionCategoryPlayback</key>
+	<true/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<key>UIApplicationExitsOnSuspend</key>
+	<false/>
+	<key>UIApplicationSupportsMultipleScenes</key>
+	<false/>
+	<key>UIRequiresPersistentWiFi</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -22,8 +36,58 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>relay3.openvine.co</key>
+			<dict>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<false/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to discover and sync videos with nearby divine users for offline sharing.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>This app uses Bluetooth to share videos directly with other divine users nearby.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_openvine._tcp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to camera to record vine videos.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Location access allows discovery of nearby devices for optional offline sync while using the app.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Location access is used to enable Wi‑Fi-related features and nearby device discovery for optional offline sync.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to microphone to record audio for vine videos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photo library access is needed to save exported videos to your library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access is needed to pick and share your videos.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+		<string>bluetooth-peripheral</string>
+		<string>audio</string>
+		<string>background-processing</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -41,17 +105,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs access to camera to record vine videos.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>This app needs access to microphone to record audio for vine videos.</string>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>This app uses Bluetooth to discover and sync videos with nearby divine users for offline sharing.</string>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>This app uses Bluetooth to share videos directly with other divine users nearby.</string>
 </dict>
 </plist>

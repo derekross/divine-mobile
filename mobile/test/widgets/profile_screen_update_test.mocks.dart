@@ -401,6 +401,15 @@ class MockUserProfileService extends _i1.Mock
       ) as Map<String, dynamic>);
 
   @override
+  void handleProfileEventForTesting(_i5.Event? event) => super.noSuchMethod(
+        Invocation.method(
+          #handleProfileEventForTesting,
+          [event],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void dispose() => super.noSuchMethod(
         Invocation.method(
           #dispose,
@@ -921,7 +930,7 @@ class MockVideoEventService extends _i1.Mock implements _i10.VideoEventService {
     String? group,
     int? since,
     int? until,
-    int? limit = 50,
+    int? limit = 200,
     bool? replace = true,
     bool? includeReposts = false,
   }) =>
@@ -1008,7 +1017,7 @@ class MockVideoEventService extends _i1.Mock implements _i10.VideoEventService {
     List<String>? authors,
     int? since,
     int? until,
-    int? limit = 50,
+    int? limit = 200,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1059,7 +1068,7 @@ class MockVideoEventService extends _i1.Mock implements _i10.VideoEventService {
   @override
   _i3.Future<void> loadMoreEvents(
     _i10.SubscriptionType? subscriptionType, {
-    int? limit = 200,
+    int? limit = 500,
   }) =>
       (super.noSuchMethod(
         Invocation.method(

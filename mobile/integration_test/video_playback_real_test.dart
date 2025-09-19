@@ -14,8 +14,9 @@ void main() {
 
   group('Real Video Playback Tests', () {
     // Use a real test video URL (this is a common test video)
-    const testVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-    
+    const testVideoUrl =
+        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+
     late VideoEvent testVideo;
 
     setUp(() {
@@ -32,7 +33,8 @@ void main() {
       );
     });
 
-    testWidgets('VideoPlaybackController initializes and plays real video', (tester) async {
+    testWidgets('VideoPlaybackController initializes and plays real video',
+        (tester) async {
       final controller = VideoPlaybackController(
         video: testVideo,
         config: VideoPlaybackConfig.feed,
@@ -48,7 +50,7 @@ void main() {
 
       // Initialize controller
       await controller.initialize();
-      
+
       // Wait for initialization to complete
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
@@ -56,11 +58,11 @@ void main() {
       expect(states.contains(VideoPlaybackState.initializing), isTrue);
       expect(controller.state, equals(VideoPlaybackState.ready));
       expect(controller.isInitialized, isTrue);
-      
+
       // Set active and play
       controller.setActive(true);
       await tester.pumpAndSettle(const Duration(milliseconds: 500));
-      
+
       // With feed config, it should autoplay
       expect(controller.isPlaying, isTrue);
       expect(controller.state, equals(VideoPlaybackState.playing));
@@ -110,7 +112,8 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('Navigation pause/resume works with real video', (tester) async {
+    testWidgets('Navigation pause/resume works with real video',
+        (tester) async {
       final controller = VideoPlaybackController(
         video: testVideo,
         config: VideoPlaybackConfig.feed,
@@ -118,7 +121,7 @@ void main() {
 
       await controller.initialize();
       controller.setActive(true);
-      
+
       // Wait for video to start playing
       await tester.pumpAndSettle(const Duration(seconds: 2));
       expect(controller.isPlaying, isTrue);
@@ -136,7 +139,8 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('Event stream emits real events during playback', (tester) async {
+    testWidgets('Event stream emits real events during playback',
+        (tester) async {
       final controller = VideoPlaybackController(
         video: testVideo,
         config: VideoPlaybackConfig.feed,
@@ -147,17 +151,18 @@ void main() {
 
       await controller.initialize();
       controller.setActive(true);
-      
+
       // Wait for events
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       // Should have received multiple events
       expect(events, isNotEmpty);
       expect(events.any((e) => e is VideoStateChanged), isTrue);
-      
+
       // Check for state changes indicating initialization
       final stateChanges = events.whereType<VideoStateChanged>().toList();
-      expect(stateChanges.any((e) => e.state == VideoPlaybackState.ready), isTrue);
+      expect(
+          stateChanges.any((e) => e.state == VideoPlaybackState.ready), isTrue);
 
       subscription.cancel();
       controller.dispose();
@@ -165,7 +170,7 @@ void main() {
 
     testWidgets('Tap to play/pause works with real video', (tester) async {
       var tapCalled = false;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -210,7 +215,7 @@ void main() {
       controller.events.listen(events.add);
 
       await controller.initialize();
-      
+
       // Wait for error
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
@@ -218,7 +223,7 @@ void main() {
       expect(controller.state, equals(VideoPlaybackState.error));
       expect(controller.hasError, isTrue);
       expect(controller.errorMessage, isNotNull);
-      
+
       // Should have emitted error event
       expect(events.any((e) => e is VideoError), isTrue);
 
@@ -234,7 +239,7 @@ void main() {
 
       await feedController.initialize();
       await tester.pumpAndSettle(const Duration(seconds: 2));
-      
+
       // Should be muted for feed videos
       expect(feedController.controller?.value.volume, equals(0.0));
 
@@ -248,7 +253,7 @@ void main() {
 
       await fullscreenController.initialize();
       await tester.pumpAndSettle(const Duration(seconds: 2));
-      
+
       // Should have audio for fullscreen videos
       expect(fullscreenController.controller?.value.volume, equals(1.0));
 
@@ -268,10 +273,10 @@ void main() {
 
       await controller1.initialize();
       await controller2.initialize();
-      
+
       controller1.setActive(true);
       controller2.setActive(true);
-      
+
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       // Both should be playing
@@ -281,7 +286,7 @@ void main() {
       // Pause one shouldn't affect the other
       await controller1.pause();
       await tester.pumpAndSettle();
-      
+
       expect(controller1.isPlaying, isFalse);
       expect(controller2.isPlaying, isTrue);
 

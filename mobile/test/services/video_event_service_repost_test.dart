@@ -53,7 +53,8 @@ void main() {
 
     test('should include Kind 6 events in subscription filter', () async {
       // Subscribe to video feed
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
 
       // Verify that the filter includes both Kind 22 and Kind 6
       verify(
@@ -102,7 +103,8 @@ void main() {
       repostEvent.id = 'repost789';
 
       // Subscribe and add events
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
 
       // First add the original video
       eventStreamController.add(originalEvent);
@@ -153,7 +155,8 @@ void main() {
       repostEvent.id = 'repost789';
 
       // Subscribe and add repost event
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
       eventStreamController.add(repostEvent);
 
       // Allow processing
@@ -192,7 +195,8 @@ void main() {
       invalidRepostEvent.id = 'repost789';
 
       // Subscribe and add event
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
       eventStreamController.add(invalidRepostEvent);
 
       // Allow processing
@@ -241,7 +245,8 @@ void main() {
       ).thenAnswer((_) => fetchStreamController.stream);
 
       // Subscribe and add repost
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
       eventStreamController.add(repostEvent);
 
       // Allow initial processing
@@ -290,7 +295,8 @@ void main() {
       repostEvent.id = 'repost789';
 
       // Subscribe with hashtag filter
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery, hashtags: ['bitcoin']);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery, hashtags: ['bitcoin']);
 
       // Add original and repost
       eventStreamController.add(originalEvent);
@@ -303,7 +309,8 @@ void main() {
 
       // Now subscribe with matching hashtag
       await videoEventService.unsubscribeFromVideoFeed();
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery, hashtags: ['nostr']);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery, hashtags: ['nostr']);
 
       // Add events again
       eventStreamController.add(originalEvent);

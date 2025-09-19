@@ -46,7 +46,7 @@ class SavedIdentity {
 
 /// Service for managing multiple Nostr identities
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class IdentityManagerService  {
+class IdentityManagerService {
   IdentityManagerService({SecureKeyStorageService? keyStorage})
       : _keyStorage = keyStorage ?? SecureKeyStorageService();
   static const String _identitiesKey = 'saved_nostr_identities';
@@ -81,7 +81,6 @@ class IdentityManagerService  {
 
       // Load the active identity
       _activeIdentityNpub = prefs.getString(_activeIdentityKey);
-
 
       Log.debug('📱 Loaded ${_savedIdentities.length} saved identities',
           name: 'IdentityManagerService', category: LogCategory.system);
@@ -209,8 +208,10 @@ class IdentityManagerService  {
       }
 
       await _persistIdentities();
-      Log.debug('📱️ Removed identity with npub: ${NostrEncoding.maskKey(npub)}',
-          name: 'IdentityManagerService', category: LogCategory.system);
+      Log.debug(
+          '📱️ Removed identity with npub: ${NostrEncoding.maskKey(npub)}',
+          name: 'IdentityManagerService',
+          category: LogCategory.system);
     } catch (e) {
       Log.error('Error removing identity: $e',
           name: 'IdentityManagerService', category: LogCategory.system);
@@ -233,8 +234,6 @@ class IdentityManagerService  {
       } else {
         await prefs.remove(_activeIdentityKey);
       }
-
-
     } catch (e) {
       Log.error('Error persisting identities: $e',
           name: 'IdentityManagerService', category: LogCategory.system);
@@ -250,7 +249,6 @@ class IdentityManagerService  {
 
       _savedIdentities.clear();
       _activeIdentityNpub = null;
-
 
       Log.debug('📱️ Cleared all saved identities',
           name: 'IdentityManagerService', category: LogCategory.system);

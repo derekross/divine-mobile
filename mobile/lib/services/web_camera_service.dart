@@ -30,7 +30,8 @@ class WebCameraService {
     try {
       // Check if mediaDevices API is available
       if (html.window.navigator.mediaDevices == null) {
-        throw Exception('MediaDevices API not available. Please ensure you are using HTTPS.');
+        throw Exception(
+            'MediaDevices API not available. Please ensure you are using HTTPS.');
       }
 
       // Request camera permissions and get media stream
@@ -47,7 +48,7 @@ class WebCameraService {
       } catch (audioError) {
         Log.warning('Failed to get audio, trying video-only: $audioError',
             name: 'WebCameraService', category: LogCategory.system);
-        
+
         // Try without audio
         _mediaStream = await html.window.navigator.mediaDevices!.getUserMedia({
           'video': {

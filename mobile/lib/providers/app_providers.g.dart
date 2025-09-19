@@ -274,27 +274,6 @@ final nip05ServiceProvider = AutoDisposeProvider<Nip05Service>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef Nip05ServiceRef = AutoDisposeProviderRef<Nip05Service>;
-String _$streamUploadServiceHash() =>
-    r'36c889822d4d1c42cf68249a86b265dd6b38f4c8';
-
-/// Stream upload service for video streaming
-///
-/// Copied from [streamUploadService].
-@ProviderFor(streamUploadService)
-final streamUploadServiceProvider =
-    AutoDisposeProvider<StreamUploadService>.internal(
-  streamUploadService,
-  name: r'streamUploadServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$streamUploadServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef StreamUploadServiceRef = AutoDisposeProviderRef<StreamUploadService>;
 String _$authServiceHash() => r'7d7fae6e9bce96247f58dc43b2b87a289dd3e08b';
 
 /// Authentication service depends on secure key storage
@@ -351,7 +330,7 @@ final subscriptionManagerProvider = Provider<SubscriptionManager>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SubscriptionManagerRef = ProviderRef<SubscriptionManager>;
-String _$videoEventServiceHash() => r'48127330032aded0ee867d5e6259bb624c7949b1';
+String _$videoEventServiceHash() => r'741983deb9e89982c79ef8e56eb387b8ebd3ba07';
 
 /// Video event service depends on Nostr, SeenVideos, Blocklist, and SubscriptionManager services
 ///
@@ -490,9 +469,51 @@ final directUploadServiceProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DirectUploadServiceRef = AutoDisposeProviderRef<DirectUploadService>;
-String _$uploadManagerHash() => r'5480f44a292ef1b41bc5eef8d736d178905753e6';
+String _$streamUploadServiceHash() =>
+    r'd442f77368f276eca0ffdae87ac89112340c791c';
 
-/// Upload manager depends on direct upload service
+/// Stream upload service (uses Cloudflare Stream)
+///
+/// Copied from [streamUploadService].
+@ProviderFor(streamUploadService)
+final streamUploadServiceProvider =
+    AutoDisposeProvider<StreamUploadService>.internal(
+  streamUploadService,
+  name: r'streamUploadServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$streamUploadServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef StreamUploadServiceRef = AutoDisposeProviderRef<StreamUploadService>;
+String _$blossomUploadServiceHash() =>
+    r'd57fa3ec36057b410664e0da59b8067e68bebade';
+
+/// Blossom upload service (uses user-configured Blossom server)
+///
+/// Copied from [blossomUploadService].
+@ProviderFor(blossomUploadService)
+final blossomUploadServiceProvider =
+    AutoDisposeProvider<BlossomUploadService>.internal(
+  blossomUploadService,
+  name: r'blossomUploadServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$blossomUploadServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef BlossomUploadServiceRef = AutoDisposeProviderRef<BlossomUploadService>;
+String _$uploadManagerHash() => r'4e8002c8150ee750614007f98903b530da18ffa0';
+
+/// Upload manager depends on direct upload service and optionally blossom service
 ///
 /// Copied from [uploadManager].
 @ProviderFor(uploadManager)

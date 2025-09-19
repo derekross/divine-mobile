@@ -23,14 +23,15 @@ Future<void> waitForCondition(
       completer.complete();
     }
   });
-  
+
   Future.delayed(timeout, () {
     if (!completer.isCompleted) {
       timer.cancel();
-      completer.completeError(TimeoutException('Condition not met within timeout'));
+      completer
+          .completeError(TimeoutException('Condition not met within timeout'));
     }
   });
-  
+
   await completer.future;
 }
 
@@ -42,14 +43,14 @@ void main() {
 
     setUpAll(() {
       // Enable debug logging to see what's happening
-      UnifiedLogger.setLogLevel(LogLevel.debug);
+      Log.setLogLevel(LogLevel.debug);
     });
 
     setUp(() async {
       // Create real services
       final keyManager = NostrKeyManager();
       await keyManager.initialize();
-      
+
       nostrService = NostrService(keyManager);
       subscriptionManager = SubscriptionManager(nostrService);
       videoEventService = VideoEventService(
@@ -59,17 +60,17 @@ void main() {
 
       // Initialize and connect to real relay
       await nostrService.initialize();
-      
+
       // Add relay instead of connectToRelay (method doesn't exist)
       await nostrService.addRelay('wss://relay3.openvine.co');
-      
+
       // Wait for relay connection to establish
       // Poll for connection status instead of arbitrary delay
       for (int i = 0; i < 20; i++) {
         if (nostrService.connectedRelayCount > 0) break;
         await Future.delayed(Duration(milliseconds: 100));
       }
-      
+
       expect(nostrService.isInitialized, isTrue);
       expect(nostrService.connectedRelayCount, greaterThan(0));
     });
@@ -79,111 +80,146 @@ void main() {
       await nostrService.dispose();
     });
 
-    test('should get real kind 32222 video events from relay3.openvine.co', () async {
+    test('should get real kind 32222 video events from relay3.openvine.co',
+        () async {
       // Subscribe to discovery feed
       await videoEventService.subscribeToVideoFeed(
         subscriptionType: SubscriptionType.discovery,
         limit: 10,
       );
-      
+
       // Wait for initial events
       await waitForCondition(
-        () => videoEventService.getVideos(SubscriptionType.discovery).isNotEmpty,
+        () =>
+            videoEventService.getVideos(SubscriptionType.discovery).isNotEmpty,
         timeout: Duration(seconds: 5),
       );
-      
+
       // Get initial videos
-      final initialVideos = videoEventService.getVideos(SubscriptionType.discovery);
-      UnifiedLogger.info('📹 Initial videos loaded: ${initialVideos.length}', name: 'Test');
-      
-      expect(initialVideos, isNotEmpty, reason: 'Should have loaded some initial videos');
-      
+      final initialVideos =
+          videoEventService.getVideos(SubscriptionType.discovery);
+      Log.info('📹 Initial videos loaded: ${initialVideos.length}',
+          name: 'Test');
+
+      expect(initialVideos, isNotEmpty,
+          reason: 'Should have loaded some initial videos');
+
       // Print first few videos to verify they're real
       final videosToShow = initialVideos.length < 3 ? initialVideos.length : 3;
       for (int i = 0; i < videosToShow; i++) {
         final video = initialVideos[i];
-        UnifiedLogger.info('  Video ${i+1}: ${video.title ?? "Untitled"} - ${video.id.substring(0, 8)}... created at ${video.timestamp}', name: 'Test');
-        expect(video.videoUrl, isNotNull, reason: 'Real videos should have URLs');
+        Log.info(
+            '  Video ${i + 1}: ${video.title ?? "Untitled"} - ${video.id.substring(0, 8)}... created at ${video.timestamp}',
+            name: 'Test');
+        expect(video.videoUrl, isNotNull,
+            reason: 'Real videos should have URLs');
       }
-      
+
       // Store the IDs of initial videos
       final initialVideoIds = initialVideos.map((v) => v.id).toSet();
       final oldestInitialTimestamp = initialVideos.last.createdAt;
-      
-      UnifiedLogger.info('\n🔄 Loading more events (pagination)...', name: 'Test');
-      UnifiedLogger.info('  Oldest timestamp before load: ${DateTime.fromMillisecondsSinceEpoch(oldestInitialTimestamp * 1000)}', name: 'Test');
-      
+
+      Log.info('\n🔄 Loading more events (pagination)...',
+          name: 'Test');
+      Log.info(
+          '  Oldest timestamp before load: ${DateTime.fromMillisecondsSinceEpoch(oldestInitialTimestamp * 1000)}',
+          name: 'Test');
+
       // Load more events - this should use pagination with 'until' parameter
       await videoEventService.loadMoreEvents(
         SubscriptionType.discovery,
         limit: 10,
       );
-      
+
       // Wait for new events to arrive
       await waitForCondition(
-        () => videoEventService.getVideos(SubscriptionType.discovery).length > initialVideos.length,
+        () =>
+            videoEventService.getVideos(SubscriptionType.discovery).length >
+            initialVideos.length,
         timeout: Duration(seconds: 5),
       );
-      
+
       // Get all videos after pagination
       final allVideos = videoEventService.getVideos(SubscriptionType.discovery);
-      UnifiedLogger.info('\n📹 Total videos after pagination: ${allVideos.length}', name: 'Test');
-      
+      Log.info(
+          '\n📹 Total videos after pagination: ${allVideos.length}',
+          name: 'Test');
+
       // Find new videos that weren't in the initial set
-      final newVideos = allVideos.where((v) => !initialVideoIds.contains(v.id)).toList();
-      UnifiedLogger.info('  New videos loaded: ${newVideos.length}', name: 'Test');
-      
+      final newVideos =
+          allVideos.where((v) => !initialVideoIds.contains(v.id)).toList();
+      Log.info('  New videos loaded: ${newVideos.length}',
+          name: 'Test');
+
       // Verify we got new videos
-      expect(newVideos, isNotEmpty, reason: 'Pagination should load NEW videos, not duplicates');
-      
+      expect(newVideos, isNotEmpty,
+          reason: 'Pagination should load NEW videos, not duplicates');
+
       // Verify the new videos are older than the initial ones
       for (final video in newVideos.take(3)) {
-        UnifiedLogger.info('  New video: ${video.title ?? "Untitled"} - created at ${video.timestamp}', name: 'Test');
+        Log.info(
+            '  New video: ${video.title ?? "Untitled"} - created at ${video.timestamp}',
+            name: 'Test');
         expect(
           video.createdAt,
           lessThanOrEqualTo(oldestInitialTimestamp),
-          reason: 'New videos should be older than or equal to the oldest initial video (reverse chronological pagination)',
+          reason:
+              'New videos should be older than or equal to the oldest initial video (reverse chronological pagination)',
         );
       }
-      
+
       // Test pagination reset scenario
-      UnifiedLogger.info('\n🔄 Testing pagination reset scenario...', name: 'Test');
-      
+      Log.info('\n🔄 Testing pagination reset scenario...',
+          name: 'Test');
+
       // Reset pagination state (simulating hasMore=false scenario)
       videoEventService.resetPaginationState(SubscriptionType.discovery);
-      
+
       // Load more after reset - should still get older videos
       await videoEventService.loadMoreEvents(
         SubscriptionType.discovery,
         limit: 10,
       );
-      
+
       await waitForCondition(
-        () => videoEventService.getVideos(SubscriptionType.discovery).isNotEmpty,
+        () =>
+            videoEventService.getVideos(SubscriptionType.discovery).isNotEmpty,
         timeout: Duration(seconds: 5),
       );
-      
-      final videosAfterReset = videoEventService.getVideos(SubscriptionType.discovery);
-      final newVideosAfterReset = videosAfterReset.where(
-        (v) => !initialVideoIds.contains(v.id) && !newVideos.map((nv) => nv.id).contains(v.id)
-      ).toList();
-      
-      UnifiedLogger.info('\n📹 Videos after pagination reset:', name: 'Test');
-      UnifiedLogger.info('  Total: ${videosAfterReset.length}', name: 'Test');
-      UnifiedLogger.info('  New after reset: ${newVideosAfterReset.length}', name: 'Test');
-      
+
+      final videosAfterReset =
+          videoEventService.getVideos(SubscriptionType.discovery);
+      final newVideosAfterReset = videosAfterReset
+          .where((v) =>
+              !initialVideoIds.contains(v.id) &&
+              !newVideos.map((nv) => nv.id).contains(v.id))
+          .toList();
+
+      Log.info('\n📹 Videos after pagination reset:', name: 'Test');
+      Log.info('  Total: ${videosAfterReset.length}', name: 'Test');
+      Log.info('  New after reset: ${newVideosAfterReset.length}',
+          name: 'Test');
+
       if (newVideosAfterReset.isNotEmpty) {
-        UnifiedLogger.info('  Successfully loaded ${newVideosAfterReset.length} more videos after reset!', name: 'Test');
+        Log.info(
+            '  Successfully loaded ${newVideosAfterReset.length} more videos after reset!',
+            name: 'Test');
         for (final video in newVideosAfterReset.take(3)) {
-          UnifiedLogger.info('    Video: ${video.title ?? "Untitled"} - ${video.timestamp}', name: 'Test');
+          Log.info(
+              '    Video: ${video.title ?? "Untitled"} - ${video.timestamp}',
+              name: 'Test');
         }
       }
-      
+
       // Final verification
-      UnifiedLogger.info('✅ Test Summary:', name: 'Test');
-      UnifiedLogger.info('  Initial videos: ${initialVideos.length}', name: 'Test');
-      UnifiedLogger.info('  Videos after first pagination: ${allVideos.length}', name: 'Test');
-      UnifiedLogger.info('  Videos after reset and pagination: ${videosAfterReset.length}', name: 'Test');
+      Log.info('✅ Test Summary:', name: 'Test');
+      Log.info('  Initial videos: ${initialVideos.length}',
+          name: 'Test');
+      Log.info('  Videos after first pagination: ${allVideos.length}',
+          name: 'Test');
+      Log.info(
+          '  Videos after reset and pagination: ${videosAfterReset.length}',
+          name: 'Test');
       // All videos in OpenVine are kind 32222 by definition
     }, timeout: Timeout(Duration(seconds: 30)));
 
@@ -193,46 +229,58 @@ void main() {
         subscriptionType: SubscriptionType.discovery,
         limit: 5,
       );
-      
+
       await waitForCondition(
-        () => videoEventService.getVideos(SubscriptionType.discovery).isNotEmpty,
+        () =>
+            videoEventService.getVideos(SubscriptionType.discovery).isNotEmpty,
         timeout: Duration(seconds: 3),
       );
-      
-      final initialCount = videoEventService.getVideos(SubscriptionType.discovery).length;
-      UnifiedLogger.info('🚀 Testing rapid pagination - Initial videos: $initialCount', name: 'Test');
-      
+
+      final initialCount =
+          videoEventService.getVideos(SubscriptionType.discovery).length;
+      Log.info(
+          '🚀 Testing rapid pagination - Initial videos: $initialCount',
+          name: 'Test');
+
       // Rapidly request more videos (simulating fast scrolling)
       for (int i = 0; i < 3; i++) {
-        UnifiedLogger.info('  Loading batch ${i + 1}...', name: 'Test');
-        final beforeCount = videoEventService.getVideos(SubscriptionType.discovery).length;
+        Log.info('  Loading batch ${i + 1}...', name: 'Test');
+        final beforeCount =
+            videoEventService.getVideos(SubscriptionType.discovery).length;
         await videoEventService.loadMoreEvents(
           SubscriptionType.discovery,
           limit: 5,
         );
         await waitForCondition(
-          () => videoEventService.getVideos(SubscriptionType.discovery).length > beforeCount,
+          () =>
+              videoEventService.getVideos(SubscriptionType.discovery).length >
+              beforeCount,
           timeout: Duration(seconds: 3),
         ).catchError((_) => null); // Allow timeout if no new videos
-        
-        final currentCount = videoEventService.getVideos(SubscriptionType.discovery).length;
-        UnifiedLogger.info('    Videos after batch ${i + 1}: $currentCount', name: 'Test');
-        
+
+        final currentCount =
+            videoEventService.getVideos(SubscriptionType.discovery).length;
+        Log.info('    Videos after batch ${i + 1}: $currentCount',
+            name: 'Test');
+
         expect(
           currentCount,
           greaterThan(initialCount),
           reason: 'Each pagination should increase video count',
         );
       }
-      
-      final finalVideos = videoEventService.getVideos(SubscriptionType.discovery);
+
+      final finalVideos =
+          videoEventService.getVideos(SubscriptionType.discovery);
       final uniqueIds = finalVideos.map((v) => v.id).toSet();
-      
-      UnifiedLogger.info('\n✅ Rapid pagination results:', name: 'Test');
-      UnifiedLogger.info('  Total videos: ${finalVideos.length}', name: 'Test');
-      UnifiedLogger.info('  Unique videos: ${uniqueIds.length}', name: 'Test');
-      UnifiedLogger.info('  No duplicates: ${finalVideos.length == uniqueIds.length}', name: 'Test');
-      
+
+      Log.info('\n✅ Rapid pagination results:', name: 'Test');
+      Log.info('  Total videos: ${finalVideos.length}', name: 'Test');
+      Log.info('  Unique videos: ${uniqueIds.length}', name: 'Test');
+      Log.info(
+          '  No duplicates: ${finalVideos.length == uniqueIds.length}',
+          name: 'Test');
+
       expect(
         uniqueIds.length,
         equals(finalVideos.length),

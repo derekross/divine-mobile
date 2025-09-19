@@ -15,7 +15,7 @@ import 'package:openvine/utils/unified_logger.dart';
 /// - Query operations by author, hashtags, etc.
 /// - Cache management and clearing
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class VideoCacheService  {
+class VideoCacheService {
   final List<VideoEvent> _videoEvents = [];
   int _duplicateVideoEventCount = 0;
   DateTime? _lastDuplicateVideoLogTime;
@@ -76,8 +76,6 @@ class VideoCacheService  {
           name: 'VideoCacheService',
           category: LogCategory.video);
     }
-
-
   }
 
   /// Add multiple videos to cache
@@ -122,13 +120,11 @@ class VideoCacheService  {
     _videoEvents.clear();
     _duplicateVideoEventCount = 0;
     _lastDuplicateVideoLogTime = null;
-
   }
 
   /// Remove a specific video from cache
   void removeVideo(String id) {
     _videoEvents.removeWhere((event) => event.id == id);
-
   }
 
   /// Get cache statistics

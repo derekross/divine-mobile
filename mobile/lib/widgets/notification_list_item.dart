@@ -3,6 +3,7 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:openvine/services/image_cache_manager.dart';
 import 'package:openvine/models/notification_model.dart';
 import 'package:openvine/theme/app_theme.dart';
 import 'package:openvine/theme/vine_theme.dart';
@@ -103,6 +104,7 @@ class NotificationListItem extends StatelessWidget {
                   width: 48,
                   height: 48,
                   fit: BoxFit.cover,
+                  cacheManager: openVineImageCache,
                   placeholder: (context, url) => Container(
                     width: 48,
                     height: 48,
@@ -236,6 +238,7 @@ class NotificationListItem extends StatelessWidget {
             width: 64,
             height: 64,
             fit: BoxFit.cover,
+            cacheManager: openVineImageCache,
             placeholder: (context, url) => Container(
               width: 64,
               height: 64,

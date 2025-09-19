@@ -61,7 +61,8 @@ void main() {
         'about': 'Testing profile update relay storage',
       };
 
-      Log.info('📝 Creating kind 0 event with data: ${jsonEncode(profileData)}');
+      Log.info(
+          '📝 Creating kind 0 event with data: ${jsonEncode(profileData)}');
 
       final event = await authService.createAndSignEvent(
         kind: 0,
@@ -85,7 +86,8 @@ void main() {
         reason: 'Event broadcast should succeed',
       );
 
-      Log.info('✅ Broadcast successful to ${broadcastResult.successCount} relays');
+      Log.info(
+          '✅ Broadcast successful to ${broadcastResult.successCount} relays');
 
       // Step 3: Wait for relay to process
       Log.info('⏳ Waiting for relay to process event...');

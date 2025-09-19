@@ -172,13 +172,17 @@ void main() {
           .thenAnswer((_) async => mockBroadcastResult);
 
       // Follow user
-      await container.read(socialNotifierProvider.notifier).followUser(userToFollow);
+      await container
+          .read(socialNotifierProvider.notifier)
+          .followUser(userToFollow);
 
       var state = container.read(socialNotifierProvider);
       expect(state.followingPubkeys.contains(userToFollow), isTrue);
 
       // Unfollow user
-      await container.read(socialNotifierProvider.notifier).unfollowUser(userToFollow);
+      await container
+          .read(socialNotifierProvider.notifier)
+          .unfollowUser(userToFollow);
 
       state = container.read(socialNotifierProvider);
       expect(state.followingPubkeys.contains(userToFollow), isFalse);
@@ -218,7 +222,9 @@ void main() {
           .thenAnswer((_) async => mockBroadcastResult);
 
       // Repost event
-      await container.read(socialNotifierProvider.notifier).repostEvent(eventToRepost);
+      await container
+          .read(socialNotifierProvider.notifier)
+          .repostEvent(eventToRepost);
 
       final state = container.read(socialNotifierProvider);
       expect(state.repostedEventIds.contains('event-to-repost'), isTrue);

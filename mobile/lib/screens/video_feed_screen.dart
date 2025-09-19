@@ -103,7 +103,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
     super.initState();
     Log.info('🎬 VideoFeedScreen: initState called',
         name: 'VideoFeedScreen', category: LogCategory.ui);
-    
+
     _pageController = PageController();
     WidgetsBinding.instance.addObserver(this);
 
@@ -118,7 +118,6 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
     // Pause all videos when screen is disposed
     _pauseAllVideos();
 
-    
     super.dispose();
   }
 
@@ -138,7 +137,6 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
         _pauseAllVideos();
     }
   }
-
 
   void _onPageChanged(int index) {
     // Store the previous index before updating
@@ -173,7 +171,8 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
     _updateVideoPlayback(index, videos, previousIndex);
   }
 
-  void _updateVideoPlayback(int videoIndex, List<VideoEvent> videos, int previousPageIndex) {
+  void _updateVideoPlayback(
+      int videoIndex, List<VideoEvent> videos, int previousPageIndex) {
     if (videoIndex < 0 || videoIndex >= videos.length) return;
 
     // Immediately pause ALL videos first to ensure clean state
@@ -287,7 +286,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     Log.info('🎬 VideoFeedScreen: build() called',
         name: 'VideoFeedScreen', category: LogCategory.ui);
-    
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -314,13 +313,15 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
   Widget _buildBody() {
     Log.info('🎬 VideoFeedScreen: _buildBody called',
         name: 'VideoFeedScreen', category: LogCategory.ui);
-    
+
     // Watch the home feed state
     final videoFeedAsync = ref.watch(homeFeedProvider);
-    
-    Log.info('🎬 VideoFeedScreen: videoFeedAsync state = ${videoFeedAsync.runtimeType}',
-        name: 'VideoFeedScreen', category: LogCategory.ui);
-    
+
+    Log.info(
+        '🎬 VideoFeedScreen: videoFeedAsync state = ${videoFeedAsync.runtimeType}',
+        name: 'VideoFeedScreen',
+        category: LogCategory.ui);
+
     // Watch the video manager provider to ensure it gets instantiated and syncs videos
     ref.watch(videoManagerProvider);
 
@@ -337,11 +338,11 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
       },
       data: (feedState) {
         final videos = feedState.videos;
-        
+
         if (videos.isEmpty) {
           return _buildEmptyState();
         }
-        
+
         return _buildVideoFeed(videos, feedState);
       },
     );
@@ -365,12 +366,14 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
     // Check if user is following anyone to show appropriate message
     final socialData = ref.watch(social.socialNotifierProvider);
     final isFollowingAnyone = socialData.followingPubkeys.isNotEmpty;
-    
-    Log.info('🔍 VideoFeedScreen: Empty state - '
+
+    Log.info(
+        '🔍 VideoFeedScreen: Empty state - '
         'isFollowingAnyone=$isFollowingAnyone, '
         'socialInitialized=${socialData.isInitialized}, '
         'followingCount=${socialData.followingPubkeys.length}',
-        name: 'VideoFeedScreen', category: LogCategory.ui);
+        name: 'VideoFeedScreen',
+        category: LogCategory.ui);
 
     if (!isFollowingAnyone) {
       // Show educational message about divine's non-algorithmic approach
@@ -427,7 +430,8 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: VineTheme.vineGreen,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                 ),
                 child: const Text('Explore Vines'),
               ),
@@ -504,107 +508,108 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
       );
 
   Widget _buildVideoFeed(List<VideoEvent> videos, VideoFeedState feedState) {
-    Log.info('🎬 VideoFeedScreen: Building home video feed with ${videos.length} videos from following',
-        name: 'VideoFeedScreen', category: LogCategory.ui);
-    
+    Log.info(
+        '🎬 VideoFeedScreen: Building home video feed with ${videos.length} videos from following',
+        name: 'VideoFeedScreen',
+        category: LogCategory.ui);
+
     return Semantics(
-        label: 'Video feed',
-        child: Stack(
-          children: [
-            NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                // Track user scrolling to prevent rebuilds during interaction
-                if (notification is ScrollStartNotification) {
-                  Log.info('📱 User started scrolling',
-                      name: 'FeedScreenV2', category: LogCategory.ui);
+      label: 'Video feed',
+      child: Stack(
+        children: [
+          NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              // Track user scrolling to prevent rebuilds during interaction
+              if (notification is ScrollStartNotification) {
+                Log.info('📱 User started scrolling',
+                    name: 'FeedScreenV2', category: LogCategory.ui);
 
-                  // Immediately pause all videos when scrolling starts
-                  _pauseAllVideos();
-                } else if (notification is ScrollEndNotification) {
-                  Log.info('📱 User stopped scrolling',
-                      name: 'FeedScreenV2', category: LogCategory.ui);
+                // Immediately pause all videos when scrolling starts
+                _pauseAllVideos();
+              } else if (notification is ScrollEndNotification) {
+                Log.info('📱 User stopped scrolling',
+                    name: 'FeedScreenV2', category: LogCategory.ui);
 
-                  // Check for pull-to-refresh at the top
-                  if (_currentIndex == 0 && notification.metrics.pixels < -50) {
-                    _handleRefresh();
-                  }
-
-                  // Resume the current video after scrolling ends
-                  if (videos.isNotEmpty && _currentIndex < videos.length) {
-                    final currentVideo = videos[_currentIndex];
-                    _playVideo(currentVideo.id);
-                  }
+                // Check for pull-to-refresh at the top
+                if (_currentIndex == 0 && notification.metrics.pixels < -50) {
+                  _handleRefresh();
                 }
-                return false;
+
+                // Resume the current video after scrolling ends
+                if (videos.isNotEmpty && _currentIndex < videos.length) {
+                  final currentVideo = videos[_currentIndex];
+                  _playVideo(currentVideo.id);
+                }
+              }
+              return false;
+            },
+            child: PageView.builder(
+              controller: _pageController,
+              scrollDirection: Axis.vertical,
+              onPageChanged: _onPageChanged,
+              itemCount: videos.length,
+              pageSnapping: true,
+              itemBuilder: (context, index) {
+                // No transition indicators needed - simple discovery feed
+
+                // Simple index - no adjustments needed
+                final videoIndex = index;
+
+                // Bounds checking
+                if (videoIndex < 0 || videoIndex >= videos.length) {
+                  return _buildErrorItem('Index out of bounds');
+                }
+
+                final video = videos[videoIndex];
+                final isActive = index == _currentIndex;
+
+                // Error boundary for individual videos
+                return _buildVideoItemWithErrorBoundary(video, isActive);
               },
-              child: PageView.builder(
-                controller: _pageController,
-                scrollDirection: Axis.vertical,
-                onPageChanged: _onPageChanged,
-                itemCount: videos.length,
-                pageSnapping: true,
-                itemBuilder: (context, index) {
-                  // No transition indicators needed - simple discovery feed
-
-                  // Simple index - no adjustments needed
-                  final videoIndex = index;
-
-                  // Bounds checking
-                  if (videoIndex < 0 || videoIndex >= videos.length) {
-                    return _buildErrorItem('Index out of bounds');
-                  }
-
-                  final video = videos[videoIndex];
-                  final isActive = index == _currentIndex;
-
-                  // Error boundary for individual videos
-                  return _buildVideoItemWithErrorBoundary(video, isActive);
-                },
-              ),
             ),
+          ),
 
-            // Pull-to-refresh indicator overlay
-            if (_isRefreshing && _currentIndex == 0)
-              Positioned(
-                top: 100,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
+          // Pull-to-refresh indicator overlay
+          if (_isRefreshing && _currentIndex == 0)
+            Positioned(
+              top: 100,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
-                        SizedBox(width: 12),
-                        Text(
-                          'Refreshing feed...',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Refreshing feed...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-          ],
-        ),
-      );
+            ),
+        ],
+      ),
+    );
   }
-
 
   Widget _buildVideoItemWithErrorBoundary(VideoEvent video, bool isActive) {
     try {
@@ -682,11 +687,11 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
   void _checkForPagination(int currentIndex, int totalVideos) {
     // Load more when we're 3 videos away from the end
     const paginationThreshold = 3;
-    
+
     if (currentIndex >= totalVideos - paginationThreshold) {
       // Rate limit pagination calls to prevent spam
       final now = DateTime.now();
-      if (_lastPaginationCall != null && 
+      if (_lastPaginationCall != null &&
           now.difference(_lastPaginationCall!).inSeconds < 5) {
         Log.debug(
           'VideoFeed: Skipping pagination - too soon since last call',
@@ -695,15 +700,15 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
         );
         return;
       }
-      
+
       _lastPaginationCall = now;
-      
+
       Log.info(
         'VideoFeed: Near end of videos ($currentIndex/$totalVideos), loading more...',
         name: 'VideoFeedScreen',
         category: LogCategory.video,
       );
-      
+
       // Call the home feed provider's loadMore method
       ref.read(homeFeedProvider.notifier).loadMore();
     }
@@ -720,10 +725,10 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
     try {
       Log.info('🔄 Pull-to-refresh triggered - refreshing feed',
           name: 'VideoFeedScreen', category: LogCategory.ui);
-      
+
       // Refresh the home feed using Riverpod
       await ref.read(homeFeedProvider.notifier).refresh();
-      
+
       Log.info('✅ Feed refresh completed',
           name: 'VideoFeedScreen', category: LogCategory.ui);
     } catch (e) {
@@ -750,37 +755,30 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
   }
 
   /// Batch fetch profiles for videos around the current position
-  void _batchFetchProfilesAroundIndex(int currentIndex, List<VideoEvent> videos) {
+  void _batchFetchProfilesAroundIndex(
+      int currentIndex, List<VideoEvent> videos) {
     if (videos.isEmpty) return;
 
-    // Define window of videos to prefetch profiles for
-    const preloadRadius = 3; // Preload profiles for ±3 videos
-    final startIndex =
-        (currentIndex - preloadRadius).clamp(0, videos.length - 1);
-    final endIndex = (currentIndex + preloadRadius).clamp(0, videos.length - 1);
-
-    // Collect unique pubkeys that need profile fetching
+    // Only fetch profile for the currently visible video
+    // This prevents creating hundreds of relay subscriptions
+    final currentVideo = videos[currentIndex];
     final pubkeysToFetch = <String>{};
     final userProfilesNotifier = ref.read(userProfileNotifierProvider.notifier);
 
-    for (var i = startIndex; i <= endIndex; i++) {
-      final video = videos[i];
-
-      // Only add pubkeys that don't have profiles yet
-      if (!userProfilesNotifier.hasProfile(video.pubkey)) {
-        pubkeysToFetch.add(video.pubkey);
-      }
+    // Only add pubkey if we don't have the profile yet
+    if (!userProfilesNotifier.hasProfile(currentVideo.pubkey)) {
+      pubkeysToFetch.add(currentVideo.pubkey);
     }
 
     if (pubkeysToFetch.isEmpty) return;
 
     Log.debug(
-      '⚡ Immediate prefetch ${pubkeysToFetch.length} profiles for videos around index $currentIndex',
+      '⚡ Lazy loading profile for visible video at index $currentIndex',
       name: 'VideoFeedScreen',
       category: LogCategory.ui,
     );
 
-    // Aggressively prefetch profiles for immediate display
+    // Fetch profile only for the currently visible video
     userProfilesNotifier.prefetchProfilesImmediately(pubkeysToFetch.toList());
   }
 

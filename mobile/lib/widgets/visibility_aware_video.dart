@@ -11,7 +11,8 @@ import 'package:visibility_detector/visibility_detector.dart';
 ///
 /// This ensures consistent visibility behavior across all video widgets
 /// Note: Widget using this mixin must be a ConsumerStatefulWidget
-mixin VideoVisibilityMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
+mixin VideoVisibilityMixin<T extends ConsumerStatefulWidget>
+    on ConsumerState<T> {
   /// Unique key for this video widget
   String get videoId;
 
@@ -66,7 +67,8 @@ class VisibilityAwareVideo extends ConsumerStatefulWidget {
   final Function(VisibilityInfo)? onVisibilityChanged;
 
   @override
-  ConsumerState<VisibilityAwareVideo> createState() => _VisibilityAwareVideoState();
+  ConsumerState<VisibilityAwareVideo> createState() =>
+      _VisibilityAwareVideoState();
 }
 
 class _VisibilityAwareVideoState extends ConsumerState<VisibilityAwareVideo> {

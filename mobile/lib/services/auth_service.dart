@@ -112,13 +112,11 @@ class AuthService {
   /// Current public key (hex format)
   String? get currentPublicKeyHex => _currentKeyContainer?.publicKeyHex;
 
-
   /// Check if user is authenticated
   bool get isAuthenticated => _authState == AuthState.authenticated;
 
   /// Last authentication error
   String? get lastError => _lastError;
-
 
   /// Initialize the authentication service
   Future<void> initialize() async {
@@ -133,7 +131,6 @@ class AuthService {
     try {
       // Initialize secure key storage
       await _keyStorage.initialize();
-
 
       // Check for existing keys
       await _checkExistingAuth();
@@ -373,7 +370,6 @@ class AuthService {
     }
   }
 
-
   /// Create and sign a Nostr event
   Future<Event?> createAndSignEvent({
     required int kind,
@@ -404,7 +400,6 @@ class AuthService {
                     (72 * 60 * 60); // 72 hours
             eventTags.add(['expiration', expirationTimestamp.toString()]);
           }
-
 
           final event = Event(
             _currentKeyContainer!.publicKeyHex,
@@ -590,8 +585,6 @@ class AuthService {
         name: 'AuthService', category: LogCategory.auth);
   }
 
-
-
   /// Update authentication state and notify listeners
   void _setAuthState(AuthState newState) {
     if (_authState != newState) {
@@ -626,7 +619,5 @@ class AuthService {
     _authStateController.close();
     _profileController.close();
     _keyStorage.dispose();
-
-    
   }
 }

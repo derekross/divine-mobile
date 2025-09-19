@@ -44,9 +44,9 @@ class FeatureFlagScreen extends ConsumerWidget {
                 flag.displayName,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: hasUserOverride 
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
+                  color: hasUserOverride
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
                 ),
               ),
               subtitle: Text(
@@ -70,9 +70,9 @@ class FeatureFlagScreen extends ConsumerWidget {
                     onChanged: (value) async {
                       await service.setFlag(flag, value);
                     },
-                    activeColor: hasUserOverride 
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
+                    activeColor: hasUserOverride
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
                   ),
                   if (hasUserOverride)
                     IconButton(

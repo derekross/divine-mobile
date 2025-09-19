@@ -18,13 +18,12 @@ part 'curation_providers.g.dart';
 AnalyticsApiService analyticsApiService(Ref ref) {
   final nostrService = ref.watch(nostrServiceProvider);
   final videoEventService = ref.watch(videoEventServiceProvider);
-  
+
   return AnalyticsApiService(
     nostrService: nostrService,
     videoEventService: videoEventService,
   );
 }
-
 
 /// Main curation provider that manages curated content sets
 @riverpod
@@ -159,8 +158,7 @@ class Curation extends _$Curation {
 
 /// Provider to check if curation is loading
 @riverpod
-bool curationLoading(Ref ref) =>
-    ref.watch(curationProvider).isLoading;
+bool curationLoading(Ref ref) => ref.watch(curationProvider).isLoading;
 
 /// Provider to get editor's picks
 @riverpod
@@ -190,10 +188,10 @@ class AnalyticsTrending extends _$AnalyticsTrending {
         timeWindow: timeWindow,
         forceRefresh: true,
       );
-      
+
       // Update state with new trending videos
       state = videos;
-      
+
       Log.info(
         'AnalyticsTrending: Loaded ${state.length} trending videos',
         name: 'AnalyticsTrendingProvider',
@@ -212,16 +210,16 @@ class AnalyticsTrending extends _$AnalyticsTrending {
   /// Load more trending videos for pagination
   Future<void> loadMore() async {
     final currentCount = state.length;
-    
+
     Log.info(
       'AnalyticsTrending: Loading more trending videos (current: $currentCount)',
       name: 'AnalyticsTrendingProvider',
       category: LogCategory.system,
     );
-    
+
     try {
       final service = ref.read(analyticsApiServiceProvider);
-      
+
       // IMPORTANT: The analytics API currently returns a fixed set of trending videos
       // If we already have videos and the API returns the same or fewer videos,
       // don't update state to avoid infinite loops
@@ -229,7 +227,7 @@ class AnalyticsTrending extends _$AnalyticsTrending {
         limit: currentCount + 50,
         forceRefresh: true,
       );
-      
+
       if (videos.length > currentCount) {
         state = videos;
         Log.info(
@@ -278,10 +276,10 @@ class AnalyticsPopular extends _$AnalyticsPopular {
         timeWindow: '7d',
         forceRefresh: true,
       );
-      
+
       // Update state with new popular videos
       state = videos;
-      
+
       Log.info(
         'AnalyticsPopular: Loaded ${state.length} popular videos',
         name: 'AnalyticsPopularProvider',

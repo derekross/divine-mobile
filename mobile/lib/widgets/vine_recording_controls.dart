@@ -390,7 +390,8 @@ class VineRecordButtonWithState extends StatefulWidget {
   final VoidCallback? onRecordingComplete;
 
   @override
-  State<VineRecordButtonWithState> createState() => _VineRecordButtonWithStateState();
+  State<VineRecordButtonWithState> createState() =>
+      _VineRecordButtonWithStateState();
 }
 
 class _VineRecordButtonWithStateState extends State<VineRecordButtonWithState>
@@ -669,7 +670,7 @@ class VineRecordingUIWithProvider extends StatelessWidget {
               Row(
                 children: [
                   // Camera switch button (only show when not recording and switching is available)
-                  if (state.recordingState != VineRecordingState.recording && 
+                  if (state.recordingState != VineRecordingState.recording &&
                       controller.canSwitchCamera)
                     Padding(
                       padding: const EdgeInsets.only(left: 16),
@@ -701,7 +702,7 @@ class VineRecordingUIWithProvider extends StatelessWidget {
                   ),
 
                   // Spacer to balance the camera switch button (only when button is shown)
-                  if (state.recordingState != VineRecordingState.recording && 
+                  if (state.recordingState != VineRecordingState.recording &&
                       controller.canSwitchCamera)
                     const SizedBox(width: 56), // Same width as button + padding
                 ],
@@ -726,7 +727,8 @@ class VineRecordingUIWithProvider extends StatelessWidget {
                       children: [
                         // Cancel/Reset button
                         if (state.segments.isNotEmpty ||
-                            state.recordingState == VineRecordingState.error) ...[
+                            state.recordingState ==
+                                VineRecordingState.error) ...[
                           GestureDetector(
                             onTap: () {
                               controller.reset();
@@ -753,18 +755,22 @@ class VineRecordingUIWithProvider extends StatelessWidget {
                         ],
 
                         // Main record button (hide when completed to avoid duplicate check icons)
-                        if (state.recordingState != VineRecordingState.completed) ...[
+                        if (state.recordingState !=
+                            VineRecordingState.completed) ...[
                           VineRecordButtonWithState(
                             controller: controller,
                             state: state,
                             onRecordingComplete: onRecordingComplete,
                           ),
                         ] else ...[
-                          const SizedBox(width: 80), // Placeholder matching button size
+                          const SizedBox(
+                              width: 80), // Placeholder matching button size
                         ],
 
                         // Done/Next button
-                        if ((state.segments.isNotEmpty || state.recordingState == VineRecordingState.completed) &&
+                        if ((state.segments.isNotEmpty ||
+                                state.recordingState ==
+                                    VineRecordingState.completed) &&
                             state.recordingState !=
                                 VineRecordingState.recording) ...[
                           GestureDetector(
@@ -845,7 +851,7 @@ class _VineRecordingUIState extends State<VineRecordingUI> {
               Row(
                 children: [
                   // Camera switch button (only show when not recording and switching is available)
-                  if (widget.controller.state != VineRecordingState.recording && 
+                  if (widget.controller.state != VineRecordingState.recording &&
                       widget.controller.canSwitchCamera)
                     Padding(
                       padding: const EdgeInsets.only(left: 16),
@@ -870,11 +876,12 @@ class _VineRecordingUIState extends State<VineRecordingUI> {
 
                   // Progress bar (takes remaining space)
                   Expanded(
-                    child: VineRecordingProgressBar(controller: widget.controller),
+                    child:
+                        VineRecordingProgressBar(controller: widget.controller),
                   ),
 
                   // Spacer to balance the camera switch button (only when button is shown)
-                  if (widget.controller.state != VineRecordingState.recording && 
+                  if (widget.controller.state != VineRecordingState.recording &&
                       widget.controller.canSwitchCamera)
                     const SizedBox(width: 56), // Same width as button + padding
                 ],
@@ -899,7 +906,8 @@ class _VineRecordingUIState extends State<VineRecordingUI> {
                       children: [
                         // Cancel/Reset button
                         if (widget.controller.hasSegments ||
-                            widget.controller.state == VineRecordingState.error) ...[
+                            widget.controller.state ==
+                                VineRecordingState.error) ...[
                           GestureDetector(
                             onTap: () {
                               widget.controller.reset();
@@ -932,7 +940,9 @@ class _VineRecordingUIState extends State<VineRecordingUI> {
                         ),
 
                         // Done/Next button
-                        if ((widget.controller.hasSegments || widget.controller.state == VineRecordingState.completed) &&
+                        if ((widget.controller.hasSegments ||
+                                widget.controller.state ==
+                                    VineRecordingState.completed) &&
                             widget.controller.state !=
                                 VineRecordingState.recording) ...[
                           GestureDetector(

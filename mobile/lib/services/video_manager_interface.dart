@@ -145,7 +145,7 @@ abstract class IVideoManager {
 
   /// Create a controller for a local file video
   ///
-  /// This method:  
+  /// This method:
   /// - Validates the file exists and is readable
   /// - Creates VideoPlayerController.file
   /// - Registers with both VideoManager and GlobalVideoRegistry
@@ -168,7 +168,7 @@ abstract class IVideoManager {
   /// - Uses lower priority for memory management
   /// - Automatically disposes after thumbnail generation
   ///
-  /// [videoId] - Unique identifier for the video  
+  /// [videoId] - Unique identifier for the video
   /// [videoUrl] - Network URL to the video
   /// [seekTimeSeconds] - Time to seek to for thumbnail
   Future<VideoPlayerController?> createThumbnailController(

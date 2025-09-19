@@ -1,4 +1,4 @@
-// ABOUTME: Unit tests for ApiService to verify backend communication functionality  
+// ABOUTME: Unit tests for ApiService to verify backend communication functionality
 // ABOUTME: Tests HTTP requests, error handling, and response parsing for API endpoints
 
 import 'dart:convert';
@@ -38,8 +38,9 @@ void main() {
           'signed_fields': {'key': 'value'},
         }));
 
-        when(() => mockClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')))
-            .thenAnswer((_) async => mockResponse);
+        when(() => mockClient.post(any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'))).thenAnswer((_) async => mockResponse);
 
         // Act
         final result = await apiService.requestSignedUpload(
@@ -60,8 +61,9 @@ void main() {
         when(() => mockResponse.statusCode).thenReturn(400);
         when(() => mockResponse.body).thenReturn('Bad Request');
 
-        when(() => mockClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')))
-            .thenAnswer((_) async => mockResponse);
+        when(() => mockClient.post(any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'))).thenAnswer((_) async => mockResponse);
 
         // Act & Assert
         expect(
@@ -82,8 +84,9 @@ void main() {
 
       test('should handle network timeout', () async {
         // Arrange
-        when(() => mockClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')))
-            .thenThrow(Exception('timeout'));
+        when(() => mockClient.post(any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'))).thenThrow(Exception('timeout'));
 
         // Act & Assert
         expect(

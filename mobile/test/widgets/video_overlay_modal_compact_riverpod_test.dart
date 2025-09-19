@@ -30,7 +30,7 @@ void main() {
 
     setUp(() {
       testVideoManager = TestVideoManager();
-      
+
       // Create test video events using real VideoEvent instances
       final now = DateTime.now();
       testStartingVideo = VideoEvent(
@@ -44,11 +44,13 @@ void main() {
         title: 'Test Video 1',
         hashtags: const <String>[],
       );
-      
+
       final testVideo2 = VideoEvent(
         id: 'test-video-2',
         pubkey: 'test-pubkey-2',
-        createdAt: now.subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+        createdAt:
+            now.subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+                1000,
         content: 'Test Video 2',
         timestamp: now.subtract(const Duration(hours: 1)),
         videoUrl: 'https://example.com/video2.mp4',
@@ -56,16 +58,17 @@ void main() {
         title: 'Test Video 2',
         hashtags: const <String>[],
       );
-      
+
       testVideoList = [testStartingVideo, testVideo2];
 
       // TestVideoManager doesn't need mock setup - it provides stub implementations
     });
 
-    testWidgets('should build with Riverpod providers (NOW PASSES)', (tester) async {
+    testWidgets('should build with Riverpod providers (NOW PASSES)',
+        (tester) async {
       // This test should NOW PASS because widget has been converted to ConsumerStatefulWidget
       // and uses ref.read() instead of Provider.of()
-      
+
       await tester.pumpWidget(
         createTestWidget(
           testVideoManager: testVideoManager,
@@ -79,14 +82,16 @@ void main() {
       );
 
       await tester.pump();
-      
+
       // This should fail because widget still uses Provider.of() instead of ref.read()
       expect(find.byType(VideoOverlayModalCompact), findsOneWidget);
     });
 
-    testWidgets('should access VideoManager through ref.read() (NOW PASSES after migration)', (tester) async {
+    testWidgets(
+        'should access VideoManager through ref.read() (NOW PASSES after migration)',
+        (tester) async {
       // This test should PASS because widget now uses ref.read(videoManagerProvider.notifier)
-      
+
       await tester.pumpWidget(
         createTestWidget(
           testVideoManager: testVideoManager,
@@ -105,9 +110,11 @@ void main() {
       expect(find.byType(VideoOverlayModalCompact), findsOneWidget);
     });
 
-    testWidgets('should handle animation and gesture behavior with Riverpod (SHOULD FAIL initially)', (tester) async {
+    testWidgets(
+        'should handle animation and gesture behavior with Riverpod (SHOULD FAIL initially)',
+        (tester) async {
       // Test that animations and gestures work with Riverpod providers
-      
+
       await tester.pumpWidget(
         createTestWidget(
           testVideoManager: testVideoManager,
@@ -120,7 +127,8 @@ void main() {
       );
 
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 350)); // Animation duration
+      await tester
+          .pump(const Duration(milliseconds: 350)); // Animation duration
 
       // Test swipe down gesture to dismiss
       await tester.drag(find.byType(PageView), const Offset(0, 500));
@@ -130,9 +138,11 @@ void main() {
       expect(find.byType(VideoOverlayModalCompact), findsOneWidget);
     });
 
-    testWidgets('should handle compact modal specific behavior (SHOULD FAIL initially)', (tester) async {
+    testWidgets(
+        'should handle compact modal specific behavior (SHOULD FAIL initially)',
+        (tester) async {
       // Test compact modal header, drag handle, and page navigation
-      
+
       await tester.pumpWidget(
         createTestWidget(
           testVideoManager: testVideoManager,
@@ -150,24 +160,26 @@ void main() {
 
       // Should show context title
       expect(find.text('Test Videos'), findsOneWidget);
-      
+
       // Should show current position
       expect(find.text('2 of 2'), findsOneWidget);
-      
+
       // Should have drag handle
       expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
-      
+
       // Should have PageView for video content
       expect(find.byType(PageView), findsOneWidget);
     });
 
-    test('showCompactVideoOverlay helper function should work with Riverpod context', () {
+    test(
+        'showCompactVideoOverlay helper function should work with Riverpod context',
+        () {
       // Test the helper function that shows the modal
       // This should fail if context doesn't have proper Riverpod providers
-      
+
       // Create a mock context that should have Riverpod providers
       final context = MockBuildContext();
-      
+
       // This should not throw an exception once converted to Riverpod
       expect(() {
         showCompactVideoOverlay(

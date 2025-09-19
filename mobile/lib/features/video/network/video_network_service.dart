@@ -121,7 +121,7 @@ class VideoNetworkService {
 
     final events = <Event>[];
     final completer = Completer<List<Event>>();
-    
+
     // Track if we've received the expected number of events
     bool hasReceivedEvents = false;
     Timer? stabilityTimer;
@@ -132,27 +132,31 @@ class VideoNetworkService {
         // Process events immediately as they arrive
         events.add(event);
         hasReceivedEvents = true;
-        
+
         // Reset stability timer on each new event
         stabilityTimer?.cancel();
-        
+
         // If we've reached the limit, complete immediately
         if (events.length >= limit) {
           subscription.cancel();
           if (!completer.isCompleted) {
-            Log.debug('Historical query completed with ${events.length} events (limit reached)',
-                name: 'VideoNetworkService', category: LogCategory.video);
+            Log.debug(
+                'Historical query completed with ${events.length} events (limit reached)',
+                name: 'VideoNetworkService',
+                category: LogCategory.video);
             completer.complete(events);
           }
           return;
         }
-        
+
         // Set a short stability timer to complete when events stop arriving
         stabilityTimer = Timer(const Duration(milliseconds: 500), () {
           subscription.cancel();
           if (!completer.isCompleted) {
-            Log.debug('Historical query completed with ${events.length} events (stable)',
-                name: 'VideoNetworkService', category: LogCategory.video);
+            Log.debug(
+                'Historical query completed with ${events.length} events (stable)',
+                name: 'VideoNetworkService',
+                category: LogCategory.video);
             completer.complete(events);
           }
         });
@@ -160,8 +164,10 @@ class VideoNetworkService {
       onDone: () {
         stabilityTimer?.cancel();
         if (!completer.isCompleted) {
-          Log.debug('Historical query stream closed with ${events.length} events',
-              name: 'VideoNetworkService', category: LogCategory.video);
+          Log.debug(
+              'Historical query stream closed with ${events.length} events',
+              name: 'VideoNetworkService',
+              category: LogCategory.video);
           completer.complete(events);
         }
       },

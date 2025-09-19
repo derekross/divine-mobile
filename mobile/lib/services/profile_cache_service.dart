@@ -8,7 +8,7 @@ import 'package:openvine/utils/unified_logger.dart';
 
 /// Service for persistent caching of user profiles
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class ProfileCacheService  {
+class ProfileCacheService {
   static const String _boxName = 'user_profiles';
   // Removed cache size limits - Kind 0 events are small, cache everything
   static const Duration _cacheExpiry =
@@ -120,8 +120,6 @@ class ProfileCacheService  {
           '📱 Cached profile for ${profile.pubkey.substring(0, 8)}... (${profile.bestDisplayName})',
           name: 'ProfileCacheService',
           category: LogCategory.storage);
-
-
     } catch (e) {
       Log.error('Error caching profile for ${profile.pubkey}: $e',
           name: 'ProfileCacheService', category: LogCategory.storage);
@@ -142,7 +140,6 @@ class ProfileCacheService  {
             'Updated cached profile for ${profile.pubkey.substring(0, 8)}... (${profile.bestDisplayName})',
             name: 'ProfileCacheService',
             category: LogCategory.storage);
-
       } else {
         Log.warning(
             '⏩ Skipping update for ${profile.pubkey.substring(0, 8)}... - cached version is newer',
@@ -163,7 +160,6 @@ class ProfileCacheService  {
       await _profileBox!.delete(pubkey);
       Log.debug('📱️ Removed cached profile for ${pubkey.substring(0, 8)}...',
           name: 'ProfileCacheService', category: LogCategory.storage);
-
     } catch (e) {
       Log.error('Error removing cached profile for $pubkey: $e',
           name: 'ProfileCacheService', category: LogCategory.storage);
@@ -205,7 +201,6 @@ class ProfileCacheService  {
       await _profileBox!.clear();
       Log.debug('📱️ Cleared all cached profiles',
           name: 'ProfileCacheService', category: LogCategory.storage);
-
     } catch (e) {
       Log.error('Error clearing profile cache: $e',
           name: 'ProfileCacheService', category: LogCategory.storage);
@@ -248,9 +243,7 @@ class ProfileCacheService  {
     }
   }
 
-
   void dispose() {
     _profileBox?.close();
-    
   }
 }

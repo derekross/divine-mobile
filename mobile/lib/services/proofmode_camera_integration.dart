@@ -37,6 +37,14 @@ class ProofModeCameraIntegration {
 
   Future<void> initialize() async {
     // Stub initialization
+    // Reference injected services to avoid unused field lints in this stub
+    // while keeping constructor signature compatible with tests.
+    // ignore: unnecessary_statements
+    _keyService.hashCode;
+    // ignore: unnecessary_statements
+    _attestationService.hashCode;
+    // ignore: unnecessary_statements
+    _sessionService.hashCode;
   }
 
   Future<void> startRecording() async {
@@ -65,7 +73,7 @@ class ProofModeCameraIntegration {
   }
 
   Future<void> resumeRecording() async {
-    // Stub implementation  
+    // Stub implementation
   }
 
   Future<void> cancelRecording() async {

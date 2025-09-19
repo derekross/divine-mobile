@@ -13,7 +13,8 @@ part 'feature_flag_providers.g.dart';
 /// SharedPreferences provider for dependency injection
 @riverpod
 SharedPreferences sharedPreferences(Ref ref) {
-  throw UnimplementedError('sharedPreferencesProvider must be overridden in tests');
+  throw UnimplementedError(
+      'sharedPreferencesProvider must be overridden in tests');
 }
 
 /// Build configuration provider
@@ -27,7 +28,7 @@ BuildConfiguration buildConfiguration(Ref ref) {
 FeatureFlagService featureFlagService(Ref ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   final buildConfig = ref.watch(buildConfigurationProvider);
-  
+
   return FeatureFlagService(prefs, buildConfig);
 }
 
@@ -35,15 +36,15 @@ FeatureFlagService featureFlagService(Ref ref) {
 @riverpod
 Map<FeatureFlag, bool> featureFlagState(Ref ref) {
   final service = ref.watch(featureFlagServiceProvider);
-  
+
   // Set up listener to invalidate provider when service changes
   ref.onDispose(() {
     // Cleanup will be handled automatically by Riverpod
   });
-  
-      // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
-      // REFACTORED: Service no longer needs manual listener cleanup
-  
+
+  // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
+  // REFACTORED: Service no longer needs manual listener cleanup
+
   return service.currentState.allFlags;
 }
 

@@ -13,26 +13,27 @@ void main() {
         'dance': 600,
         'funny': 400,
       };
-      
+
       final localHashtags = {
-        'vine': 50,    // Should add to JSON count
-        'local': 100,  // Only in local
-        'dance': 20,   // Should add to JSON count
-        'new': 75,     // Only in local
+        'vine': 50, // Should add to JSON count
+        'local': 100, // Only in local
+        'dance': 20, // Should add to JSON count
+        'new': 75, // Only in local
       };
-      
+
       // Combine the counts (this is what explore_screen does)
       final combined = <String, int>{};
-      
+
       // First add all JSON hashtags
       combined.addAll(jsonHashtags);
-      
+
       // Then add local counts to existing or create new entries
       localHashtags.forEach((hashtag, localCount) {
         final currentCount = combined[hashtag] ?? 0;
-        combined[hashtag] = currentCount + localCount; // ADD counts, don't replace
+        combined[hashtag] =
+            currentCount + localCount; // ADD counts, don't replace
       });
-      
+
       // Expected results after combining:
       expect(combined['vine'], equals(1050)); // 1000 + 50
       expect(combined['comedy'], equals(800)); // 800 + 0
@@ -40,11 +41,11 @@ void main() {
       expect(combined['funny'], equals(400)); // 400 + 0
       expect(combined['local'], equals(100)); // 0 + 100
       expect(combined['new'], equals(75)); // 0 + 75
-      
+
       // Now sort by count descending
       final sorted = combined.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
-      
+
       // Check sorting order
       expect(sorted[0].key, equals('vine')); // 1050
       expect(sorted[1].key, equals('comedy')); // 800
@@ -60,20 +61,20 @@ void main() {
       for (int i = 0; i < 500; i++) {
         manyHashtags['hashtag$i'] = 500 - i; // Decreasing counts
       }
-      
+
       // Sort without limit
       final sorted = manyHashtags.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
-      
+
       // All hashtags should be included
       expect(sorted.length, equals(500));
-      
+
       // First should have highest count
       expect(sorted.first.value, equals(500));
-      
+
       // Last should have lowest count
       expect(sorted.last.value, equals(1));
-      
+
       // No artificial limit should be applied
       final displayed = sorted.map((e) => e.key).toList();
       expect(displayed.length, equals(500)); // All should be displayed
@@ -82,19 +83,19 @@ void main() {
     test('should properly format hashtag filter for relay query', () {
       // Test the filter structure for hashtag queries
       final hashtags = ['dankmemes', 'funny', 'viral'];
-      
+
       // This simulates what VideoEventService creates
       final filter = {
         'kinds': [32222], // NIP-32222 video events
-        '#t': hashtags,   // Hashtag filter
+        '#t': hashtags, // Hashtag filter
         'limit': 100,
       };
-      
+
       // Verify filter structure
       expect(filter['kinds'], equals([32222]));
       expect(filter['#t'], equals(hashtags));
       expect(filter['limit'], equals(100));
-      
+
       // Verify the filter would match events with these hashtags
       final testEvent = {
         'kind': 32222,
@@ -103,13 +104,13 @@ void main() {
           ['t', 'othertag'],
         ],
       };
-      
+
       // Check if event would match filter (has at least one matching hashtag)
       final eventHashtags = (testEvent['tags'] as List)
           .where((tag) => tag[0] == 't')
           .map((tag) => tag[1] as String)
           .toList();
-      
+
       final matchesFilter = eventHashtags.any((tag) => hashtags.contains(tag));
       expect(matchesFilter, isTrue);
     });

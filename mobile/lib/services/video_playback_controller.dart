@@ -97,8 +97,7 @@ class VideoPositionChanged extends VideoPlaybackEvent {
 }
 
 /// Consolidated video playback controller with best practices
-class VideoPlaybackController 
-    with WidgetsBindingObserver {
+class VideoPlaybackController with WidgetsBindingObserver {
   VideoPlaybackController({
     required this.video,
     this.config = VideoPlaybackConfig.feed,
@@ -149,9 +148,8 @@ class VideoPlaybackController
         throw Exception('Video URL is null');
       }
 
-      _controller = VideoPlayerController.networkUrl(
-        Uri.parse(videoUrl),
-      );
+      // CRITICAL iOS FIX: Ensure video controller creation on main thread
+      _controller = await _createVideoControllerOnMainThread(videoUrl);
 
       // CRITICAL: Register with GlobalVideoRegistry for emergency pause
       GlobalVideoRegistry().registerController(_controller!);
@@ -187,7 +185,8 @@ class VideoPlaybackController
     }
 
     try {
-      await _controller!.play();
+      await _awaitWithTimeout(_controller!.play(), const Duration(seconds: 2),
+          op: 'play');
       _setState(VideoPlaybackState.playing);
       _startPositionTimer();
 
@@ -207,7 +206,8 @@ class VideoPlaybackController
     }
 
     try {
-      await _controller!.pause();
+      await _awaitWithTimeout(_controller!.pause(), const Duration(seconds: 2),
+          op: 'pause');
       _setState(VideoPlaybackState.paused);
       _stopPositionTimer();
 
@@ -349,6 +349,27 @@ class VideoPlaybackController
 
   // Private methods
 
+  /// Create video controller on main thread (critical for iOS stability)
+  Future<VideoPlayerController> _createVideoControllerOnMainThread(String videoUrl) async {
+    // Use a Completer to ensure proper thread handling
+    final completer = Completer<VideoPlayerController>();
+
+    // Schedule on main thread using WidgetsBinding
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+        completer.complete(controller);
+      } catch (e) {
+        completer.completeError(e);
+      }
+    });
+
+    return completer.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => throw TimeoutException('Video controller creation timed out'),
+    );
+  }
+
   bool _canPlay() =>
       _controller != null &&
       _controller!.value.isInitialized &&
@@ -369,7 +390,6 @@ class VideoPlaybackController
     if (_state != newState) {
       _state = newState;
       _emitEvent(VideoStateChanged(newState));
-
     }
   }
 
@@ -391,7 +411,6 @@ class VideoPlaybackController
     }
   }
 
-
   void _startPositionTimer() {
     _positionTimer?.cancel();
     _positionTimer = Timer.periodic(const Duration(milliseconds: 250), (_) {
@@ -404,6 +423,20 @@ class VideoPlaybackController
   void _stopPositionTimer() {
     _positionTimer?.cancel();
     _positionTimer = null;
+  }
+
+  /// Await a controller operation with a timeout to avoid UI hangs if
+  /// platform calls never resolve (seen on some iOS video_player paths).
+  Future<void> _awaitWithTimeout(Future<void> future, Duration timeout,
+      {required String op}) async {
+    try {
+      await future.timeout(timeout);
+    } on TimeoutException {
+      UnifiedLogger.warning(
+        'Video $op timed out after ${timeout.inMilliseconds}ms (Video: ${video.id.substring(0, 8)}...)',
+        name: 'VideoPlaybackController',
+      );
+    }
   }
 
   Future<void> _disposeController() async {
@@ -453,8 +486,6 @@ class VideoPlaybackController
 
     _disposeController();
     _eventController.close();
-
-    
   }
 }
 

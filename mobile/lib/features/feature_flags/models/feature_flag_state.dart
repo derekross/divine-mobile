@@ -27,14 +27,14 @@ class FeatureFlagState {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! FeatureFlagState) return false;
-    
+
     // Compare all flags
     if (_flags.length != other._flags.length) return false;
-    
+
     for (final entry in _flags.entries) {
       if (other._flags[entry.key] != entry.value) return false;
     }
-    
+
     return true;
   }
 

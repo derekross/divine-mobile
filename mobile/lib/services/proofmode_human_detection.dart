@@ -22,12 +22,12 @@ class HumanActivityAnalysis {
   final Map<String, dynamic>? biometricSignals;
 
   Map<String, dynamic> toJson() => {
-    'isHumanLikely': isHumanLikely,
-    'confidenceScore': confidenceScore,
-    'reasons': reasons,
-    'redFlags': redFlags,
-    'biometricSignals': biometricSignals,
-  };
+        'isHumanLikely': isHumanLikely,
+        'confidenceScore': confidenceScore,
+        'reasons': reasons,
+        'redFlags': redFlags,
+        'biometricSignals': biometricSignals,
+      };
 }
 
 /// Interaction timing analysis
@@ -44,7 +44,8 @@ class InteractionTiming {
   final double standardDeviation;
   final double variation; // Coefficient of variation
 
-  bool get hasNaturalVariation => variation > 0.05; // 5% minimum variation expected for humans
+  bool get hasNaturalVariation =>
+      variation > 0.05; // 5% minimum variation expected for humans
   bool get hasSuspiciousPrecision => variation < 0.01; // Too precise for human
 }
 
@@ -57,17 +58,20 @@ class CoordinatePrecision {
   });
 
   final List<Map<String, double>> coordinates;
-  final double precisionScore; // 0.0 = perfect precision (suspicious), 1.0 = natural variation
+  final double
+      precisionScore; // 0.0 = perfect precision (suspicious), 1.0 = natural variation
   final bool hasNaturalImprecision;
 }
 
 /// ProofMode human activity detection service
 class ProofModeHumanDetection {
-  
   /// Analyze interaction patterns to determine if they're human-like
-  static HumanActivityAnalysis analyzeInteractions(List<UserInteractionProof> interactions) {
-    Log.debug('Analyzing ${interactions.length} interactions for human activity patterns',
-        name: 'ProofModeHumanDetection', category: LogCategory.auth);
+  static HumanActivityAnalysis analyzeInteractions(
+      List<UserInteractionProof> interactions) {
+    Log.debug(
+        'Analyzing ${interactions.length} interactions for human activity patterns',
+        name: 'ProofModeHumanDetection',
+        category: LogCategory.auth);
 
     final reasons = <String>[];
     final redFlags = <String>[];
@@ -135,10 +139,12 @@ class ProofModeHumanDetection {
 
       final isHumanLikely = confidenceScore > 0.6 && redFlags.isEmpty;
 
-      Log.debug('Human activity analysis complete: '
-                'likely=$isHumanLikely, confidence=${(confidenceScore * 100).toInt()}%, '
-                'reasons=${reasons.length}, redFlags=${redFlags.length}',
-          name: 'ProofModeHumanDetection', category: LogCategory.auth);
+      Log.debug(
+          'Human activity analysis complete: '
+          'likely=$isHumanLikely, confidence=${(confidenceScore * 100).toInt()}%, '
+          'reasons=${reasons.length}, redFlags=${redFlags.length}',
+          name: 'ProofModeHumanDetection',
+          category: LogCategory.auth);
 
       return HumanActivityAnalysis(
         isHumanLikely: isHumanLikely,
@@ -150,7 +156,7 @@ class ProofModeHumanDetection {
     } catch (e) {
       Log.error('Failed to analyze human activity: $e',
           name: 'ProofModeHumanDetection', category: LogCategory.auth);
-      
+
       return HumanActivityAnalysis(
         isHumanLikely: false,
         confidenceScore: 0.0,
@@ -161,7 +167,8 @@ class ProofModeHumanDetection {
   }
 
   /// Validate recording session for human authenticity
-  static HumanActivityAnalysis validateRecordingSession(ProofManifest manifest) {
+  static HumanActivityAnalysis validateRecordingSession(
+      ProofManifest manifest) {
     Log.info('Validating recording session for human authenticity',
         name: 'ProofModeHumanDetection', category: LogCategory.auth);
 
@@ -200,7 +207,8 @@ class ProofModeHumanDetection {
 
       // Analyze interactions
       final interactionAnalysis = analyzeInteractions(manifest.interactions);
-      confidenceScore += interactionAnalysis.confidenceScore * 0.5; // Weight interaction analysis
+      confidenceScore += interactionAnalysis.confidenceScore *
+          0.5; // Weight interaction analysis
 
       if (interactionAnalysis.isHumanLikely) {
         reasons.addAll(interactionAnalysis.reasons);
@@ -211,9 +219,11 @@ class ProofModeHumanDetection {
       confidenceScore = confidenceScore.clamp(0.0, 1.0);
       final isHumanLikely = confidenceScore > 0.7 && redFlags.length < 2;
 
-      Log.info('Session validation complete: '
-               'likely=$isHumanLikely, confidence=${(confidenceScore * 100).toInt()}%',
-          name: 'ProofModeHumanDetection', category: LogCategory.auth);
+      Log.info(
+          'Session validation complete: '
+          'likely=$isHumanLikely, confidence=${(confidenceScore * 100).toInt()}%',
+          name: 'ProofModeHumanDetection',
+          category: LogCategory.auth);
 
       return HumanActivityAnalysis(
         isHumanLikely: isHumanLikely,
@@ -224,7 +234,7 @@ class ProofModeHumanDetection {
     } catch (e) {
       Log.error('Failed to validate recording session: $e',
           name: 'ProofModeHumanDetection', category: LogCategory.auth);
-      
+
       return HumanActivityAnalysis(
         isHumanLikely: false,
         confidenceScore: 0.0,
@@ -237,7 +247,8 @@ class ProofModeHumanDetection {
   // Private analysis methods
 
   /// Analyze timing patterns between interactions
-  static InteractionTiming _analyzeTimingPatterns(List<UserInteractionProof> interactions) {
+  static InteractionTiming _analyzeTimingPatterns(
+      List<UserInteractionProof> interactions) {
     if (interactions.length < 2) {
       return InteractionTiming(
         intervals: [],
@@ -249,17 +260,21 @@ class ProofModeHumanDetection {
 
     final intervals = <Duration>[];
     for (int i = 1; i < interactions.length; i++) {
-      final interval = interactions[i].timestamp.difference(interactions[i - 1].timestamp);
+      final interval =
+          interactions[i].timestamp.difference(interactions[i - 1].timestamp);
       intervals.add(interval);
     }
 
-    final meanMs = intervals.map((d) => d.inMilliseconds).reduce((a, b) => a + b) / intervals.length;
+    final meanMs =
+        intervals.map((d) => d.inMilliseconds).reduce((a, b) => a + b) /
+            intervals.length;
     final meanInterval = Duration(milliseconds: meanMs.round());
 
     // Calculate standard deviation
     final variance = intervals
-        .map((d) => pow(d.inMilliseconds - meanMs, 2))
-        .reduce((a, b) => a + b) / intervals.length;
+            .map((d) => pow(d.inMilliseconds - meanMs, 2))
+            .reduce((a, b) => a + b) /
+        intervals.length;
     final stdDev = sqrt(variance);
 
     // Coefficient of variation (CV = stdDev / mean)
@@ -274,9 +289,10 @@ class ProofModeHumanDetection {
   }
 
   /// Analyze coordinate precision and natural variation
-  static CoordinatePrecision _analyzeCoordinatePrecision(List<UserInteractionProof> interactions) {
+  static CoordinatePrecision _analyzeCoordinatePrecision(
+      List<UserInteractionProof> interactions) {
     final coordinates = interactions.map((i) => i.coordinates).toList();
-    
+
     if (coordinates.isEmpty) {
       return CoordinatePrecision(
         coordinates: [],
@@ -307,10 +323,11 @@ class ProofModeHumanDetection {
 
     final xVariance = _calculateVariance(xValues);
     final yVariance = _calculateVariance(yValues);
-    
+
     // Higher variance indicates more natural human imprecision
     final precisionScore = (xVariance + yVariance).clamp(0.0, 1.0);
-    final hasNaturalImprecision = precisionScore > 0.001; // Minimum expected for human touch
+    final hasNaturalImprecision =
+        precisionScore > 0.001; // Minimum expected for human touch
 
     return CoordinatePrecision(
       coordinates: coordinates,
@@ -320,7 +337,8 @@ class ProofModeHumanDetection {
   }
 
   /// Analyze pressure variation in touch interactions
-  static double _analyzePressureVariation(List<UserInteractionProof> interactions) {
+  static double _analyzePressureVariation(
+      List<UserInteractionProof> interactions) {
     final pressures = interactions
         .where((i) => i.pressure != null)
         .map((i) => i.pressure!)
@@ -332,12 +350,14 @@ class ProofModeHumanDetection {
   }
 
   /// Analyze interaction frequency patterns
-  static ({bool isHumanLike, double frequency}) _analyzeInteractionFrequency(List<UserInteractionProof> interactions) {
+  static ({bool isHumanLike, double frequency}) _analyzeInteractionFrequency(
+      List<UserInteractionProof> interactions) {
     if (interactions.length < 2) {
       return (isHumanLike: false, frequency: 0.0);
     }
 
-    final totalDuration = interactions.last.timestamp.difference(interactions.first.timestamp);
+    final totalDuration =
+        interactions.last.timestamp.difference(interactions.first.timestamp);
     final frequency = interactions.length / totalDuration.inSeconds;
 
     // Human interaction frequency is typically 0.5-5 interactions per second during active use
@@ -347,15 +367,16 @@ class ProofModeHumanDetection {
   }
 
   /// Detect biometric micro-signals in interaction patterns
-  static Map<String, dynamic> _detectBiometricSignals(List<UserInteractionProof> interactions) {
+  static Map<String, dynamic> _detectBiometricSignals(
+      List<UserInteractionProof> interactions) {
     final signals = <String, dynamic>{};
 
     // Detect hand tremor patterns (8-12 Hz natural frequency)
     signals['handTremor'] = _detectHandTremor(interactions);
-    
+
     // Detect breathing influence on touch patterns
     signals['breathingInfluence'] = _detectBreathingInfluence(interactions);
-    
+
     // Detect natural micro-variations
     signals['microVariations'] = _detectMicroVariations(interactions);
 
@@ -369,7 +390,7 @@ class ProofModeHumanDetection {
     // Look for subtle oscillations in coordinate data
     // Real implementation would use FFT analysis for 8-12 Hz detection
     // For now, just check for small but consistent variations
-    
+
     final coordinates = interactions.map((i) => i.coordinates).toList();
     var hasConsistentVariation = false;
 
@@ -380,7 +401,7 @@ class ProofModeHumanDetection {
 
       final dx1 = (prev1['x']! - prev2['x']!).abs();
       final dx2 = (curr['x']! - prev1['x']!).abs();
-      
+
       // Look for consistent small movements (tremor-like)
       if (dx1 > 0.001 && dx1 < 0.01 && dx2 > 0.001 && dx2 < 0.01) {
         hasConsistentVariation = true;
@@ -392,7 +413,8 @@ class ProofModeHumanDetection {
   }
 
   /// Detect breathing influence on interaction timing
-  static bool _detectBreathingInfluence(List<UserInteractionProof> interactions) {
+  static bool _detectBreathingInfluence(
+      List<UserInteractionProof> interactions) {
     // Breathing typically affects interaction timing in subtle ways
     // Real implementation would analyze for ~0.2-0.5 Hz patterns
     return interactions.length > 5; // Simplified placeholder
@@ -407,7 +429,7 @@ class ProofModeHumanDetection {
       for (int j = i + 1; j < interactions.length; j++) {
         final coord1 = interactions[i].coordinates;
         final coord2 = interactions[j].coordinates;
-        
+
         if (coord1['x'] == coord2['x'] && coord1['y'] == coord2['y']) {
           // Identical coordinates found - suspicious
           return false;
@@ -423,9 +445,9 @@ class ProofModeHumanDetection {
     if (values.isEmpty) return 0.0;
 
     final mean = values.reduce((a, b) => a + b) / values.length;
-    final variance = values
-        .map((x) => pow(x - mean, 2))
-        .reduce((a, b) => a + b) / values.length;
+    final variance =
+        values.map((x) => pow(x - mean, 2)).reduce((a, b) => a + b) /
+            values.length;
 
     return variance;
   }

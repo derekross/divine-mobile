@@ -190,7 +190,7 @@ class MockVideoEventService extends _i1.Mock implements _i2.VideoEventService {
     String? group,
     int? since,
     int? until,
-    int? limit = 50,
+    int? limit = 200,
     bool? replace = true,
     bool? includeReposts = false,
   }) =>
@@ -277,7 +277,7 @@ class MockVideoEventService extends _i1.Mock implements _i2.VideoEventService {
     List<String>? authors,
     int? since,
     int? until,
-    int? limit = 50,
+    int? limit = 200,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -329,7 +329,7 @@ class MockVideoEventService extends _i1.Mock implements _i2.VideoEventService {
   @override
   _i6.Future<void> loadMoreEvents(
     _i2.SubscriptionType? subscriptionType, {
-    int? limit = 200,
+    int? limit = 500,
   }) =>
       (super.noSuchMethod(
         Invocation.method(

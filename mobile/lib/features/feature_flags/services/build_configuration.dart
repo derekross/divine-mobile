@@ -10,15 +10,20 @@ class BuildConfiguration {
   bool getDefault(FeatureFlag flag) {
     switch (flag) {
       case FeatureFlag.newCameraUI:
-        return const bool.fromEnvironment('FF_NEW_CAMERA_UI', defaultValue: false);
+        return const bool.fromEnvironment('FF_NEW_CAMERA_UI',
+            defaultValue: false);
       case FeatureFlag.enhancedVideoPlayer:
-        return const bool.fromEnvironment('FF_ENHANCED_VIDEO_PLAYER', defaultValue: false);
+        return const bool.fromEnvironment('FF_ENHANCED_VIDEO_PLAYER',
+            defaultValue: false);
       case FeatureFlag.enhancedAnalytics:
-        return const bool.fromEnvironment('FF_ENHANCED_ANALYTICS', defaultValue: false);
+        return const bool.fromEnvironment('FF_ENHANCED_ANALYTICS',
+            defaultValue: false);
       case FeatureFlag.newProfileLayout:
-        return const bool.fromEnvironment('FF_NEW_PROFILE_LAYOUT', defaultValue: false);
+        return const bool.fromEnvironment('FF_NEW_PROFILE_LAYOUT',
+            defaultValue: false);
       case FeatureFlag.livestreamingBeta:
-        return const bool.fromEnvironment('FF_LIVESTREAMING_BETA', defaultValue: false);
+        return const bool.fromEnvironment('FF_LIVESTREAMING_BETA',
+            defaultValue: false);
       case FeatureFlag.debugTools:
         return const bool.fromEnvironment('FF_DEBUG_TOOLS', defaultValue: true);
     }

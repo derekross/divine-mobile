@@ -1558,6 +1558,15 @@ class MockUserProfileService extends _i1.Mock
       ) as Map<String, dynamic>);
 
   @override
+  void handleProfileEventForTesting(_i9.Event? event) => super.noSuchMethod(
+        Invocation.method(
+          #handleProfileEventForTesting,
+          [event],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void dispose() => super.noSuchMethod(
         Invocation.method(
           #dispose,

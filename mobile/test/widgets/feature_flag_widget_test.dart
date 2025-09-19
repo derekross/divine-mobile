@@ -20,11 +20,12 @@ void main() {
 
     setUp(() {
       mockPrefs = MockSharedPreferences();
-      
+
       // Set up default stubs for all flags
       for (final flag in FeatureFlag.values) {
         when(mockPrefs.getBool('ff_${flag.name}')).thenReturn(null);
-        when(mockPrefs.setBool('ff_${flag.name}', any)).thenAnswer((_) async => true);
+        when(mockPrefs.setBool('ff_${flag.name}', any))
+            .thenAnswer((_) async => true);
         when(mockPrefs.remove('ff_${flag.name}')).thenAnswer((_) async => true);
         when(mockPrefs.containsKey('ff_${flag.name}')).thenReturn(false);
       }
@@ -34,7 +35,7 @@ void main() {
       // Set flag as enabled
       when(mockPrefs.getBool('ff_newCameraUI')).thenReturn(true);
       when(mockPrefs.containsKey('ff_newCameraUI')).thenReturn(true);
-      
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -51,15 +52,14 @@ void main() {
 
       // Initialize the service with the test preferences
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagWidget))
-      );
+          tester.element(find.byType(FeatureFlagWidget)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
 
       await tester.pumpAndSettle();
       expect(find.text('Enabled Content'), findsOneWidget);
     });
-    
+
     testWidgets('should show fallback when flag disabled', (tester) async {
       // Flag is disabled by default (null/false)
       await tester.pumpWidget(
@@ -81,8 +81,9 @@ void main() {
       expect(find.text('Disabled Content'), findsOneWidget);
       expect(find.text('Enabled Content'), findsNothing);
     });
-    
-    testWidgets('should show nothing when flag disabled and no fallback', (tester) async {
+
+    testWidgets('should show nothing when flag disabled and no fallback',
+        (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -134,7 +135,7 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      
+
       // Initially disabled
       expect(find.text('Disabled Content'), findsOneWidget);
       expect(find.text('Enabled Content'), findsNothing);
@@ -142,16 +143,15 @@ void main() {
       // Enable the flag
       when(mockPrefs.getBool('ff_newCameraUI')).thenReturn(true);
       when(mockPrefs.containsKey('ff_newCameraUI')).thenReturn(true);
-      
+
       // Trigger a rebuild by getting the service and changing the flag
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagWidget))
-      );
+          tester.element(find.byType(FeatureFlagWidget)));
       final service = container.read(featureFlagServiceProvider);
       await service.setFlag(FeatureFlag.newCameraUI, true);
-      
+
       await tester.pumpAndSettle();
-      
+
       // Now should show enabled content
       expect(find.text('Enabled Content'), findsOneWidget);
       expect(find.text('Disabled Content'), findsNothing);
@@ -163,7 +163,7 @@ void main() {
       when(mockPrefs.containsKey('ff_newCameraUI')).thenReturn(true);
       when(mockPrefs.getBool('ff_enhancedVideoPlayer')).thenReturn(false);
       when(mockPrefs.containsKey('ff_enhancedVideoPlayer')).thenReturn(true);
-      
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -190,13 +190,12 @@ void main() {
 
       // Initialize the service with the test preferences
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagWidget).first)
-      );
+          tester.element(find.byType(FeatureFlagWidget).first));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
 
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Camera UI Enabled'), findsOneWidget);
       expect(find.text('Camera UI Disabled'), findsNothing);
       expect(find.text('Video Player Enabled'), findsNothing);

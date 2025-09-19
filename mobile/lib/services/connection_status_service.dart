@@ -10,11 +10,11 @@ class ConnectionStatusService extends ChangeNotifier {
   ConnectionStatusService() {
     _startMonitoring();
   }
-  
+
   bool _isConnected = true;
   bool _isConnecting = false;
-  Map<String, bool> _relayStatuses = {};
-  
+  final Map<String, bool> _relayStatuses = {};
+
   final _statusController = StreamController<bool>.broadcast();
   Timer? _monitoringTimer;
 
@@ -34,7 +34,8 @@ class ConnectionStatusService extends ChangeNotifier {
   Stream<bool> get statusStream => _statusController.stream;
 
   /// Number of connected relays
-  int get connectedRelayCount => _relayStatuses.values.where((status) => status).length;
+  int get connectedRelayCount =>
+      _relayStatuses.values.where((status) => status).length;
 
   /// Total number of configured relays
   int get totalRelayCount => _relayStatuses.length;
@@ -49,7 +50,7 @@ class ConnectionStatusService extends ChangeNotifier {
   void updateRelayStatus(String relayUrl, bool isConnected) {
     final wasConnected = _isConnected;
     _relayStatuses[relayUrl] = isConnected;
-    
+
     // Update overall connection status
     final newConnectionStatus = _relayStatuses.values.any((status) => status);
     if (newConnectionStatus != _isConnected) {
@@ -72,11 +73,11 @@ class ConnectionStatusService extends ChangeNotifier {
   /// Forces a connection check
   Future<void> checkConnection() async {
     setConnecting(true);
-    
+
     // Simulate connection check - in real implementation, this would
     // ping relays or check network connectivity
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     setConnecting(false);
   }
 

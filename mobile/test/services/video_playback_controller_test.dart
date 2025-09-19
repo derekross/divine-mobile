@@ -196,10 +196,10 @@ void main() {
 
         // Test that setActive changes the isActive property
         expect(controller.isActive, isFalse);
-        
+
         controller.setActive(true);
         expect(controller.isActive, isTrue);
-        
+
         controller.setActive(false);
         expect(controller.isActive, isFalse);
 

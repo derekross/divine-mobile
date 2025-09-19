@@ -2,7 +2,6 @@
 // ABOUTME: Provides consistent setup for VideoEventService, SocialService, and UserProfileService
 
 import 'package:mockito/mockito.dart';
-import 'package:nostr_sdk/event.dart';
 import 'package:openvine/services/auth_service.dart';
 import 'package:openvine/services/nostr_service_interface.dart';
 import 'package:openvine/services/social_service.dart';

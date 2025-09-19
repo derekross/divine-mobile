@@ -35,7 +35,8 @@ class VineRecordingUIState {
     return VineRecordingUIState(
       recordingState: recordingState ?? this.recordingState,
       progress: progress ?? this.progress,
-      totalRecordedDuration: totalRecordedDuration ?? this.totalRecordedDuration,
+      totalRecordedDuration:
+          totalRecordedDuration ?? this.totalRecordedDuration,
       remainingDuration: remainingDuration ?? this.remainingDuration,
       canRecord: canRecord ?? this.canRecord,
       segments: segments ?? this.segments,
@@ -45,16 +46,17 @@ class VineRecordingUIState {
 
 /// StateNotifier that wraps VineRecordingController and provides reactive updates
 class VineRecordingNotifier extends StateNotifier<VineRecordingUIState> {
-  VineRecordingNotifier(this._controller) : super(
-    VineRecordingUIState(
-      recordingState: _controller.state,
-      progress: _controller.progress,
-      totalRecordedDuration: _controller.totalRecordedDuration,
-      remainingDuration: _controller.remainingDuration,
-      canRecord: _controller.canRecord,
-      segments: _controller.segments,
-    ),
-  ) {
+  VineRecordingNotifier(this._controller)
+      : super(
+          VineRecordingUIState(
+            recordingState: _controller.state,
+            progress: _controller.progress,
+            totalRecordedDuration: _controller.totalRecordedDuration,
+            remainingDuration: _controller.remainingDuration,
+            canRecord: _controller.canRecord,
+            segments: _controller.segments,
+          ),
+        ) {
     // Set up callback for recording progress updates
     _controller.setStateChangeCallback(updateState);
   }
@@ -113,14 +115,14 @@ class VineRecordingNotifier extends StateNotifier<VineRecordingUIState> {
 }
 
 /// Provider for VineRecordingController with reactive state management
-final vineRecordingProvider = 
+final vineRecordingProvider =
     StateNotifierProvider<VineRecordingNotifier, VineRecordingUIState>((ref) {
   final controller = VineRecordingController();
   final notifier = VineRecordingNotifier(controller);
-  
+
   ref.onDispose(() {
     notifier.dispose();
   });
-  
+
   return notifier;
 });

@@ -26,7 +26,7 @@ void main() {
     test('should define required abstract methods', () {
       // This test ensures the CameraService interface is properly defined
       expect(CameraService, isA<Type>());
-      
+
       // Since CameraService is abstract, we can't instantiate it directly
       // This test just verifies the interface exists and compiles correctly
     });

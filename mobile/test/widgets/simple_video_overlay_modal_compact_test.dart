@@ -27,7 +27,8 @@ void main() {
 
       // This should not throw an exception if the widget is properly converted
       expect(widget, isA<ConsumerStatefulWidget>());
-      expect(widget.runtimeType.toString(), contains('VideoOverlayModalCompact'));
+      expect(
+          widget.runtimeType.toString(), contains('VideoOverlayModalCompact'));
     });
   });
 }

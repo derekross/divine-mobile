@@ -25,7 +25,9 @@ void main() {
       expect(activeTab, equals(0));
     });
 
-    test('TabVisibility provider should update active tab when setActiveTab is called', () {
+    test(
+        'TabVisibility provider should update active tab when setActiveTab is called',
+        () {
       // Arrange
       final notifier = container.read(tabVisibilityProvider.notifier);
 
@@ -41,7 +43,7 @@ void main() {
       // Arrange
       final notifier = container.read(tabVisibilityProvider.notifier);
       int? capturedValue;
-      
+
       container.listen(tabVisibilityProvider, (previous, next) {
         capturedValue = next;
       });
@@ -64,7 +66,7 @@ void main() {
     test('isFeedTabActive should return false when tab 1 is active', () {
       // Arrange
       final tabNotifier = container.read(tabVisibilityProvider.notifier);
-      
+
       // Act
       tabNotifier.setActiveTab(1);
       final isFeedActive = container.read(isFeedTabActiveProvider);
@@ -76,7 +78,7 @@ void main() {
     test('isExploreTabActive should return true when tab 2 is active', () {
       // Arrange
       final tabNotifier = container.read(tabVisibilityProvider.notifier);
-      
+
       // Act
       tabNotifier.setActiveTab(2);
       final isExploreActive = container.read(isExploreTabActiveProvider);
@@ -96,7 +98,7 @@ void main() {
     test('isProfileTabActive should return true when tab 3 is active', () {
       // Arrange
       final tabNotifier = container.read(tabVisibilityProvider.notifier);
-      
+
       // Act
       tabNotifier.setActiveTab(3);
       final isProfileActive = container.read(isProfileTabActiveProvider);
@@ -108,7 +110,7 @@ void main() {
     test('isProfileTabActive should return false when tab 1 is active', () {
       // Arrange
       final tabNotifier = container.read(tabVisibilityProvider.notifier);
-      
+
       // Act
       tabNotifier.setActiveTab(1);
       final isProfileActive = container.read(isProfileTabActiveProvider);
@@ -117,10 +119,11 @@ void main() {
       expect(isProfileActive, isFalse);
     });
 
-    test('tab visibility providers should update reactively when tab changes', () {
+    test('tab visibility providers should update reactively when tab changes',
+        () {
       // Arrange
       final tabNotifier = container.read(tabVisibilityProvider.notifier);
-      
+
       // Initial state - feed should be active
       expect(container.read(isFeedTabActiveProvider), isTrue);
       expect(container.read(isExploreTabActiveProvider), isFalse);

@@ -6,25 +6,26 @@ import 'package:openvine/providers/app_providers.dart';
 
 /// Tracks optimistic follow states that haven't been confirmed yet
 /// Maps pubkey to follow state (true = following, false = not following, null = no optimistic state)
-final optimisticFollowStateProvider = StateNotifierProvider<OptimisticFollowNotifier, Map<String, bool>>((ref) {
+final optimisticFollowStateProvider =
+    StateNotifierProvider<OptimisticFollowNotifier, Map<String, bool>>((ref) {
   return OptimisticFollowNotifier(ref);
 });
 
 class OptimisticFollowNotifier extends StateNotifier<Map<String, bool>> {
   OptimisticFollowNotifier(this.ref) : super({});
-  
+
   final Ref ref;
-  
+
   /// Set optimistic follow state for a user
   void setOptimisticState(String pubkey, bool isFollowing) {
     state = {...state, pubkey: isFollowing};
   }
-  
+
   /// Clear optimistic state after server confirmation
   void clearOptimisticState(String pubkey) {
     state = Map.from(state)..remove(pubkey);
   }
-  
+
   /// Clear all optimistic states
   void clearAll() {
     state = {};
@@ -35,12 +36,12 @@ class OptimisticFollowNotifier extends StateNotifier<Map<String, bool>> {
 final isFollowingProvider = Provider.family<bool, String>((ref, pubkey) {
   final socialService = ref.watch(socialServiceProvider);
   final optimisticStates = ref.watch(optimisticFollowStateProvider);
-  
+
   // Check if we have an optimistic state for this user
   if (optimisticStates.containsKey(pubkey)) {
     return optimisticStates[pubkey]!;
   }
-  
+
   // Otherwise use the real state from social service
   return socialService.isFollowing(pubkey);
 });
@@ -52,20 +53,20 @@ final optimisticFollowMethodsProvider = Provider((ref) {
 
 class OptimisticFollowMethods {
   OptimisticFollowMethods(this.ref);
-  
+
   final Ref ref;
-  
+
   Future<void> followUser(String pubkey) async {
     final socialService = ref.read(socialServiceProvider);
     final optimisticNotifier = ref.read(optimisticFollowStateProvider.notifier);
-    
+
     // Set optimistic state immediately
     optimisticNotifier.setOptimisticState(pubkey, true);
-    
+
     try {
       // Perform actual follow
       await socialService.followUser(pubkey);
-      
+
       // Clear optimistic state on success (real state will take over)
       optimisticNotifier.clearOptimisticState(pubkey);
     } catch (e) {
@@ -74,18 +75,18 @@ class OptimisticFollowMethods {
       rethrow;
     }
   }
-  
+
   Future<void> unfollowUser(String pubkey) async {
     final socialService = ref.read(socialServiceProvider);
     final optimisticNotifier = ref.read(optimisticFollowStateProvider.notifier);
-    
+
     // Set optimistic state immediately
     optimisticNotifier.setOptimisticState(pubkey, false);
-    
+
     try {
       // Perform actual unfollow
       await socialService.unfollowUser(pubkey);
-      
+
       // Clear optimistic state on success (real state will take over)
       optimisticNotifier.clearOptimisticState(pubkey);
     } catch (e) {

@@ -17,7 +17,7 @@ class TestVideoManager extends VideoManager {
   @override
   VideoManagerState build() {
     final config = VideoManagerConfig.wifi(); // Simple config for tests
-    
+
     // Set up cleanup on dispose
     ref.onDispose(() {
       // Cleanup without starting any timers or listeners
@@ -30,18 +30,19 @@ class TestVideoManager extends VideoManager {
       currentTab: 0, // Default tab
     );
   }
-  
+
   // Override the methods to prevent actual Nostr connections
   @override
   void addVideoEvent(VideoEvent event) {
     // Do nothing in tests
   }
-  
+
   @override
-  Future<void> preloadVideo(String videoId, {PreloadPriority priority = PreloadPriority.nearby}) async {
+  Future<void> preloadVideo(String videoId,
+      {PreloadPriority priority = PreloadPriority.nearby}) async {
     // Do nothing in tests
   }
-  
+
   @override
   void pauseAllVideos() {
     // Do nothing in tests
@@ -61,29 +62,29 @@ List<Override> getTestProviderOverrides({
   dynamic mockAuthService,
 }) {
   final overrides = <Override>[];
-  
+
   // Add video manager override - create default if not provided
   final videoManager = testVideoManager ?? TestVideoManager();
   overrides.add(videoManagerProvider.overrideWith(() => videoManager));
-  
+
   // Add social service override if provided
   if (mockSocialService != null) {
     overrides.add(socialServiceProvider.overrideWithValue(mockSocialService));
   }
-  
+
   // Add auth service override if provided
   if (mockAuthService != null) {
     overrides.add(authServiceProvider.overrideWithValue(mockAuthService));
   }
-  
+
   // Add video controller factory override when available
   // overrides.add(videoControllerFactoryProvider.overrideWithValue(testVideoControllerFactory));
-  
+
   // Add any additional overrides
   if (additionalOverrides != null) {
     overrides.addAll(additionalOverrides);
   }
-  
+
   return overrides;
 }
 
@@ -92,7 +93,7 @@ Widget createTestWidget({
   required Widget child,
   TestVideoManager? testVideoManager,
   dynamic mockSocialService,
-  dynamic mockAuthService,  
+  dynamic mockAuthService,
   List<Override>? additionalOverrides,
 }) {
   return ProviderScope(

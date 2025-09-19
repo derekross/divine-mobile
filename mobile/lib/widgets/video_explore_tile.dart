@@ -1,4 +1,4 @@
-// ABOUTME: Simple video thumbnail tile for explore screen  
+// ABOUTME: Simple video thumbnail tile for explore screen
 // ABOUTME: Shows clean thumbnail with title/hashtag overlay - full screen handled by parent
 
 import 'package:flutter/material.dart';
@@ -34,92 +34,92 @@ class VideoExploreTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-        onTap: () {
-          onTap?.call();
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Use LayoutBuilder to get actual dimensions and pass to thumbnail
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  return VideoThumbnailWidget(
-                    video: video,
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    fit: BoxFit.cover,
-                    showPlayIcon: false,
-                    borderRadius: BorderRadius.circular(borderRadius),
-                  );
-                },
-              ),
+      onTap: () {
+        onTap?.call();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Use LayoutBuilder to get actual dimensions and pass to thumbnail
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return VideoThumbnailWidget(
+                  video: video,
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  fit: BoxFit.cover,
+                  showPlayIcon: false,
+                  borderRadius: BorderRadius.circular(borderRadius),
+                );
+              },
+            ),
 
-                // Video info overlay - conditionally shown
-                if (showTextOverlay)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(borderRadius),
-                          bottomRight: Radius.circular(borderRadius),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.8),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Username/Creator info
-                          _buildCreatorInfo(ref),
-                          const SizedBox(height: 4),
-                          if (video.title != null) ...[
-                            Text(
-                              video.title!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                          ],
-                          if (video.hashtags.isNotEmpty)
-                            Text(
-                              video.hashtags.map((tag) => '#$tag').join(' '),
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
+            // Video info overlay - conditionally shown
+            if (showTextOverlay)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(borderRadius),
+                      bottomRight: Radius.circular(borderRadius),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.8),
+                        Colors.transparent,
+                      ],
                     ),
                   ),
-              ],
-            ),
-          ),
-        );
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Username/Creator info
+                      _buildCreatorInfo(ref),
+                      const SizedBox(height: 4),
+                      if (video.title != null) ...[
+                        Text(
+                          video.title!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                      ],
+                      if (video.hashtags.isNotEmpty)
+                        Text(
+                          video.hashtags.map((tag) => '#$tag').join(' '),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildCreatorInfo(WidgetRef ref) {

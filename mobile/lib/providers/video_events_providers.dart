@@ -24,8 +24,7 @@ INostrService videoEventsNostrService(Ref ref) {
 
 /// Provider for SubscriptionManager instance (Video Events specific)
 @riverpod
-SubscriptionManager videoEventsSubscriptionManager(
-    Ref ref) {
+SubscriptionManager videoEventsSubscriptionManager(Ref ref) {
   throw UnimplementedError(
       'VideoEventsSubscriptionManager must be overridden in ProviderScope');
 }
@@ -46,7 +45,7 @@ class VideoEvents extends _$VideoEvents {
 
     Log.info(
       'VideoEvents: Provider built with reactive listening (${videoEventService.discoveryVideos.length} cached events)',
-      name: 'VideoEventsProvider', 
+      name: 'VideoEventsProvider',
       category: LogCategory.video,
     );
 
@@ -65,23 +64,25 @@ class VideoEvents extends _$VideoEvents {
 
     // Create a new stream controller
     _controller = StreamController<List<VideoEvent>>.broadcast();
-    
+
     // Emit current events immediately from discovery list
-    final currentEvents = List<VideoEvent>.from(videoEventService.discoveryVideos);
+    final currentEvents =
+        List<VideoEvent>.from(videoEventService.discoveryVideos);
     if (_canEmit) {
       _controller!.add(currentEvents);
     }
 
     // Listen to VideoEventService changes reactively (proper Riverpod way)
     void onVideoEventServiceChange() {
-      final newEvents = List<VideoEvent>.from(videoEventService.discoveryVideos);
-      
+      final newEvents =
+          List<VideoEvent>.from(videoEventService.discoveryVideos);
+
       // Store pending events for debounced emission
       _pendingEvents = newEvents;
-      
+
       // Cancel any existing timer
       _debounceTimer?.cancel();
-      
+
       // Create a new debounce timer to batch updates
       _debounceTimer = Timer(const Duration(milliseconds: 500), () {
         if (_pendingEvents != null && _canEmit) {
@@ -95,7 +96,7 @@ class VideoEvents extends _$VideoEvents {
         }
       });
     }
-    
+
     // Add listener for reactive updates
     videoEventService.addListener(onVideoEventServiceChange);
 
@@ -106,13 +107,12 @@ class VideoEvents extends _$VideoEvents {
       // Close and null out the controller to signal no further emits
       _controller?.close();
       _controller = null;
-      // Ensure discovery subscription is torn down when provider is disposed
-      videoEventService.unsubscribeFromVideoFeed();
+      // Don't unsubscribe - keep the videos cached in the service
+      // The service will manage its own lifecycle
     });
 
     return _controller!.stream;
   }
-
 
   /// Start discovery subscription when Explore tab is visible
   void startDiscoverySubscription() {
@@ -129,13 +129,13 @@ class VideoEvents extends _$VideoEvents {
           name: 'VideoEventsProvider', category: LogCategory.video);
       return;
     }
-    
+
     Log.info(
       'VideoEvents: Starting discovery subscription on demand',
-      name: 'VideoEventsProvider', 
+      name: 'VideoEventsProvider',
       category: LogCategory.video,
     );
-    
+
     // Subscribe to discovery videos using dedicated subscription type
     // NostrService now handles deduplication automatically
     videoEventService.subscribeToDiscovery(limit: 100);
@@ -144,10 +144,11 @@ class VideoEvents extends _$VideoEvents {
   /// Load more historical events
   Future<void> loadMoreEvents() async {
     final videoEventService = ref.read(videoEventServiceProvider);
-    
+
     // Delegate to VideoEventService with proper subscription type for discovery
-    await videoEventService.loadMoreEvents(SubscriptionType.discovery, limit: 50);
-    
+    await videoEventService.loadMoreEvents(SubscriptionType.discovery,
+        limit: 50);
+
     // The periodic timer will automatically pick up the new events
     // and emit them through the stream
   }
@@ -162,8 +163,7 @@ class VideoEvents extends _$VideoEvents {
 
 /// Provider to check if video events are loading
 @riverpod
-bool videoEventsLoading(Ref ref) =>
-    ref.watch(videoEventsProvider).isLoading;
+bool videoEventsLoading(Ref ref) => ref.watch(videoEventsProvider).isLoading;
 
 /// Provider to get video event count
 @riverpod

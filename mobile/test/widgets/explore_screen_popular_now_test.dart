@@ -82,13 +82,14 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          exploreVideoManagerProvider.overrideWithValue(mockExploreVideoManager),
+          exploreVideoManagerProvider
+              .overrideWithValue(mockExploreVideoManager),
           curationServiceProvider.overrideWithValue(mockCurationService),
           hashtagServiceProvider.overrideWithValue(mockHashtagService),
           videoEventServiceProvider.overrideWithValue(mockVideoEventService),
         ],
       );
-      
+
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
@@ -149,13 +150,14 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          exploreVideoManagerProvider.overrideWithValue(mockExploreVideoManager),
+          exploreVideoManagerProvider
+              .overrideWithValue(mockExploreVideoManager),
           curationServiceProvider.overrideWithValue(mockCurationService),
           hashtagServiceProvider.overrideWithValue(mockHashtagService),
           videoEventServiceProvider.overrideWithValue(mockVideoEventService),
         ],
       );
-      
+
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,

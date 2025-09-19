@@ -14,7 +14,7 @@ class RelatedVideosWidget extends ConsumerStatefulWidget {
   final VideoEvent currentVideo;
   final Function(List<VideoEvent>, int) onVideoTap;
   final String algorithm;
-  
+
   const RelatedVideosWidget({
     super.key,
     required this.currentVideo,
@@ -23,7 +23,8 @@ class RelatedVideosWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<RelatedVideosWidget> createState() => _RelatedVideosWidgetState();
+  ConsumerState<RelatedVideosWidget> createState() =>
+      _RelatedVideosWidgetState();
 }
 
 class _RelatedVideosWidgetState extends ConsumerState<RelatedVideosWidget> {
@@ -48,7 +49,7 @@ class _RelatedVideosWidgetState extends ConsumerState<RelatedVideosWidget> {
 
   Future<void> _loadRelatedVideos() async {
     if (_isLoading) return;
-    
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -69,12 +70,14 @@ class _RelatedVideosWidgetState extends ConsumerState<RelatedVideosWidget> {
         });
       }
 
-      Log.info('📊 Loaded ${videos.length} related videos for ${widget.currentVideo.id}',
-          name: 'RelatedVideosWidget', category: LogCategory.ui);
+      Log.info(
+          '📊 Loaded ${videos.length} related videos for ${widget.currentVideo.id}',
+          name: 'RelatedVideosWidget',
+          category: LogCategory.ui);
     } catch (e) {
       Log.error('❌ Failed to load related videos: $e',
           name: 'RelatedVideosWidget', category: LogCategory.ui);
-      
+
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -185,13 +188,16 @@ class _RelatedVideosWidgetState extends ConsumerState<RelatedVideosWidget> {
               ),
               if (_relatedVideos.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: VineTheme.vineGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    widget.algorithm == 'hashtag' ? 'By Hashtags' : 'Co-watched',
+                    widget.algorithm == 'hashtag'
+                        ? 'By Hashtags'
+                        : 'Co-watched',
                     style: TextStyle(
                       color: VineTheme.vineGreen,
                       fontSize: 12,

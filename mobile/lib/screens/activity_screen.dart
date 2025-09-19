@@ -7,6 +7,7 @@ import 'package:openvine/models/notification_model.dart';
 import 'package:openvine/models/user_profile.dart' as models;
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/screens/explore_video_screen.dart';
+import 'package:openvine/widgets/user_avatar.dart';
 import 'package:openvine/services/video_event_service.dart';
 import 'package:openvine/theme/vine_theme.dart';
 import 'package:openvine/utils/unified_logger.dart';
@@ -33,14 +34,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final authService = ref.watch(authServiceProvider);
-    
+
     if (!authService.isAuthenticated) {
       return _buildUnauthenticatedState();
     }
@@ -63,8 +64,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
           indicatorColor: VineTheme.whiteText,
           indicatorWeight: 2,
           labelColor: VineTheme.whiteText,
-          unselectedLabelColor:
-              VineTheme.whiteText.withValues(alpha: 0.7),
+          unselectedLabelColor: VineTheme.whiteText.withValues(alpha: 0.7),
           labelStyle:
               const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           tabs: const [
@@ -216,7 +216,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
     }
 
     final userProfileService = ref.watch(userProfileServiceProvider);
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: followingPubkeys.length,
@@ -235,7 +235,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
   Widget _buildPersonalActivity() {
     final authService = ref.watch(authServiceProvider);
     final videoEventService = ref.watch(videoEventServiceProvider);
-    
+
     // Get current user's videos
     final userVideos = videoEventService.discoveryVideos
         .where((video) => video.pubkey == authService.currentPublicKeyHex)
@@ -360,114 +360,90 @@ class _NotificationItem extends ConsumerWidget {
     final userName = profile?.bestDisplayName ?? 'Unknown User';
 
     return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Card(
-              color: Colors.grey[900],
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        color: Colors.grey[900],
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              UserAvatar(
+                imageUrl: profile?.picture,
+                name: userName,
+                size: 40,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: profile?.picture != null &&
-                              profile!.picture!.isNotEmpty
-                          ? NetworkImage(profile.picture!)
-                          : null,
-                      backgroundColor: VineTheme.vineGreen,
-                      child:
-                          profile?.picture == null || profile!.picture!.isEmpty
-                              ? Icon(
-                                  _getNotificationIcon(),
-                                  color: VineTheme.whiteText,
-                                  size: 20,
-                                )
-                              : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  userName,
-                                  style: const TextStyle(
-                                    color: VineTheme.whiteText,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (profile?.nip05 != null &&
-                                  profile!.nip05!.isNotEmpty) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.blue,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 10,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            notification.message,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            userName,
                             style: const TextStyle(
-                              color: VineTheme.secondaryText,
-                              fontSize: 14,
+                              color: VineTheme.whiteText,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatTimestamp(notification.timestamp),
-                            style: const TextStyle(
-                              color: VineTheme.secondaryText,
-                              fontSize: 12,
+                        ),
+                        if (profile?.nip05 != null &&
+                            profile!.nip05!.isNotEmpty) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 10,
                             ),
                           ),
                         ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      notification.message,
+                      style: const TextStyle(
+                        color: VineTheme.secondaryText,
+                        fontSize: 14,
                       ),
                     ),
-                    if (notification.targetEventId != null)
-                      IconButton(
-                        onPressed: onTap,
-                        icon: const Icon(
-                          Icons.play_arrow,
-                          color: VineTheme.vineGreen,
-                          size: 24,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatTimestamp(notification.timestamp),
+                      style: const TextStyle(
+                        color: VineTheme.secondaryText,
+                        fontSize: 12,
                       ),
+                    ),
                   ],
                 ),
               ),
-            ),
-          );
+              if (notification.targetEventId != null)
+                IconButton(
+                  onPressed: onTap,
+                  icon: const Icon(
+                    Icons.play_arrow,
+                    color: VineTheme.vineGreen,
+                    size: 24,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  IconData _getNotificationIcon() {
-    switch (notification.type) {
-      case NotificationType.like:
-        return Icons.favorite;
-      case NotificationType.follow:
-        return Icons.person_add;
-      case NotificationType.repost:
-        return Icons.repeat;
-      case NotificationType.mention:
-        return Icons.alternate_email;
-      default:
-        return Icons.notifications;
-    }
-  }
+  // Removed unused _getNotificationIcon method
 
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
@@ -502,15 +478,10 @@ class _FollowingItem extends StatelessWidget {
         color: Colors.grey[900],
         child: ListTile(
           onTap: onTap,
-          leading: CircleAvatar(
-            backgroundImage:
-                profile?.picture != null && profile!.picture!.isNotEmpty
-                    ? NetworkImage(profile!.picture!)
-                    : null,
-            backgroundColor: VineTheme.vineGreen,
-            child: profile?.picture == null || profile!.picture!.isEmpty
-                ? const Icon(Icons.person, color: VineTheme.whiteText)
-                : null,
+          leading: UserAvatar(
+            imageUrl: profile?.picture,
+            name: profile?.bestDisplayName,
+            size: 40,
           ),
           title: Row(
             children: [

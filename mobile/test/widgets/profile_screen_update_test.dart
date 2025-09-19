@@ -36,7 +36,8 @@ class MockNostrService extends Mock implements INostrService {
 
 UserProfile createTestAuthProfile({
   String npub = 'npub1testuser',
-  String publicKeyHex = '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  String publicKeyHex =
+      '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
   String? displayName,
   String? about,
   String? picture,
@@ -108,8 +109,8 @@ void main() {
 
       // Setup default mocks
       when(mockAuthService.isAuthenticated).thenReturn(true);
-      when(mockAuthService.currentPublicKeyHex)
-          .thenReturn('1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef');
+      when(mockAuthService.currentPublicKeyHex).thenReturn(
+          '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef');
       when(mockSocialService.followingPubkeys).thenReturn([]);
       // Profile providers need to be overridden differently
       // when(mockProfileStatsProvider.hasData).thenReturn(false);
@@ -121,7 +122,8 @@ void main() {
       // when(mockProfileVideosProvider.loadingState)
       //     .thenReturn(ProfileVideosLoadingState.idle);
       // Add specific getCachedProfile stub for current user
-      when(mockUserProfileService.getCachedProfile('1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'))
+      when(mockUserProfileService.getCachedProfile(
+              '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'))
           .thenReturn(null);
     });
 
@@ -138,12 +140,14 @@ void main() {
           nostrServiceProvider.overrideWithValue(mockNostrService),
           // These providers need to be overridden with actual provider values
           // profileStatsProvider.overrideWith((ref, pubkey) async => ProfileStats()),
-          profileVideosProvider('1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef').overrideWith(
+          profileVideosProvider(
+                  '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef')
+              .overrideWith(
             (ref) async => <VideoEvent>[],
           ),
         ],
       );
-      
+
       return MaterialApp(
         home: UncontrolledProviderScope(
           container: container,
@@ -343,7 +347,7 @@ void main() {
       // This test needs to be rewritten to work with actual provider structure
       // TODO: Fix test to work with Riverpod providers
       return; // Skip this test for now
-      
+
       // // Setup loading state
       // when(mockAuthService.currentProfile).thenReturn(null);
       // when(mockUserProfileService.getCachedProfile(any)).thenReturn(null);

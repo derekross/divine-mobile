@@ -41,7 +41,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _searchController.addListener(_onSearchChanged);
-    
+
     // Request focus after a short delay to avoid Chrome keyboard issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 100), () {
@@ -58,7 +58,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     _searchController.dispose();
     _searchFocusNode.dispose();
     _tabController.dispose();
-    
+
     super.dispose();
   }
 
@@ -66,10 +66,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     final query = _searchController.text.trim();
     if (query != _currentQuery) {
       _currentQuery = query;
-      
+
       // Cancel any existing timer
       _debounceTimer?.cancel();
-      
+
       if (query.isNotEmpty) {
         // Debounce search to avoid rapid queries
         _debounceTimer = Timer(const Duration(milliseconds: 300), () {
@@ -109,14 +109,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
       // Perform proper Nostr search through the embedded relay
       final searchResults = <VideoEvent>[];
       final processedEventIds = <String>{};
-      
+
       // If searching for a specific user, filter by author
       final searchStream = nostrService.searchVideos(
         query,
         authors: searchPubkey != null ? [searchPubkey] : null,
         limit: 200,
       );
-      
+
       // Collect search results from the relay
       await for (final event in searchStream) {
         if (!processedEventIds.contains(event.id)) {
@@ -141,26 +141,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
       if (videoEventService.editorialVideos.isNotEmpty) {
         allCachedVideos.addAll(videoEventService.editorialVideos);
       }
-      
+
       // Add cached videos that match but weren't in relay results
       for (final video in allCachedVideos) {
         if (!processedEventIds.contains(video.id)) {
           bool matches = false;
-          
+
           // If we have a decoded npub, search by author
           if (searchPubkey != null) {
             matches = video.pubkey == searchPubkey;
           } else {
             // Otherwise search by content
             final titleMatch =
-                video.title?.toLowerCase().contains(query.toLowerCase()) ?? false;
+                video.title?.toLowerCase().contains(query.toLowerCase()) ??
+                    false;
             final contentMatch =
                 video.content.toLowerCase().contains(query.toLowerCase());
             final hashtagMatch = video.hashtags
                 .any((tag) => tag.toLowerCase().contains(query.toLowerCase()));
             matches = titleMatch || contentMatch || hashtagMatch;
           }
-          
+
           if (matches) {
             searchResults.add(video);
             processedEventIds.add(video.id);
@@ -173,7 +174,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 
       // Search for user profiles that match the query
       final userResults = <String>{};
-      
+
       // If we decoded an npub, add that user to results
       if (searchPubkey != null) {
         userResults.add(searchPubkey);
@@ -185,22 +186,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
             kinds: [0], // Profile metadata events
             limit: 50,
           );
-          
+
           final profileEvents = await nostrService.getEvents(
             filters: [profileFilter],
             limit: 50,
           );
-          
+
           // Filter profiles that match the search query
           for (final event in profileEvents) {
             try {
               // Parse profile metadata
-              final metadata = jsonDecode(event.content) as Map<String, dynamic>;
+              final metadata =
+                  jsonDecode(event.content) as Map<String, dynamic>;
               final name = metadata['name']?.toString() ?? '';
               final displayName = metadata['display_name']?.toString() ?? '';
               final about = metadata['about']?.toString() ?? '';
               final nip05 = metadata['nip05']?.toString() ?? '';
-              
+
               // Check if any profile field matches the query
               if (name.toLowerCase().contains(query.toLowerCase()) ||
                   displayName.toLowerCase().contains(query.toLowerCase()) ||
@@ -223,7 +225,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 
       // Search for hashtags across all videos in the network
       final hashtagResults = <String>{};
-      
+
       // Get hashtags from search results
       for (final video in searchResults) {
         for (final tag in video.hashtags) {
@@ -232,7 +234,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
           }
         }
       }
-      
+
       // Also include hashtags from cached videos
       final allCachedHashtags = videoEventService.getAllHashtags();
       for (final tag in allCachedHashtags) {
@@ -240,7 +242,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
           hashtagResults.add(tag);
         }
       }
-      
+
       final sortedHashtags = hashtagResults.toList()..sort();
 
       // Apply loops-first sorting to video results
@@ -472,18 +474,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 
     final userProfileService = ref.watch(userProfileServiceProvider);
     return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _userResults.length,
-        itemBuilder: (context, index) {
-          final pubkey = _userResults[index];
-          final profile = userProfileService.getCachedProfile(pubkey);
-          return _UserSearchResultCard(
-            pubkey: pubkey,
-            profile: profile,
-            onTap: () => _openUserProfile(pubkey),
-          );
-        },
-      );
+      padding: const EdgeInsets.all(16),
+      itemCount: _userResults.length,
+      itemBuilder: (context, index) {
+        final pubkey = _userResults[index];
+        final profile = userProfileService.getCachedProfile(pubkey);
+        return _UserSearchResultCard(
+          pubkey: pubkey,
+          profile: profile,
+          onTap: () => _openUserProfile(pubkey),
+        );
+      },
+    );
   }
 
   Widget _buildHashtagResults() {
@@ -543,10 +545,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   void _openVideoInFeed(VideoEvent video, int index) {
     // Close search screen first
     Navigator.of(context).pop();
-    
+
     // Get video manager to add all search result videos for seamless playback
     final videoManager = ref.read(videoManagerProvider.notifier);
-    
+
     // Add all video results to VideoManager for the search results feed
     for (final searchVideo in _videoResults) {
       try {
@@ -555,7 +557,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
         // Video might already exist, that's ok
       }
     }
-    
+
     // Create a feed from search results starting at the tapped video
     mainNavigationKey.currentState?.playSpecificVideo(_videoResults, index);
   }
@@ -573,96 +575,96 @@ class _VideoSearchResultCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  // Video thumbnail placeholder
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: VineTheme.vineGreen,
-                      borderRadius: BorderRadius.circular(8),
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    // Video thumbnail placeholder
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: VineTheme.vineGreen,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.play_arrow,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (video.title?.isNotEmpty == true) ...[
-                          SelectableText(
-                            video.title!,
-                            style: const TextStyle(
-                              color: VineTheme.whiteText,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (video.title?.isNotEmpty == true) ...[
+                            SelectableText(
+                              video.title!,
+                              style: const TextStyle(
+                                color: VineTheme.whiteText,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
                             ),
-                            maxLines: 2,
-                          ),
-                          const SizedBox(height: 4),
-                        ],
-                        if (video.content.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                          ],
+                          if (video.content.isNotEmpty) ...[
+                            SelectableText(
+                              video.content,
+                              style: const TextStyle(
+                                color: VineTheme.secondaryText,
+                                fontSize: 12,
+                              ),
+                              maxLines: 2,
+                            ),
+                            const SizedBox(height: 4),
+                          ],
                           SelectableText(
-                            video.content,
+                            'by ${video.displayPubkey} • ${video.relativeTime}',
                             style: const TextStyle(
                               color: VineTheme.secondaryText,
-                              fontSize: 12,
-                            ),
-                            maxLines: 2,
-                          ),
-                          const SizedBox(height: 4),
-                        ],
-                        SelectableText(
-                          'by ${video.displayPubkey} • ${video.relativeTime}',
-                          style: const TextStyle(
-                            color: VineTheme.secondaryText,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (video.hashtags.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: video.hashtags
-                      .take(3)
-                      .map(
-                        (tag) => Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: VineTheme.vineGreen.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '#$tag',
-                            style: const TextStyle(
-                              color: VineTheme.vineGreen,
                               fontSize: 10,
                             ),
                           ),
-                        ),
-                      )
-                      .toList(),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+                if (video.hashtags.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: video.hashtags
+                        .take(3)
+                        .map(
+                          (tag) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: VineTheme.vineGreen.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '#$tag',
+                              style: const TextStyle(
+                                color: VineTheme.vineGreen,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
         ),
       );
 }
@@ -728,10 +730,12 @@ class _HashtagSearchResultCard extends ConsumerStatefulWidget {
   final VoidCallback onTap;
 
   @override
-  ConsumerState<_HashtagSearchResultCard> createState() => _HashtagSearchResultCardState();
+  ConsumerState<_HashtagSearchResultCard> createState() =>
+      _HashtagSearchResultCardState();
 }
 
-class _HashtagSearchResultCardState extends ConsumerState<_HashtagSearchResultCard> {
+class _HashtagSearchResultCardState
+    extends ConsumerState<_HashtagSearchResultCard> {
   int _videoCount = 0;
   bool _isLoading = true;
 
@@ -744,7 +748,7 @@ class _HashtagSearchResultCardState extends ConsumerState<_HashtagSearchResultCa
   Future<void> _loadHashtagCount() async {
     try {
       final nostrService = ref.read(nostrServiceProvider);
-      
+
       // Query for videos with this hashtag
       // Note: Nostr SDK Filter doesn't have a direct 'tags' parameter
       // We need to get all videos and filter client-side
@@ -752,24 +756,25 @@ class _HashtagSearchResultCardState extends ConsumerState<_HashtagSearchResultCa
         kinds: [32222], // Video events
         limit: 1000,
       );
-      
+
       final events = await nostrService.getEvents(
         filters: [filter],
         limit: 1000,
       );
-      
+
       // Filter events that have this hashtag
       final eventsWithHashtag = events.where((event) {
         // Check if event has 't' tags with this hashtag
         for (final tag in event.tags) {
-          if (tag.length >= 2 && tag[0] == 't' && 
+          if (tag.length >= 2 &&
+              tag[0] == 't' &&
               tag[1].toLowerCase() == widget.hashtag.toLowerCase()) {
             return true;
           }
         }
         return false;
       }).toList();
-      
+
       if (mounted) {
         setState(() {
           _videoCount = eventsWithHashtag.length;
@@ -782,14 +787,15 @@ class _HashtagSearchResultCardState extends ConsumerState<_HashtagSearchResultCa
       final allVideos = <VideoEvent>[];
       allVideos.addAll(videoEventService.discoveryVideos);
       allVideos.addAll(videoEventService.homeFeedVideos);
-      
+
       final uniqueVideos = <String>{};
       for (final video in allVideos) {
-        if (video.hashtags.any((tag) => tag.toLowerCase() == widget.hashtag.toLowerCase())) {
+        if (video.hashtags
+            .any((tag) => tag.toLowerCase() == widget.hashtag.toLowerCase())) {
           uniqueVideos.add(video.id);
         }
       }
-      
+
       if (mounted) {
         setState(() {
           _videoCount = uniqueVideos.length;
@@ -802,56 +808,56 @@ class _HashtagSearchResultCardState extends ConsumerState<_HashtagSearchResultCa
   @override
   Widget build(BuildContext context) {
     return Card(
-        color: Colors.grey[900],
-        child: ListTile(
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: VineTheme.vineGreen.withValues(alpha: 0.2),
-              border: Border.all(color: VineTheme.vineGreen, width: 1),
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: VineTheme.vineGreen,
-                    ),
-                  )
-                : const Icon(
-                    Icons.tag,
+      color: Colors.grey[900],
+      child: ListTile(
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: VineTheme.vineGreen.withValues(alpha: 0.2),
+            border: Border.all(color: VineTheme.vineGreen, width: 1),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
                     color: VineTheme.vineGreen,
-                    size: 20,
                   ),
-          ),
-          title: Text(
-            '#${widget.hashtag}',
-            style: const TextStyle(
-              color: VineTheme.whiteText,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          subtitle: Text(
-            _isLoading
-                ? 'Loading...'
-                : _videoCount > 0 
-                    ? '$_videoCount ${_videoCount == 1 ? 'video' : 'videos'} with this hashtag'
-                    : 'Tap to search videos with this hashtag',
-            style: const TextStyle(
-              color: VineTheme.secondaryText,
-              fontSize: 12,
-            ),
-          ),
-          trailing: const Icon(
-            Icons.search,
-            color: VineTheme.secondaryText,
-            size: 16,
-          ),
-          onTap: widget.onTap,
+                )
+              : const Icon(
+                  Icons.tag,
+                  color: VineTheme.vineGreen,
+                  size: 20,
+                ),
         ),
-      );
+        title: Text(
+          '#${widget.hashtag}',
+          style: const TextStyle(
+            color: VineTheme.whiteText,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          _isLoading
+              ? 'Loading...'
+              : _videoCount > 0
+                  ? '$_videoCount ${_videoCount == 1 ? 'video' : 'videos'} with this hashtag'
+                  : 'Tap to search videos with this hashtag',
+          style: const TextStyle(
+            color: VineTheme.secondaryText,
+            fontSize: 12,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.search,
+          color: VineTheme.secondaryText,
+          size: 16,
+        ),
+        onTap: widget.onTap,
+      ),
+    );
   }
 }

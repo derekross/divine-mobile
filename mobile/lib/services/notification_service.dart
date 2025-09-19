@@ -97,7 +97,7 @@ class AppNotification {
 
 /// Service for managing app notifications
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class NotificationService  {
+class NotificationService {
   /// Factory constructor that returns the singleton instance
   factory NotificationService() => instance;
 
@@ -215,7 +215,6 @@ class NotificationService  {
 
     final removedCount = initialCount - _notifications.length;
     if (removedCount > 0) {
-
       Log.debug('📱️ Cleared $removedCount old notifications',
           name: 'NotificationService', category: LogCategory.system);
     }
@@ -270,8 +269,6 @@ class NotificationService  {
     if (_notifications.length > 100) {
       _notifications.removeRange(100, _notifications.length);
     }
-
-
   }
 
   /// Get notification statistics
@@ -291,7 +288,6 @@ class NotificationService  {
 
     _disposed = true;
     _notifications.clear();
-    
   }
 
   /// Check if this service is still mounted/active

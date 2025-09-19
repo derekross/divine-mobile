@@ -1,7 +1,6 @@
 // ABOUTME: Unit tests for UploadManager.getUploadByFilePath method
 // ABOUTME: Tests file path lookup functionality using the public API
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -39,7 +38,7 @@ void main() {
     } catch (e) {
       // Box might not exist, that's fine
     }
-    
+
     mockUploadService = MockDirectUploadService();
     uploadManager = UploadManager(uploadService: mockUploadService);
 
@@ -52,10 +51,10 @@ void main() {
     try {
       // Dispose the upload manager and wait for completion
       uploadManager.dispose();
-      
+
       // Use proper async coordination instead of arbitrary delays
       await Future.microtask(() {});
-      
+
       // Close the box if it's still open
       if (Hive.isBoxOpen('pending_uploads')) {
         final box = Hive.box('pending_uploads');

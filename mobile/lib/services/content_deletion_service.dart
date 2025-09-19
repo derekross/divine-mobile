@@ -71,7 +71,7 @@ class ContentDeletion {
 
 /// Service for deleting user's own content via NIP-09
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class ContentDeletionService  {
+class ContentDeletionService {
   ContentDeletionService({
     required INostrService nostrService,
     required SharedPreferences prefs,
@@ -160,7 +160,6 @@ class ContentDeletionService  {
         _deletionHistory.add(deletion);
         await _saveDeletionHistory();
 
-
         Log.debug('📱️ Content deletion request submitted: ${deleteEvent.id}',
             name: 'ContentDeletionService', category: LogCategory.system);
         return DeleteResult.createSuccess(deleteEvent.id);
@@ -214,7 +213,6 @@ class ContentDeletionService  {
 
     if (_deletionHistory.length != initialCount) {
       await _saveDeletionHistory();
-
 
       final removedCount = initialCount - _deletionHistory.length;
       Log.debug('🧹 Cleared $removedCount old deletion records',
@@ -351,7 +349,6 @@ class ContentDeletionService  {
 
   void dispose() {
     // Clean up any active operations
-    
   }
 }
 

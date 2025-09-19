@@ -1,5 +1,5 @@
 // ABOUTME: Analytics service for tracking video views with user opt-out support
-import 'package:flutter/foundation.dart';// ABOUTME: Sends anonymous view data to divine analytics backend when enabled
+import 'package:flutter/foundation.dart'; // ABOUTME: Sends anonymous view data to divine analytics backend when enabled
 
 import 'dart:async';
 import 'dart:convert';
@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service for tracking video analytics with privacy controls
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class AnalyticsService  implements BackgroundAwareService {
+class AnalyticsService implements BackgroundAwareService {
   AnalyticsService({http.Client? client}) : _client = client ?? http.Client();
   static const String _analyticsEndpoint =
       'https://api.openvine.co/analytics/view';
@@ -27,7 +27,7 @@ class AnalyticsService  implements BackgroundAwareService {
   // Track recent views to prevent duplicate tracking
   final Set<String> _recentlyTrackedViews = {};
   Timer? _cleanupTimer;
-  
+
   // Background activity management
   bool _isInBackground = false;
   final List<Map<String, dynamic>> _pendingAnalytics = [];
@@ -50,8 +50,10 @@ class AnalyticsService  implements BackgroundAwareService {
       // Register with background activity manager
       try {
         BackgroundActivityManager().registerService(this);
-        Log.debug('📱 Registered AnalyticsService with background activity manager',
-            name: 'AnalyticsService', category: LogCategory.system);
+        Log.debug(
+            '📱 Registered AnalyticsService with background activity manager',
+            name: 'AnalyticsService',
+            category: LogCategory.system);
       } catch (e) {
         Log.warning('Could not register with background activity manager: $e',
             name: 'AnalyticsService', category: LogCategory.system);
@@ -59,7 +61,6 @@ class AnalyticsService  implements BackgroundAwareService {
 
       Log.info('Analytics service initialized (enabled: $_analyticsEnabled)',
           name: 'AnalyticsService', category: LogCategory.system);
-
     } catch (e) {
       Log.error('Failed to initialize analytics service: $e',
           name: 'AnalyticsService', category: LogCategory.system);
@@ -81,7 +82,6 @@ class AnalyticsService  implements BackgroundAwareService {
       await prefs.setBool(_analyticsEnabledKey, enabled);
 
       debugPrint('📊 Analytics ${enabled ? 'enabled' : 'disabled'} by user');
-
     } catch (e) {
       Log.error('Failed to save analytics preference: $e',
           name: 'AnalyticsService', category: LogCategory.system);
@@ -91,34 +91,37 @@ class AnalyticsService  implements BackgroundAwareService {
   /// Track a basic video view (when video starts playing)
   Future<void> trackVideoView(VideoEvent video,
       {String source = 'mobile'}) async {
-    trackDetailedVideoView(video, 
-      source: source, 
+    trackDetailedVideoView(
+      video,
+      source: source,
       eventType: 'view_start',
     );
   }
 
   /// Track a video view with user identification for proper analytics
-  Future<void> trackVideoViewWithUser(VideoEvent video, {
-    required String? userId,
-    String source = 'mobile'
-  }) async {
-    trackDetailedVideoViewWithUser(video,
+  Future<void> trackVideoViewWithUser(VideoEvent video,
+      {required String? userId, String source = 'mobile'}) async {
+    trackDetailedVideoViewWithUser(
+      video,
       userId: userId,
-      source: source, 
+      source: source,
       eventType: 'view_start',
     );
   }
 
   /// Track detailed video interaction events
-  Future<void> trackDetailedVideoView(VideoEvent video, {
+  Future<void> trackDetailedVideoView(
+    VideoEvent video, {
     required String source,
-    required String eventType, // 'view_start', 'view_end', 'loop', 'pause', 'resume', 'skip'
+    required String
+        eventType, // 'view_start', 'view_end', 'loop', 'pause', 'resume', 'skip'
     Duration? watchDuration,
     Duration? totalDuration,
     int? loopCount,
     bool? completedVideo,
   }) async {
-    trackDetailedVideoViewWithUser(video,
+    trackDetailedVideoViewWithUser(
+      video,
       userId: null, // Legacy method - no user ID
       source: source,
       eventType: eventType,
@@ -130,10 +133,12 @@ class AnalyticsService  implements BackgroundAwareService {
   }
 
   /// Track detailed video interaction events with user identification
-  Future<void> trackDetailedVideoViewWithUser(VideoEvent video, {
+  Future<void> trackDetailedVideoViewWithUser(
+    VideoEvent video, {
     required String? userId,
     required String source,
-    required String eventType, // 'view_start', 'view_end', 'loop', 'pause', 'resume', 'skip'
+    required String
+        eventType, // 'view_start', 'view_end', 'loop', 'pause', 'resume', 'skip'
     Duration? watchDuration,
     Duration? totalDuration,
     int? loopCount,
@@ -147,7 +152,11 @@ class AnalyticsService  implements BackgroundAwareService {
     }
 
     // Fire-and-forget analytics to avoid blocking the UI
-    _trackDetailedVideoViewWithRetry(video, userId, source, eventType, 
+    _trackDetailedVideoViewWithRetry(
+      video,
+      userId,
+      source,
+      eventType,
       watchDuration: watchDuration,
       totalDuration: totalDuration,
       loopCount: loopCount,
@@ -160,15 +169,15 @@ class AnalyticsService  implements BackgroundAwareService {
 
   /// Internal method to track detailed video view with retry logic
   Future<void> _trackDetailedVideoViewWithRetry(
-    VideoEvent video, 
+    VideoEvent video,
     String? userId,
-    String source, 
+    String source,
     String eventType, {
     Duration? watchDuration,
     Duration? totalDuration,
     int? loopCount,
     bool? completedVideo,
-    int attempt = 1, 
+    int attempt = 1,
     int maxAttempts = 3,
   }) async {
     try {
@@ -191,7 +200,9 @@ class AnalyticsService  implements BackgroundAwareService {
       if (totalDuration != null) {
         viewData['totalDuration'] = totalDuration.inMilliseconds;
         if (watchDuration != null) {
-          viewData['completionRate'] = (watchDuration.inMilliseconds / totalDuration.inMilliseconds).clamp(0.0, 1.0);
+          viewData['completionRate'] =
+              (watchDuration.inMilliseconds / totalDuration.inMilliseconds)
+                  .clamp(0.0, 1.0);
         }
       }
       if (loopCount != null) {
@@ -203,8 +214,10 @@ class AnalyticsService  implements BackgroundAwareService {
 
       // Log only on first attempt to reduce noise
       if (attempt == 1) {
-        Log.info('📊 Tracking $eventType for video ${video.id.substring(0, 8)}...',
-            name: 'AnalyticsService', category: LogCategory.system);
+        Log.info(
+            '📊 Tracking $eventType for video ${video.id.substring(0, 8)}...',
+            name: 'AnalyticsService',
+            category: LogCategory.system);
       }
 
       // Send view tracking request
@@ -245,7 +258,7 @@ class AnalyticsService  implements BackgroundAwareService {
             totalDuration: totalDuration,
             loopCount: loopCount,
             completedVideo: completedVideo,
-            attempt: attempt + 1, 
+            attempt: attempt + 1,
             maxAttempts: maxAttempts);
       } else {
         // Log final failure but don't crash the app
@@ -255,7 +268,6 @@ class AnalyticsService  implements BackgroundAwareService {
       }
     }
   }
-
 
   /// Track multiple video views in batch (for feed loading)
   Future<void> trackVideoViews(List<VideoEvent> videos,
@@ -299,8 +311,10 @@ class AnalyticsService  implements BackgroundAwareService {
   @override
   void onExtendedBackground() {
     if (_isInBackground) {
-      Log.info('📱 AnalyticsService: Extended background - suspending network requests',
-          name: 'AnalyticsService', category: LogCategory.system);
+      Log.info(
+          '📱 AnalyticsService: Extended background - suspending network requests',
+          name: 'AnalyticsService',
+          category: LogCategory.system);
       // Analytics will be queued and sent when app resumes
     }
   }
@@ -310,12 +324,12 @@ class AnalyticsService  implements BackgroundAwareService {
     _isInBackground = false;
     Log.info('📱 AnalyticsService: App resumed - processing pending analytics',
         name: 'AnalyticsService', category: LogCategory.system);
-    
+
     // Process any pending analytics
     if (_pendingAnalytics.isNotEmpty) {
       Log.info('📊 Processing ${_pendingAnalytics.length} pending analytics',
           name: 'AnalyticsService', category: LogCategory.system);
-      
+
       // Process pending analytics asynchronously
       _processPendingAnalytics();
     }
@@ -326,7 +340,7 @@ class AnalyticsService  implements BackgroundAwareService {
     if (!_isInBackground) {
       Log.debug('🧹 AnalyticsService: Performing periodic cleanup',
           name: 'AnalyticsService', category: LogCategory.system);
-      
+
       // Clear old tracked views to prevent memory growth
       _recentlyTrackedViews.clear();
     }
@@ -335,10 +349,10 @@ class AnalyticsService  implements BackgroundAwareService {
   /// Process any analytics that were queued while in background
   Future<void> _processPendingAnalytics() async {
     if (_pendingAnalytics.isEmpty || _isInBackground) return;
-    
+
     final analytics = List<Map<String, dynamic>>.from(_pendingAnalytics);
     _pendingAnalytics.clear();
-    
+
     for (final analytic in analytics) {
       try {
         if (!_isInBackground && _analyticsEnabled) {
@@ -357,6 +371,5 @@ class AnalyticsService  implements BackgroundAwareService {
   void dispose() {
     _cleanupTimer?.cancel();
     _client.close();
-    
   }
 }

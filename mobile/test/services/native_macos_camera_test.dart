@@ -13,14 +13,14 @@ void main() {
 
     setUp(() {
       methodCalls = [];
-      
+
       // Set up method channel mock
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
         const MethodChannel('openvine/native_camera'),
         (MethodCall methodCall) async {
           methodCalls.add(methodCall);
-          
+
           switch (methodCall.method) {
             case 'initialize':
               return true;
@@ -61,7 +61,7 @@ void main() {
 
     test('should initialize camera successfully', () async {
       final result = await NativeMacOSCamera.initialize();
-      
+
       expect(result, isTrue);
       expect(methodCalls.length, 1);
       expect(methodCalls.first.method, 'initialize');
@@ -70,7 +70,7 @@ void main() {
     test('should start preview successfully', () async {
       await NativeMacOSCamera.initialize();
       final result = await NativeMacOSCamera.startPreview();
-      
+
       expect(result, isTrue);
       expect(methodCalls.any((call) => call.method == 'startPreview'), isTrue);
     });
@@ -79,18 +79,19 @@ void main() {
       await NativeMacOSCamera.initialize();
       await NativeMacOSCamera.startPreview();
       final result = await NativeMacOSCamera.startRecording();
-      
+
       expect(result, isTrue);
-      expect(methodCalls.any((call) => call.method == 'startRecording'), isTrue);
+      expect(
+          methodCalls.any((call) => call.method == 'startRecording'), isTrue);
     });
 
     test('should stop recording and return file path', () async {
       await NativeMacOSCamera.initialize();
       await NativeMacOSCamera.startPreview();
       await NativeMacOSCamera.startRecording();
-      
+
       final filePath = await NativeMacOSCamera.stopRecording();
-      
+
       expect(filePath, isNotNull);
       expect(filePath, '/tmp/openvine_test_recording.mov');
       expect(methodCalls.any((call) => call.method == 'stopRecording'), isTrue);
@@ -114,16 +115,16 @@ void main() {
       await NativeMacOSCamera.initialize();
       await NativeMacOSCamera.startPreview();
       await NativeMacOSCamera.startRecording();
-      
+
       final filePath = await NativeMacOSCamera.stopRecording();
-      
+
       // Should return null after timeout
       expect(filePath, isNull);
     });
 
     test('should get available cameras', () async {
       final cameras = await NativeMacOSCamera.getAvailableCameras();
-      
+
       expect(cameras, isNotNull);
       expect(cameras, isA<List<Map<String, dynamic>>>());
       expect(cameras.isNotEmpty, isTrue);
@@ -132,33 +133,35 @@ void main() {
 
     test('should switch camera successfully', () async {
       final result = await NativeMacOSCamera.switchCamera(0);
-      
+
       expect(result, isTrue);
-      expect(methodCalls.any((call) => 
-        call.method == 'switchCamera' && 
-        call.arguments['cameraIndex'] == 0
-      ), isTrue);
+      expect(
+          methodCalls.any((call) =>
+              call.method == 'switchCamera' &&
+              call.arguments['cameraIndex'] == 0),
+          isTrue);
     });
 
     test('should check camera permission', () async {
       final hasPermission = await NativeMacOSCamera.hasPermission();
-      
+
       expect(hasPermission, isTrue);
       expect(methodCalls.any((call) => call.method == 'hasPermission'), isTrue);
     });
 
     test('should request camera permission', () async {
       final granted = await NativeMacOSCamera.requestPermission();
-      
+
       expect(granted, isTrue);
-      expect(methodCalls.any((call) => call.method == 'requestPermission'), isTrue);
+      expect(methodCalls.any((call) => call.method == 'requestPermission'),
+          isTrue);
     });
 
     test('should stop preview successfully', () async {
       await NativeMacOSCamera.initialize();
       await NativeMacOSCamera.startPreview();
       final result = await NativeMacOSCamera.stopPreview();
-      
+
       expect(result, isTrue);
       expect(methodCalls.any((call) => call.method == 'stopPreview'), isTrue);
     });
@@ -180,7 +183,7 @@ void main() {
       );
 
       final result = await NativeMacOSCamera.initialize();
-      
+
       // Should return false on error
       expect(result, isFalse);
     });

@@ -51,7 +51,7 @@ class ShareResult {
 
 /// Service for sharing videos with other users
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class VideoSharingService  {
+class VideoSharingService {
   VideoSharingService({
     required INostrService nostrService,
     required AuthService authService,

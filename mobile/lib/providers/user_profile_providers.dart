@@ -15,8 +15,8 @@ import 'package:openvine/providers/tab_visibility_provider.dart';
 part 'user_profile_providers.g.dart';
 
 // Helper function for safe pubkey truncation in logs
-String _safePubkeyTrunc(String pubkey) => pubkey.length > 8 ? pubkey.substring(0, 8) : pubkey;
-
+String _safePubkeyTrunc(String pubkey) =>
+    pubkey.length > 8 ? pubkey.substring(0, 8) : pubkey;
 
 // Cache for user profiles
 final Map<String, UserProfile> _userProfileCache = {};
@@ -54,8 +54,10 @@ UserProfile? _getCachedUserProfile(String pubkey) {
 void _cacheUserProfile(String pubkey, UserProfile profile) {
   _userProfileCache[pubkey] = profile;
   _userProfileCacheTimestamps[pubkey] = DateTime.now();
-  Log.debug('👤 Cached profile for ${_safePubkeyTrunc(pubkey)}: ${profile.bestDisplayName}',
-      name: 'UserProfileProvider', category: LogCategory.ui);
+  Log.debug(
+      '👤 Cached profile for ${_safePubkeyTrunc(pubkey)}: ${profile.bestDisplayName}',
+      name: 'UserProfileProvider',
+      category: LogCategory.ui);
 }
 
 /// Clear cache for a specific user
@@ -64,13 +66,12 @@ void _clearUserProfileCache(String pubkey) {
   _userProfileCacheTimestamps.remove(pubkey);
 }
 
-
 /// Mark a profile as missing to avoid spam
 void _markProfileAsMissing(String pubkey) {
   final retryAfter = DateTime.now().add(const Duration(minutes: 10));
   _knownMissingProfiles.add(pubkey);
   _missingProfileRetryAfter[pubkey] = retryAfter;
-  
+
   Log.debug(
     'Marked profile as missing: ${_safePubkeyTrunc(pubkey)}... (retry after 10 minutes)',
     name: 'UserProfileProvider',
@@ -186,7 +187,7 @@ class UserProfileNotifier extends _$UserProfileNotifier {
     // Check memory cache first
     final cached = _getCachedUserProfile(pubkey);
     if (cached != null) return cached;
-    
+
     // Check state cache
     return state.getCachedProfile(pubkey);
   }
@@ -195,7 +196,7 @@ class UserProfileNotifier extends _$UserProfileNotifier {
   void updateCachedProfile(UserProfile profile) {
     // Update both memory cache and state
     _cacheUserProfile(profile.pubkey, profile);
-    
+
     final newCache = {...state.profileCache, profile.pubkey: profile};
     state = state.copyWith(
       profileCache: newCache,
@@ -226,7 +227,7 @@ class UserProfileNotifier extends _$UserProfileNotifier {
 
       _clearUserProfileCache(pubkey);
       ref.invalidate(userProfileProvider(pubkey));
-      
+
       final newCache = {...state.profileCache}..remove(pubkey);
       state = state.copyWith(profileCache: newCache);
 
@@ -282,13 +283,17 @@ class UserProfileNotifier extends _$UserProfileNotifier {
     final isExploreActive = ref.read(isExploreTabActiveProvider);
     final isProfileActive = ref.read(isProfileTabActiveProvider);
     if (!(isFeedActive || isExploreActive || isProfileActive)) {
-      Log.info('🚫 Prefetch suppressed: Feed=$isFeedActive, Explore=$isExploreActive, Profile=$isProfileActive',
-          name: 'UserProfileNotifier', category: LogCategory.system);
+      Log.info(
+          '🚫 Prefetch suppressed: Feed=$isFeedActive, Explore=$isExploreActive, Profile=$isProfileActive',
+          name: 'UserProfileNotifier',
+          category: LogCategory.system);
       return;
     }
-    
-    Log.info('✅ Prefetch allowed: Feed=$isFeedActive, Explore=$isExploreActive, Profile=$isProfileActive',
-        name: 'UserProfileNotifier', category: LogCategory.system);
+
+    Log.info(
+        '✅ Prefetch allowed: Feed=$isFeedActive, Explore=$isExploreActive, Profile=$isProfileActive',
+        name: 'UserProfileNotifier',
+        category: LogCategory.system);
 
     if (!state.isInitialized) {
       await initialize();
@@ -311,21 +316,21 @@ class UserProfileNotifier extends _$UserProfileNotifier {
     try {
       // Use UserProfileService for immediate batch requests
       final userProfileService = ref.read(userProfileServiceProvider);
-      
+
       // Prefetch profiles using UserProfileService
       await userProfileService.prefetchProfilesImmediately(pubkeysToFetch);
-      
+
       // Get profiles from cache after prefetch
       final fetchedPubkeys = <String>{};
       for (final pubkey in pubkeysToFetch) {
         final profile = userProfileService.getCachedProfile(pubkey);
-        
+
         if (profile != null) {
           fetchedPubkeys.add(pubkey);
-          
+
           // Update both memory cache and state cache
           _cacheUserProfile(pubkey, profile);
-          
+
           final newCache = {...state.profileCache, pubkey: profile};
           state = state.copyWith(
             profileCache: newCache,
@@ -339,7 +344,7 @@ class UserProfileNotifier extends _$UserProfileNotifier {
           );
         }
       }
-      
+
       // Mark unfetched profiles as missing
       for (final pubkey in pubkeysToFetch) {
         if (!fetchedPubkeys.contains(pubkey)) {
@@ -347,8 +352,10 @@ class UserProfileNotifier extends _$UserProfileNotifier {
         }
       }
 
-      Log.debug('⚡ Prefetch completed: ${fetchedPubkeys.length}/${pubkeysToFetch.length} profiles fetched',
-          name: 'UserProfileNotifier', category: LogCategory.system);
+      Log.debug(
+          '⚡ Prefetch completed: ${fetchedPubkeys.length}/${pubkeysToFetch.length} profiles fetched',
+          name: 'UserProfileNotifier',
+          category: LogCategory.system);
     } catch (e) {
       Log.error('Error in prefetch: $e',
           name: 'UserProfileNotifier', category: LogCategory.system);
@@ -394,7 +401,7 @@ class UserProfileNotifier extends _$UserProfileNotifier {
   void markProfileAsMissing(String pubkey) {
     // Update memory cache
     _markProfileAsMissing(pubkey);
-    
+
     // Update state
     final retryAfter = DateTime.now().add(const Duration(minutes: 10));
     state = state.copyWith(
@@ -429,27 +436,27 @@ class UserProfileNotifier extends _$UserProfileNotifier {
     try {
       // Use UserProfileService for batch requests instead of individual subscriptions
       final userProfileService = ref.read(userProfileServiceProvider);
-      
+
       Log.debug(
         'Using UserProfileService for batch fetch...',
         name: 'UserProfileNotifier',
         category: LogCategory.system,
       );
-      
+
       // Prefetch profiles using UserProfileService
       await userProfileService.prefetchProfilesImmediately(pubkeysToFetch);
-      
+
       // Get profiles from cache after prefetch
       final fetchedPubkeys = <String>{};
       for (final pubkey in pubkeysToFetch) {
         final profile = userProfileService.getCachedProfile(pubkey);
-        
+
         if (profile != null) {
           fetchedPubkeys.add(pubkey);
-          
+
           // Update both memory cache and state cache
           _cacheUserProfile(pubkey, profile);
-          
+
           final newCache = {...state.profileCache, pubkey: profile};
           state = state.copyWith(
             profileCache: newCache,
@@ -463,7 +470,7 @@ class UserProfileNotifier extends _$UserProfileNotifier {
           );
         }
       }
-      
+
       // Finalize the batch
       _finalizeBatchFetch(pubkeysToFetch, fetchedPubkeys);
     } catch (e) {
@@ -500,8 +507,10 @@ class UserProfileNotifier extends _$UserProfileNotifier {
 
   Future<void> _cleanupProfileRequest(String pubkey) async {
     // No longer needed - UserProfileService handles cleanup internally
-    Log.debug('Profile request cleanup no longer needed for: ${_safePubkeyTrunc(pubkey)}',
-        name: 'UserProfileNotifier', category: LogCategory.system);
+    Log.debug(
+        'Profile request cleanup no longer needed for: ${_safePubkeyTrunc(pubkey)}',
+        name: 'UserProfileNotifier',
+        category: LogCategory.system);
   }
 
   void _cleanupAllSubscriptions() {

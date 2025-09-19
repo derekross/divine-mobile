@@ -4,6 +4,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:openvine/features/app/startup/startup_metrics.dart';
 import 'package:openvine/features/app/startup/startup_phase.dart';
+import 'package:openvine/services/crash_reporting_service.dart';
 import 'package:openvine/utils/unified_logger.dart';
 
 /// Maps provider types to appropriate startup phases
@@ -98,6 +99,7 @@ class StartupProfiler {
   void markAppStart() {
     _appStartTime = DateTime.now();
     Log.info('📱 App startup initiated', name: 'StartupProfiler');
+    CrashReportingService.instance.logInitializationStep('App startup initiated');
   }
 
   /// Mark provider initialization start
@@ -114,6 +116,10 @@ class StartupProfiler {
   void markAppReady() {
     _appReadyTime = DateTime.now();
     Log.info('✅ App ready for interaction', name: 'StartupProfiler');
+
+    final startupTime = _appReadyTime!.difference(_appStartTime!).inMilliseconds;
+    CrashReportingService.instance.logInitializationStep('App ready - startup took ${startupTime}ms');
+    CrashReportingService.instance.setCustomKey('startup_time_ms', startupTime);
 
     if (kDebugMode) {
       printReport();
@@ -175,9 +181,11 @@ class StartupProfiler {
             .map((e) => e.value.inMilliseconds)
             .reduce((a, b) => a + b);
 
-        Log.info('\n${phase.description}: ${phaseTime}ms total', name: 'StartupProfiler');
+        Log.info('\n${phase.description}: ${phaseTime}ms total',
+            name: 'StartupProfiler');
         for (final provider in providers) {
-          Log.info('  ${provider.key}: ${provider.value.inMilliseconds}ms', name: 'StartupProfiler');
+          Log.info('  ${provider.key}: ${provider.value.inMilliseconds}ms',
+              name: 'StartupProfiler');
         }
       }
 
@@ -196,16 +204,19 @@ class StartupProfiler {
           .toList();
 
       if (deferrable.isNotEmpty) {
-        Log.info('\nConsider deferring these providers:', name: 'StartupProfiler');
+        Log.info('\nConsider deferring these providers:',
+            name: 'StartupProfiler');
         for (final entry in deferrable) {
-          Log.info('  ${entry.key}: ${entry.value.inMilliseconds}ms', name: 'StartupProfiler');
+          Log.info('  ${entry.key}: ${entry.value.inMilliseconds}ms',
+              name: 'StartupProfiler');
         }
       }
 
       // Parallel initialization opportunities
       final sequentialProviders = _identifySequentialProviders();
       if (sequentialProviders.isNotEmpty) {
-        Log.info('\nThese providers could initialize in parallel:', name: 'StartupProfiler');
+        Log.info('\nThese providers could initialize in parallel:',
+            name: 'StartupProfiler');
         for (final group in sequentialProviders) {
           Log.info('  Group: ${group.join(', ')}', name: 'StartupProfiler');
         }

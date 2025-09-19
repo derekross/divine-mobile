@@ -13,8 +13,9 @@ import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/widgets/user_profile_tile.dart';
 
 class FollowingScreen extends ConsumerStatefulWidget {
-  const FollowingScreen({super.key, required this.pubkey, required this.displayName});
-  
+  const FollowingScreen(
+      {super.key, required this.pubkey, required this.displayName});
+
   final String pubkey;
   final String displayName;
 
@@ -41,7 +42,7 @@ class _FollowingScreenState extends ConsumerState<FollowingScreen> {
       });
 
       final socialService = ref.read(socialServiceProvider);
-      
+
       // If viewing current user's following, use cached data
       final authService = ref.read(authServiceProvider);
       if (widget.pubkey == authService.currentPublicKeyHex) {
@@ -58,7 +59,8 @@ class _FollowingScreenState extends ConsumerState<FollowingScreen> {
       // Otherwise start streaming following list from Nostr - updates will happen in real-time
       await _fetchFollowingFromNostr(widget.pubkey);
     } catch (e) {
-      Log.error('Failed to load following: $e', name: 'FollowingScreen', category: LogCategory.ui);
+      Log.error('Failed to load following: $e',
+          name: 'FollowingScreen', category: LogCategory.ui);
       if (mounted) {
         setState(() {
           _error = 'Failed to load following';
@@ -70,7 +72,7 @@ class _FollowingScreenState extends ConsumerState<FollowingScreen> {
 
   Future<void> _fetchFollowingFromNostr(String pubkey) async {
     final nostrService = ref.read(nostrServiceProvider);
-    
+
     // Subscribe to the user's kind 3 contact list events
     final subscription = nostrService.subscribeToEvents(
       filters: [
@@ -95,17 +97,19 @@ class _FollowingScreenState extends ConsumerState<FollowingScreen> {
             }
           }
         }
-        
+
         // Update UI immediately with the complete following list from this event
         if (mounted) {
           setState(() {
             _following = newFollowing;
-            _isLoading = false; // Stop loading as soon as we have the contact list
+            _isLoading =
+                false; // Stop loading as soon as we have the contact list
           });
         }
       },
       onError: (error) {
-        Log.error('Error in following subscription: $error', name: 'FollowingScreen', category: LogCategory.relay);
+        Log.error('Error in following subscription: $error',
+            name: 'FollowingScreen', category: LogCategory.relay);
         if (mounted) {
           setState(() {
             _error = 'Failed to load following';

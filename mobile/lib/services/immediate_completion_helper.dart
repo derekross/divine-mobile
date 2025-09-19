@@ -9,10 +9,13 @@ import 'package:openvine/utils/unified_logger.dart';
 enum CompletionMode {
   /// Complete immediately when the first matching event arrives
   first,
+
   /// Complete when a specific number of events are received
   count,
+
   /// Complete when all requested items are received (for batch requests)
   all,
+
   /// Complete when no more events are expected (e.g., for stats queries)
   exhaustive,
 }
@@ -30,7 +33,8 @@ class CompletionConfig {
 
   final CompletionMode mode;
   final int? expectedCount;
-  final Set<String>? expectedItems; // For tracking specific items (e.g., pubkeys)
+  final Set<String>?
+      expectedItems; // For tracking specific items (e.g., pubkeys)
   final int fallbackTimeoutSeconds;
   final LogCategory logCategory;
   final String serviceName;
@@ -105,7 +109,7 @@ class ImmediateCompletionHelper {
 
           case CompletionMode.count:
             // Complete when we have enough events
-            if (config.expectedCount != null && 
+            if (config.expectedCount != null &&
                 receivedItems.length >= config.expectedCount!) {
               tryComplete(isEarly: true);
             }
@@ -114,7 +118,8 @@ class ImmediateCompletionHelper {
           case CompletionMode.all:
             // Complete when all expected items are received
             if (config.expectedItems != null) {
-              final received = receivedItems.map((e) => _getItemKey(e, config)).toSet();
+              final received =
+                  receivedItems.map((e) => _getItemKey(e, config)).toSet();
               if (received.containsAll(config.expectedItems!)) {
                 tryComplete(isEarly: true);
               }
@@ -235,14 +240,16 @@ class ProfileCompletionHelper {
       logCategory: LogCategory.ui,
     );
 
-    final result = await ImmediateCompletionHelper.queryWithImmediateCompletion<Map<String, dynamic>>(
+    final result = await ImmediateCompletionHelper.queryWithImmediateCompletion<
+        Map<String, dynamic>>(
       eventStream: eventStream,
       config: config,
       eventMapper: (event) => {
         'pubkey': event.pubkey,
         'event': event,
       },
-      eventFilter: (event) => event.kind == 0 && requestedPubkeys.contains(event.pubkey),
+      eventFilter: (event) =>
+          event.kind == 0 && requestedPubkeys.contains(event.pubkey),
     );
 
     return {
@@ -268,7 +275,8 @@ class ContactListCompletionHelper {
       logCategory: LogCategory.system,
     );
 
-    final result = await ImmediateCompletionHelper.queryWithImmediateCompletion<Event>(
+    final result =
+        await ImmediateCompletionHelper.queryWithImmediateCompletion<Event>(
       eventStream: eventStream,
       config: config,
       eventMapper: (event) => event,
@@ -289,7 +297,7 @@ class VideoEventCompletionHelper {
     int fallbackTimeoutSeconds = 60,
   }) {
     int receivedCount = 0;
-    
+
     final config = CompletionConfig(
       mode: CompletionMode.exhaustive, // Don't auto-complete, let caller decide
       fallbackTimeoutSeconds: fallbackTimeoutSeconds,
@@ -304,7 +312,7 @@ class VideoEventCompletionHelper {
         if (event.kind == 32222) {
           onVideoEvent(event);
           receivedCount++;
-          
+
           // Trigger sufficient data callback when threshold is reached
           if (receivedCount >= sufficientDataThreshold) {
             onSufficientData();

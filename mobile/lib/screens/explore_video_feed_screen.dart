@@ -29,7 +29,8 @@ class ExploreVideoFeedScreen extends ConsumerStatefulWidget {
   final int startingIndex;
 
   @override
-  ConsumerState<ExploreVideoFeedScreen> createState() => _ExploreVideoFeedScreenState();
+  ConsumerState<ExploreVideoFeedScreen> createState() =>
+      _ExploreVideoFeedScreenState();
 }
 
 class _ExploreVideoFeedScreenState extends ConsumerState<ExploreVideoFeedScreen>
@@ -60,11 +61,11 @@ class _ExploreVideoFeedScreenState extends ConsumerState<ExploreVideoFeedScreen>
     _pageController.dispose();
 
     // Pause all videos when leaving
-    if (_isInitialized && _exploreVideoManager != null) {
-      _exploreVideoManager!.pauseAllVideos();
+    // FIXED: Use VideoManager directly to avoid circular dependency
+    if (_isInitialized && _videoManager != null) {
+      _videoManager!.pauseAllVideos();
     }
 
-    
     super.dispose();
   }
 
@@ -89,15 +90,20 @@ class _ExploreVideoFeedScreenState extends ConsumerState<ExploreVideoFeedScreen>
   void _initializeServices() {
     try {
       _exploreVideoManager = ref.read(exploreVideoManagerProvider);
-      _videoManager = _exploreVideoManager!.videoManager;
+      // FIXED: Get VideoManager directly to avoid circular dependency
+      _videoManager = ref.read(videoManagerProvider.notifier);
 
       // Get videos for this curation type
       _videos = _exploreVideoManager!.getVideosForType(widget.curationSetType);
 
       // Start preloading around initial position
       if (_videos.isNotEmpty) {
-        _exploreVideoManager!.preloadCollection(widget.curationSetType,
-            startIndex: _currentIndex);
+        // FIXED: Handle preloading directly through VideoManager
+        final videosToPreload = _exploreVideoManager!.getVideosForPreloading(widget.curationSetType, startIndex: _currentIndex);
+        for (final video in videosToPreload) {
+          _videoManager!.addVideoEvent(video);
+          _videoManager!.preloadVideo(video.id);
+        }
       }
 
       // REFACTORED: Service no longer extends ChangeNotifier - using Riverpod watch instead
@@ -117,7 +123,6 @@ class _ExploreVideoFeedScreenState extends ConsumerState<ExploreVideoFeedScreen>
     }
   }
 
-
   void _onPageChanged(int index) {
     if (!_isInitialized || _videoManager == null) return;
 
@@ -125,9 +130,12 @@ class _ExploreVideoFeedScreenState extends ConsumerState<ExploreVideoFeedScreen>
       _currentIndex = index;
     });
 
-    // Use VideoManager's preloading around new position
-    _exploreVideoManager!
-        .preloadCollection(widget.curationSetType, startIndex: index);
+    // FIXED: Use VideoManager's preloading around new position
+    final videosToPreload = _exploreVideoManager!.getVideosForPreloading(widget.curationSetType, startIndex: index);
+    for (final video in videosToPreload) {
+      _videoManager!.addVideoEvent(video);
+      _videoManager!.preloadVideo(video.id);
+    }
 
     // Update video playback states
     _updateVideoPlayback(index);
@@ -161,8 +169,9 @@ class _ExploreVideoFeedScreenState extends ConsumerState<ExploreVideoFeedScreen>
   }
 
   void _pauseAllVideos() {
-    if (_exploreVideoManager != null) {
-      _exploreVideoManager!.pauseAllVideos();
+    // FIXED: Use VideoManager directly to avoid circular dependency
+    if (_videoManager != null) {
+      _videoManager!.pauseAllVideos();
     }
   }
 

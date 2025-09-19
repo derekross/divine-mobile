@@ -43,9 +43,9 @@ class HashtagStats {
 
 /// Service for managing hashtag data and statistics
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class HashtagService  {
+class HashtagService {
   HashtagService(this._videoService, [this._cacheService]) {
-      // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
+    // REFACTORED: Service no longer extends ChangeNotifier - use Riverpod ref.watch instead
     _updateHashtagStats();
 
     // Update stats every minute
@@ -60,10 +60,9 @@ class HashtagService  {
 
   void dispose() {
     _updateTimer?.cancel();
-      // REFACTORED: Service no longer needs manual listener cleanup
-    
+    // REFACTORED: Service no longer needs manual listener cleanup
   }
-  
+
   /// Force refresh hashtag statistics
   void refreshHashtagStats() {
     _updateHashtagStats();
@@ -121,7 +120,6 @@ class HashtagService  {
 
     _hashtagStats.clear();
     _hashtagStats.addAll(newStats);
-
   }
 
   /// Get all hashtags sorted by video count
@@ -147,20 +145,22 @@ class HashtagService  {
         return cachedHashtags.take(limit).toList();
       }
     }
-    
+
     // Generate fresh list
     final sorted = _hashtagStats.entries.toList()
       ..sort((a, b) => b.value.videoCount.compareTo(a.value.videoCount));
     final hashtags = sorted.take(limit).map((e) => e.key).toList();
-    
+
     // Cache the result asynchronously
-    if (_cacheService != null && _cacheService!.isInitialized && hashtags.isNotEmpty) {
+    if (_cacheService != null &&
+        _cacheService!.isInitialized &&
+        hashtags.isNotEmpty) {
       _cacheService!.cachePopularHashtags(hashtags);
     }
-    
+
     return hashtags;
   }
-  
+
   /// Get statistics for a specific hashtag
   HashtagStats? getHashtagStats(String hashtag) {
     return _hashtagStats[hashtag];

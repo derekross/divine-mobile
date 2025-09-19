@@ -57,7 +57,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _bioController.dispose();
     _pictureController.dispose();
     _nip05Controller.dispose();
-    
+
     super.dispose();
   }
 
@@ -1388,7 +1388,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-
   Future<void> _uploadImage() async {
     if (_selectedImage == null) return;
 
@@ -1436,21 +1435,27 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           name: 'ProfileSetupScreen', category: LogCategory.ui);
       Log.error('Upload error type: ${e.runtimeType}',
           name: 'ProfileSetupScreen', category: LogCategory.ui);
-      
+
       // Check if it's a network connectivity issue
       final errorMessage = e.toString().toLowerCase();
       String userMessage = 'Failed to upload image: $e';
-      
-      if (errorMessage.contains('network') || 
+
+      if (errorMessage.contains('network') ||
           errorMessage.contains('connection') ||
           errorMessage.contains('timeout')) {
-        userMessage = 'Network error: Please check your internet connection and try again.';
-      } else if (errorMessage.contains('auth') || errorMessage.contains('401') || errorMessage.contains('403')) {
-        userMessage = 'Authentication error: Please try logging out and back in.';
-      } else if (errorMessage.contains('file too large') || errorMessage.contains('size')) {
-        userMessage = 'File too large: Please choose a smaller image (max 10MB).';
+        userMessage =
+            'Network error: Please check your internet connection and try again.';
+      } else if (errorMessage.contains('auth') ||
+          errorMessage.contains('401') ||
+          errorMessage.contains('403')) {
+        userMessage =
+            'Authentication error: Please try logging out and back in.';
+      } else if (errorMessage.contains('file too large') ||
+          errorMessage.contains('size')) {
+        userMessage =
+            'File too large: Please choose a smaller image (max 10MB).';
       }
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

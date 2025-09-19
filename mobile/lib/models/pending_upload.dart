@@ -1,6 +1,7 @@
 // ABOUTME: Model for tracking video uploads to Cloudinary in various states
 // ABOUTME: Supports local persistence and state management for async upload flow
 
+import 'dart:math' as math;
 import 'package:hive/hive.dart';
 
 part 'pending_upload.g.dart';
@@ -72,7 +73,7 @@ class PendingUpload {
     Duration? videoDuration,
   }) =>
       PendingUpload(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: '${DateTime.now().microsecondsSinceEpoch}_${math.Random().nextInt(999999)}',
         localVideoPath: localVideoPath,
         nostrPubkey: nostrPubkey,
         status: UploadStatus.pending,
@@ -144,10 +145,10 @@ class PendingUpload {
 
   @HiveField(19)
   final int? videoDurationMillis; // Store as milliseconds for Hive
-  
+
   /// Get video duration as Duration object
-  Duration? get videoDuration => videoDurationMillis != null 
-      ? Duration(milliseconds: videoDurationMillis!) 
+  Duration? get videoDuration => videoDurationMillis != null
+      ? Duration(milliseconds: videoDurationMillis!)
       : null;
 
   /// Copy with updated fields
@@ -193,7 +194,8 @@ class PendingUpload {
         retryCount: retryCount ?? this.retryCount,
         videoWidth: videoWidth ?? this.videoWidth,
         videoHeight: videoHeight ?? this.videoHeight,
-        videoDurationMillis: (videoDuration ?? this.videoDuration)?.inMilliseconds,
+        videoDurationMillis:
+            (videoDuration ?? this.videoDuration)?.inMilliseconds,
       );
 
   /// Check if the upload is in a terminal state

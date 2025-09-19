@@ -9,11 +9,11 @@ void main() {
       // Test hashtag display format
       final hashtag = 'comedy';
       final count = 42;
-      
+
       // Expected format for chip with count
       final expectedText = '#$hashtag ($count)';
       expect(expectedText, equals('#comedy (42)'));
-      
+
       // Expected format for chip without count
       final hashtagNoCount = 'new';
       final expectedNoCount = '#$hashtagNoCount';
@@ -29,28 +29,28 @@ void main() {
         'funny': 400,
         'music': 300,
       };
-      
+
       final localHashtags = {
-        'vine': 50,    // Should add to JSON
-        'comedy': 25,  // Should add to JSON
-        'local': 100,  // Only in local
-        'new': 75,     // Only in local
+        'vine': 50, // Should add to JSON
+        'comedy': 25, // Should add to JSON
+        'local': 100, // Only in local
+        'new': 75, // Only in local
         'trending': 200, // Only in local
       };
-      
+
       // Combine the counts
       final combined = <String, int>{};
       combined.addAll(jsonHashtags);
-      
+
       localHashtags.forEach((hashtag, localCount) {
         final currentCount = combined[hashtag] ?? 0;
         combined[hashtag] = currentCount + localCount;
       });
-      
+
       // Sort by count descending
       final sorted = combined.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
-      
+
       // Verify sorting order
       final sortedHashtags = sorted.map((e) => e.key).toList();
       expect(sortedHashtags[0], equals('vine')); // 1050
@@ -69,15 +69,15 @@ void main() {
       for (int i = 0; i < 1000; i++) {
         allHashtags.add('hashtag$i');
       }
-      
+
       // Verify all hashtags are available for display
       expect(allHashtags.length, equals(1000));
-      
+
       // Simulate scrolling through all hashtags
       // In the UI, this would be a horizontal ListView with itemCount = allHashtags.length + 1
       final itemCount = allHashtags.length + 1; // +1 for "All" chip
       expect(itemCount, equals(1001));
-      
+
       // Verify any hashtag can be accessed by index
       expect(allHashtags[0], equals('hashtag0'));
       expect(allHashtags[500], equals('hashtag500'));
@@ -87,18 +87,18 @@ void main() {
     test('should handle hashtag selection and filtering', () {
       // Test hashtag selection state
       String? selectedHashtag;
-      
+
       // Initially no hashtag selected
       expect(selectedHashtag, isNull);
-      
+
       // Select a hashtag
       selectedHashtag = 'comedy';
       expect(selectedHashtag, equals('comedy'));
-      
+
       // Deselect hashtag (back to "All")
       selectedHashtag = null;
       expect(selectedHashtag, isNull);
-      
+
       // Select different hashtag
       selectedHashtag = 'dance';
       expect(selectedHashtag, equals('dance'));
@@ -107,13 +107,13 @@ void main() {
     test('should create proper Nostr filter for hashtag queries', () {
       // Test filter creation for hashtag subscription
       final hashtags = ['comedy', 'funny', 'viral'];
-      
+
       final filter = {
         'kinds': [32222], // NIP-32222 video events
-        '#t': hashtags,   // Hashtag filter
+        '#t': hashtags, // Hashtag filter
         'limit': 100,
       };
-      
+
       // Verify filter structure
       expect(filter['kinds'], equals([32222]));
       expect(filter['#t'], equals(['comedy', 'funny', 'viral']));
@@ -123,11 +123,11 @@ void main() {
     test('should handle empty hashtag lists gracefully', () {
       // Test with no hashtags
       final emptyHashtags = <String, int>{};
-      
+
       // Sort empty list
       final sorted = emptyHashtags.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
-      
+
       expect(sorted, isEmpty);
       expect(sorted.length, equals(0));
     });
@@ -140,11 +140,11 @@ void main() {
         'highCount': 500,
         'veryHighCount': 5000,
       };
-      
+
       // Sort by count
       final sorted = hashtags.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
-      
+
       // Verify order
       expect(sorted[0].key, equals('veryHighCount'));
       expect(sorted[0].value, equals(5000));

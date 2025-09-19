@@ -56,15 +56,15 @@ class NsecBunkerClient {
   });
 
   final String authEndpoint;
-  
+
   WebSocketChannel? _wsChannel;
   BunkerConfig? _config;
   String? _userPubkey;
   String? _clientPubkey;
-  
+
   final _pendingRequests = <String, Completer<Map<String, dynamic>>>{};
   StreamSubscription? _wsSubscription;
-  
+
   bool get isConnected => _wsChannel != null && _config != null;
   String? get userPubkey => _userPubkey;
 
@@ -93,7 +93,7 @@ class NsecBunkerClient {
       }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      
+
       if (data['error'] != null) {
         return BunkerAuthResult(
           success: false,
@@ -103,7 +103,7 @@ class NsecBunkerClient {
 
       _config = BunkerConfig.fromJson(data['bunker'] as Map<String, dynamic>);
       _userPubkey = data['pubkey'] as String;
-      
+
       Log.info('Bunker authentication successful',
           name: 'NsecBunkerClient', category: LogCategory.auth);
 
@@ -139,7 +139,7 @@ class NsecBunkerClient {
       _clientPubkey = _generateClientPubkey();
 
       _wsChannel = WebSocketChannel.connect(Uri.parse(_config!.relayUrl));
-      
+
       // Subscribe to bunker responses
       _wsSubscription = _wsChannel!.stream.listen(
         _handleMessage,
@@ -261,7 +261,7 @@ class NsecBunkerClient {
   void disconnect() {
     Log.debug('Disconnecting from bunker',
         name: 'NsecBunkerClient', category: LogCategory.relay);
-    
+
     _wsSubscription?.cancel();
     _wsChannel?.sink.close();
     _wsChannel = null;
@@ -297,7 +297,7 @@ class NsecBunkerClient {
 
   void _handleDisconnect() {
     _wsChannel = null;
-    
+
     // Fail all pending requests
     for (final completer in _pendingRequests.values) {
       completer.completeError('Connection lost');
@@ -312,7 +312,7 @@ class NsecBunkerClient {
       'method': 'connect',
       'params': [_clientPubkey, _config!.secret],
     };
-    
+
     await _sendRequest(connectRequest);
   }
 
@@ -323,7 +323,7 @@ class NsecBunkerClient {
 
     // Wrap request in Nostr event format for NIP-46
     final event = _createRequestEvent(request);
-    
+
     // Send as Nostr REQ message
     final message = ['REQ', 'bunker-${request['id']}', event];
     _wsChannel!.sink.add(jsonEncode(message));

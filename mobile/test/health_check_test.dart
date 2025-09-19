@@ -10,7 +10,8 @@ import 'package:http/testing.dart';
 
 void main() {
   group('Backend Health Check', () {
-    test('should successfully check backend availability using NIP-96 endpoint', () async {
+    test('should successfully check backend availability using NIP-96 endpoint',
+        () async {
       // Arrange - create mock HTTP client that returns success for NIP-96 endpoint
       final mockClient = MockClient((request) async {
         if (request.url.path.contains('.well-known/nostr/nip96.json')) {
@@ -21,70 +22,70 @@ void main() {
         }
         return http.Response('Not Found', 404);
       });
-      
+
       // Create AuthService and Nip98AuthService
       final authService = AuthService();
       final nip98Service = Nip98AuthService(authService: authService);
-      
+
       // Create DirectUploadService with mock client
       final uploadService = DirectUploadService(
         authService: nip98Service,
         httpClient: mockClient,
       );
-      
+
       // Act - this will internally call _checkBackendHealth
       // We can't call it directly as it's private, but we know it's called
       // at the start of uploadVideo. We'll test that the service is created
       // successfully without errors.
       expect(uploadService, isNotNull);
-      
+
       // Cleanup
       mockClient.close();
     });
-    
+
     test('should handle backend unavailability gracefully', () async {
       // Arrange - create mock HTTP client that returns error
       final mockClient = MockClient((request) async {
         return http.Response('Service Unavailable', 503);
       });
-      
+
       // Create services
       final authService = AuthService();
       final nip98Service = Nip98AuthService(authService: authService);
-      
+
       // Create DirectUploadService with mock client
       final uploadService = DirectUploadService(
         authService: nip98Service,
         httpClient: mockClient,
       );
-      
+
       // Service should still be created even if backend is down
       expect(uploadService, isNotNull);
-      
+
       // Cleanup
       mockClient.close();
     });
-    
+
     test('should handle network timeout gracefully', () async {
       // Arrange - create mock HTTP client that times out
       final mockClient = MockClient((request) async {
         await Future.delayed(Duration(seconds: 15)); // Longer than 10s timeout
         return http.Response('Timeout', 200);
       });
-      
+
       // Create services
       final authService = AuthService();
       final nip98Service = Nip98AuthService(authService: authService);
-      
+
       // Create DirectUploadService with mock client
       final uploadService = DirectUploadService(
         authService: nip98Service,
         httpClient: mockClient,
       );
-      
+
       // Service should still be created even if backend times out
       expect(uploadService, isNotNull);
-      
+
       // Cleanup
       mockClient.close();
     });

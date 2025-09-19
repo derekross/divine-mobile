@@ -38,7 +38,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
     for (final controller in _replyControllers.values) {
       controller.dispose();
     }
-    
+
     super.dispose();
   }
 
@@ -142,8 +142,9 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                     Expanded(
                       child: Builder(
                         builder: (context) {
-                          final state = ref.watch(commentsNotifierProvider(widget.videoEvent.id, widget.videoEvent.pubkey));
-                          
+                          final state = ref.watch(commentsNotifierProvider(
+                              widget.videoEvent.id, widget.videoEvent.pubkey));
+
                           if (state.isLoading) {
                             return const Center(
                               child: CircularProgressIndicator(

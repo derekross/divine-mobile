@@ -38,7 +38,7 @@ void main() {
           hashtagServiceProvider.overrideWithValue(mockHashtagService),
         ],
       );
-      
+
       return UncontrolledProviderScope(
         container: container,
         child: MaterialApp(

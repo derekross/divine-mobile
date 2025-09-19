@@ -11,6 +11,7 @@ import 'package:openvine/providers/tab_visibility_provider.dart';
 import 'package:openvine/providers/video_events_providers.dart';
 import 'package:openvine/providers/home_feed_provider.dart';
 import 'package:openvine/services/global_video_registry.dart';
+import 'package:openvine/services/crash_reporting_service.dart';
 import 'package:openvine/services/video_manager_interface.dart';
 import 'package:openvine/state/video_manager_state.dart';
 import 'package:openvine/utils/unified_logger.dart';
@@ -54,27 +55,26 @@ class VideoManager extends _$VideoManager {
     });
 
     // Listen to VideoEvents directly (not VideoFeed) to avoid circular dependency
-    // This is deferred to after provider initialization to avoid test failures
-    Timer.run(() {
-      try {
-        // Listen to discovery videos
-        ref.listen(videoEventsProvider, (previous, next) {
+    // FIXED: Removed Timer.run race condition - using synchronous initialization
+    try {
+      // Listen to discovery videos
+      ref.listen(videoEventsProvider, (previous, next) {
           if (next.hasValue) {
             final newVideos = next.value!;
             final previousVideos = previous?.value ?? [];
-            
+
             // Only add videos that are actually new to avoid re-processing all videos
             final newVideoIds = newVideos.map((v) => v.id).toSet();
             final previousVideoIds = previousVideos.map((v) => v.id).toSet();
             final addedVideoIds = newVideoIds.difference(previousVideoIds);
-            
+
             // Only process actually new videos
             for (final video in newVideos) {
               if (addedVideoIds.contains(video.id)) {
                 _addVideoEvent(video);
               }
             }
-            
+
             Log.verbose(
               'VideoManager: Processed ${addedVideoIds.length} new discovery videos (total: ${newVideos.length})',
               name: 'VideoManagerProvider',
@@ -82,7 +82,7 @@ class VideoManager extends _$VideoManager {
             );
           }
         });
-        
+
         // Also listen to home feed videos
         ref.listen(homeFeedProvider, (previous, next) {
           if (next.hasValue) {
@@ -90,19 +90,19 @@ class VideoManager extends _$VideoManager {
             final previousFeedState = previous?.value;
             final newVideos = newFeedState.videos;
             final previousVideos = previousFeedState?.videos ?? [];
-            
+
             // Only add videos that are actually new to avoid re-processing all videos
             final newVideoIds = newVideos.map((v) => v.id).toSet();
             final previousVideoIds = previousVideos.map((v) => v.id).toSet();
             final addedVideoIds = newVideoIds.difference(previousVideoIds);
-            
+
             // Only process actually new videos
             for (final video in newVideos) {
               if (addedVideoIds.contains(video.id)) {
                 _addVideoEvent(video);
               }
             }
-            
+
             Log.verbose(
               'VideoManager: Processed ${addedVideoIds.length} new home feed videos (total: ${newVideos.length})',
               name: 'VideoManagerProvider',
@@ -117,7 +117,6 @@ class VideoManager extends _$VideoManager {
           category: LogCategory.video,
         );
       }
-    });
 
     return VideoManagerState(
       config: config,
@@ -145,8 +144,10 @@ class VideoManager extends _$VideoManager {
       pauseVideosForTab(previousTab);
     }
 
-    Log.info('⏸️ Auto-paused videos when switching from tab $previousTab to $currentTab',
-        name: 'VideoManager', category: LogCategory.video);
+    Log.info(
+        '⏸️ Auto-paused videos when switching from tab $previousTab to $currentTab',
+        name: 'VideoManager',
+        category: LogCategory.video);
   }
 
   /// Pause videos for a specific tab
@@ -228,7 +229,8 @@ class VideoManager extends _$VideoManager {
         name: 'VideoManagerProvider',
         category: LogCategory.video,
       );
-      throw VideoManagerException('Video not found in manager state: $videoId. Use addVideoEvent first.');
+      throw VideoManagerException(
+          'Video not found in manager state: $videoId. Use addVideoEvent first.');
     }
 
     try {
@@ -292,6 +294,12 @@ class VideoManager extends _$VideoManager {
         name: 'VideoManagerProvider',
         category: LogCategory.video,
       );
+
+      // Record non-fatal to Crashlytics
+      try {
+        await CrashReportingService.instance
+            .recordError(e, StackTrace.current, reason: 'Video preload');
+      } catch (_) {}
 
       // Handle failure state
 
@@ -498,10 +506,10 @@ class VideoManager extends _$VideoManager {
         controllerState.controller.pause();
       }
     }
-    
+
     // Also pause any controllers registered globally (like VideoFeedItem controllers)
     GlobalVideoRegistry().pauseAllControllers();
-    
+
     Log.info(
       'VideoManager: ✅ Paused all videos (VideoManager + GlobalVideoRegistry)',
       name: 'VideoManagerProvider',
@@ -628,7 +636,8 @@ class VideoManager extends _$VideoManager {
       // Validate URL for security
       final uri = Uri.parse(videoUrl);
       if (!uri.hasScheme || (!uri.isScheme('http') && !uri.isScheme('https'))) {
-        throw VideoManagerException('Invalid URL scheme: $videoUrl', videoId: videoId);
+        throw VideoManagerException('Invalid URL scheme: $videoUrl',
+            videoId: videoId);
       }
 
       Log.debug(
@@ -694,6 +703,14 @@ class VideoManager extends _$VideoManager {
         category: LogCategory.video,
       );
 
+      try {
+        await CrashReportingService.instance.recordError(
+          e,
+          StackTrace.current,
+          reason: 'Create network controller',
+        );
+      } catch (_) {}
+
       // Update failure stats
       state = state.copyWith(
         failedLoads: state.failedLoads + 1,
@@ -707,7 +724,7 @@ class VideoManager extends _$VideoManager {
 
   /// Create a controller for a local file video
   ///
-  /// This method:  
+  /// This method:
   /// - Validates the file exists and is readable
   /// - Creates VideoPlayerController.file
   /// - Registers with both VideoManager and GlobalVideoRegistry
@@ -724,7 +741,9 @@ class VideoManager extends _$VideoManager {
     try {
       // Validate file exists and is readable
       if (!videoFile.existsSync()) {
-        throw VideoManagerException('Video file does not exist: ${videoFile.path}', videoId: videoId);
+        throw VideoManagerException(
+            'Video file does not exist: ${videoFile.path}',
+            videoId: videoId);
       }
 
       Log.debug(
@@ -790,6 +809,14 @@ class VideoManager extends _$VideoManager {
         category: LogCategory.video,
       );
 
+      try {
+        await CrashReportingService.instance.recordError(
+          e,
+          StackTrace.current,
+          reason: 'Create file controller',
+        );
+      } catch (_) {}
+
       // Update failure stats
       state = state.copyWith(
         failedLoads: state.failedLoads + 1,
@@ -809,7 +836,7 @@ class VideoManager extends _$VideoManager {
   /// - Uses lower priority for memory management
   /// - Automatically disposes after thumbnail generation
   ///
-  /// [videoId] - Unique identifier for the video  
+  /// [videoId] - Unique identifier for the video
   /// [videoUrl] - Network URL to the video
   /// [seekTimeSeconds] - Time to seek to for thumbnail
   Future<VideoPlayerController?> createThumbnailController(
@@ -821,7 +848,8 @@ class VideoManager extends _$VideoManager {
       // Validate URL for security
       final uri = Uri.parse(videoUrl);
       if (!uri.hasScheme || (!uri.isScheme('http') && !uri.isScheme('https'))) {
-        throw VideoManagerException('Invalid URL scheme: $videoUrl', videoId: videoId);
+        throw VideoManagerException('Invalid URL scheme: $videoUrl',
+            videoId: videoId);
       }
 
       Log.debug(
@@ -841,10 +869,11 @@ class VideoManager extends _$VideoManager {
 
       // Configure for thumbnail generation
       await controller.setVolume(0.0); // Mute audio
-      
+
       // Seek to specified time or middle of video
       if (controller.value.duration > Duration.zero) {
-        final seekTime = controller.value.duration > Duration(seconds: seekTimeSeconds.ceil())
+        final seekTime = controller.value.duration >
+                Duration(seconds: seekTimeSeconds.ceil())
             ? Duration(milliseconds: (seekTimeSeconds * 1000).toInt())
             : controller.value.duration ~/ 2;
         await controller.seekTo(seekTime);
@@ -852,18 +881,19 @@ class VideoManager extends _$VideoManager {
 
       // Play for a frame then pause to ensure we have video data
       await controller.play();
-      
+
       // Wait for value change listener to ensure frame is loaded
       final completer = Completer<void>();
       late final VoidCallback listener;
       listener = () {
-        if (controller.value.isPlaying && controller.value.position > Duration.zero) {
+        if (controller.value.isPlaying &&
+            controller.value.position > Duration.zero) {
           controller.removeListener(listener);
           completer.complete();
         }
       };
       controller.addListener(listener);
-      
+
       // Safety timeout in case listener doesn't fire
       Timer(const Duration(milliseconds: 200), () {
         if (!completer.isCompleted) {
@@ -871,7 +901,7 @@ class VideoManager extends _$VideoManager {
           completer.complete();
         }
       });
-      
+
       await completer.future;
       await controller.pause();
 
@@ -927,6 +957,14 @@ class VideoManager extends _$VideoManager {
         category: LogCategory.video,
       );
 
+      try {
+        await CrashReportingService.instance.recordError(
+          e,
+          StackTrace.current,
+          reason: 'Create thumbnail controller',
+        );
+      } catch (_) {}
+
       // Update failure stats
       state = state.copyWith(
         failedLoads: state.failedLoads + 1,
@@ -942,17 +980,17 @@ class VideoManager extends _$VideoManager {
   /// This is called from profile screens to ensure videos are available for playback
   void addProfileVideos(List<VideoEvent> videos) {
     if (videos.isEmpty) return;
-    
+
     Log.info(
       'VideoManager: Adding ${videos.length} profile videos to manager state',
       name: 'VideoManagerProvider',
       category: LogCategory.video,
     );
-    
+
     for (final video in videos) {
       _addVideoEvent(video);
     }
-    
+
     Log.debug(
       'VideoManager: Successfully added ${videos.length} profile videos',
       name: 'VideoManagerProvider',
@@ -967,8 +1005,7 @@ class VideoManager extends _$VideoManager {
 
 /// Helper provider to get video player controller by ID
 @riverpod
-VideoPlayerController? videoPlayerController(
-    Ref ref, String videoId) {
+VideoPlayerController? videoPlayerController(Ref ref, String videoId) {
   final managerState = ref.watch(videoManagerProvider);
   return managerState.getPlayerController(videoId);
 }

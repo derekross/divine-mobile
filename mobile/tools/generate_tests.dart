@@ -7,26 +7,36 @@ import 'package:openvine/utils/unified_logger.dart';
 
 void main(List<String> args) async {
   final parser = ArgParser()
-    ..addOption('type', 
-        abbr: 't', 
-        allowed: ['service', 'widget', 'integration', 'benchmark'],
-        help: 'Type of test to generate',)
-    ..addOption('input', 
-        abbr: 'i', 
-        help: 'Input file or service to generate tests for',)
-    ..addOption('pattern', 
-        abbr: 'p', 
-        help: 'Pattern file to follow for test structure',)
-    ..addOption('flow', 
-        abbr: 'f', 
-        help: 'Flow name for integration tests',)
-    ..addFlag('help', 
-        abbr: 'h', 
-        negatable: false, 
-        help: 'Show usage information',);
+    ..addOption(
+      'type',
+      abbr: 't',
+      allowed: ['service', 'widget', 'integration', 'benchmark'],
+      help: 'Type of test to generate',
+    )
+    ..addOption(
+      'input',
+      abbr: 'i',
+      help: 'Input file or service to generate tests for',
+    )
+    ..addOption(
+      'pattern',
+      abbr: 'p',
+      help: 'Pattern file to follow for test structure',
+    )
+    ..addOption(
+      'flow',
+      abbr: 'f',
+      help: 'Flow name for integration tests',
+    )
+    ..addFlag(
+      'help',
+      abbr: 'h',
+      negatable: false,
+      help: 'Show usage information',
+    );
 
   final results = parser.parse(args);
-  
+
   if (results['help'] as bool) {
     Log.info('Test Generation Tool\n', name: 'TestGenerator');
     Log.info(parser.usage, name: 'TestGenerator');
@@ -76,10 +86,11 @@ Future<void> generateServiceTest(String inputPath, String? patternPath) async {
 
   final className = _extractClassName(inputFile);
   final outputPath = 'test/generated/${_toSnakeCase(className)}_test.dart';
-  
+
   String testContent;
   if (patternPath != null) {
-    testContent = await _generateFromPattern(inputFile, File(patternPath), 'service');
+    testContent =
+        await _generateFromPattern(inputFile, File(patternPath), 'service');
   } else {
     testContent = _generateDefaultServiceTest(className, inputPath);
   }
@@ -96,7 +107,7 @@ Future<void> generateWidgetTest(String inputPath, String? patternPath) async {
 
   final className = _extractClassName(inputFile);
   final outputPath = 'test/generated/${_toSnakeCase(className)}_test.dart';
-  
+
   final testContent = _generateDefaultWidgetTest(className, inputPath);
   await File(outputPath).writeAsString(testContent);
   Log.info('Generated widget test: $outputPath', name: 'TestGenerator');
@@ -105,7 +116,7 @@ Future<void> generateWidgetTest(String inputPath, String? patternPath) async {
 Future<void> generateIntegrationTest(String flow, String? patternPath) async {
   final flowName = flow.replaceAll('-', '_');
   final outputPath = 'test/generated/${flowName}_integration_test.dart';
-  
+
   final testContent = _generateDefaultIntegrationTest(flowName);
   await File(outputPath).writeAsString(testContent);
   Log.info('Generated integration test: $outputPath', name: 'TestGenerator');
@@ -119,7 +130,7 @@ Future<void> generateBenchmark(String inputPath, String? patternPath) async {
 
   final className = _extractClassName(inputFile);
   final outputPath = 'test/generated/${_toSnakeCase(className)}_benchmark.dart';
-  
+
   final testContent = _generateDefaultBenchmark(className, inputPath);
   await File(outputPath).writeAsString(testContent);
   Log.info('Generated benchmark: $outputPath', name: 'TestGenerator');
@@ -129,7 +140,7 @@ String _extractClassName(File file) {
   final content = file.readAsStringSync();
   final filename = file.path.split('/').last.replaceAll('.dart', '');
   final expectedClassName = _toPascalCase(filename);
-  
+
   // Try to find a class that matches the filename pattern
   final classMatches = RegExp(r'class\s+(\w+)').allMatches(content);
   for (final match in classMatches) {
@@ -142,26 +153,28 @@ String _extractClassName(File file) {
       return className;
     }
   }
-  
+
   // Fallback to first class found
   if (classMatches.isNotEmpty) {
     return classMatches.first.group(1)!;
   }
-  
+
   // Final fallback to filename
   return expectedClassName;
 }
 
 String _toSnakeCase(String input) => input
-      .replaceAllMapped(RegExp('[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}')
-      .replaceFirst(RegExp('^_'), '');
+    .replaceAllMapped(
+        RegExp('[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}')
+    .replaceFirst(RegExp('^_'), '');
 
 String _toPascalCase(String input) => input
-      .split('_')
-      .map((word) => word[0].toUpperCase() + word.substring(1))
-      .join('');
+    .split('_')
+    .map((word) => word[0].toUpperCase() + word.substring(1))
+    .join('');
 
-Future<String> _generateFromPattern(File inputFile, File patternFile, String type) async {
+Future<String> _generateFromPattern(
+    File inputFile, File patternFile, String type) async {
   if (!patternFile.existsSync()) {
     throw Exception('Pattern file not found: ${patternFile.path}');
   }
@@ -183,7 +196,7 @@ Future<String> _generateFromPattern(File inputFile, File patternFile, String typ
 String _generateDefaultServiceTest(String className, String inputPath) {
   final snakeCase = _toSnakeCase(className);
   final importPath = inputPath.replaceFirst('lib/', 'package:openvine/');
-  
+
   return '''
 // ABOUTME: Generated test suite for $className service
 // ABOUTME: Tests initialization, core functionality, and error handling
@@ -258,7 +271,7 @@ void main() {
 String _generateDefaultWidgetTest(String className, String inputPath) {
   final snakeCase = _toSnakeCase(className);
   final importPath = inputPath.replaceFirst('lib/', 'package:openvine/');
-  
+
   return '''
 // ABOUTME: Generated widget test suite for $className
 // ABOUTME: Tests widget rendering, interactions, and state changes
@@ -349,7 +362,7 @@ void main() {
 
 String _generateDefaultIntegrationTest(String flowName) {
   final pascalCase = _toPascalCase(flowName);
-  
+
   return '''
 // Integration test for $flowName flow
 // Tests complete user journey and system integration
@@ -409,7 +422,7 @@ void main() {
 String _generateDefaultBenchmark(String className, String inputPath) {
   final snakeCase = _toSnakeCase(className);
   final importPath = inputPath.replaceFirst('lib/', 'package:openvine/');
-  
+
   return '''
 // Performance benchmark for $className
 // Measures execution time and resource usage

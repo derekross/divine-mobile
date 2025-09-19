@@ -23,11 +23,13 @@ void main() {
     setUp(() {
       mockNostrService = MockINostrService();
       testEventController = StreamController<Event>.broadcast();
-      
+
       // Mock the NostrService to return our test stream
-      when(mockNostrService.subscribeToEvents(filters: anyNamed('filters'), bypassLimits: anyNamed('bypassLimits')))
+      when(mockNostrService.subscribeToEvents(
+              filters: anyNamed('filters'),
+              bypassLimits: anyNamed('bypassLimits')))
           .thenAnswer((_) => testEventController.stream);
-      
+
       subscriptionManager = SubscriptionManager(mockNostrService);
     });
 
@@ -36,85 +38,111 @@ void main() {
       subscriptionManager.dispose();
     });
 
-    test('TDD: SubscriptionManager should forward events from NostrService to callback - WILL FAIL FIRST', () async {
-      Log.debug('🔍 TDD: Testing if SubscriptionManager forwards events to callbacks...', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
-      
+    test(
+        'TDD: SubscriptionManager should forward events from NostrService to callback - WILL FAIL FIRST',
+        () async {
+      Log.debug(
+          '🔍 TDD: Testing if SubscriptionManager forwards events to callbacks...',
+          name: 'SubscriptionManagerTDDTest',
+          category: LogCategory.system);
+
       // This test will FAIL initially - proving the bug exists!
       final receivedEvents = <Event>[];
       final completer = Completer<void>();
-      
+
       // Create subscription
       final subscriptionId = await subscriptionManager.createSubscription(
         name: 'tdd_test',
-        filters: [Filter(kinds: [22], limit: 3)],
+        filters: [
+          Filter(kinds: [22], limit: 3)
+        ],
         onEvent: (event) {
-          Log.info('✅ TDD: Callback received event: ${event.id.substring(0, 8)}', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+          Log.info(
+              '✅ TDD: Callback received event: ${event.id.substring(0, 8)}',
+              name: 'SubscriptionManagerTDDTest',
+              category: LogCategory.system);
           receivedEvents.add(event);
           if (receivedEvents.length >= 2) {
             completer.complete();
           }
         },
         onError: (error) {
-          Log.error('❌ TDD: Callback error: $error', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+          Log.error('❌ TDD: Callback error: $error',
+              name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
           completer.completeError(error);
         },
         onComplete: () {
-          Log.debug('🏁 TDD: Callback completed', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+          Log.debug('🏁 TDD: Callback completed',
+              name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
           if (!completer.isCompleted) completer.complete();
         },
       );
 
-      Log.debug('📡 TDD: Created subscription $subscriptionId', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
-      
+      Log.debug('📡 TDD: Created subscription $subscriptionId',
+          name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+
       // Simulate events coming from the NostrService stream (using valid hex pubkeys)
       final testEvent1 = Event(
-        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 
-        22, 
-        [['url', 'https://example.com/video1.mp4']], 
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        22,
+        [
+          ['url', 'https://example.com/video1.mp4']
+        ],
         'Test video content 1',
       );
-      
+
       final testEvent2 = Event(
-        'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210', 
-        22, 
-        [['url', 'https://example.com/video2.mp4']], 
+        'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
+        22,
+        [
+          ['url', 'https://example.com/video2.mp4']
+        ],
         'Test video content 2',
       );
 
       // Send events through the stream (simulating real relay events)
-      Log.debug('📤 TDD: Sending test events through stream...', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+      Log.debug('📤 TDD: Sending test events through stream...',
+          name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
       testEventController.add(testEvent1);
       await Future.delayed(Duration(milliseconds: 100));
       testEventController.add(testEvent2);
-      
+
       // Wait for events to be forwarded to callback
       try {
         await completer.future.timeout(Duration(seconds: 5));
       } catch (e) {
-        Log.warning('⏰ TDD: Timeout - events were not forwarded to callback', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+        Log.warning('⏰ TDD: Timeout - events were not forwarded to callback',
+            name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
       }
 
       await subscriptionManager.cancelSubscription(subscriptionId);
-      
-      Log.debug('📊 TDD: Received ${receivedEvents.length} events via callback', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
-      
+
+      Log.debug('📊 TDD: Received ${receivedEvents.length} events via callback',
+          name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+
       // This assertion will FAIL initially if SubscriptionManager has the bug
-      expect(receivedEvents.length, equals(2), 
-        reason: 'SubscriptionManager should forward events from stream to callback - THIS WILL FAIL FIRST (TDD Red phase)');
+      expect(receivedEvents.length, equals(2),
+          reason:
+              'SubscriptionManager should forward events from stream to callback - THIS WILL FAIL FIRST (TDD Red phase)');
     });
 
-    test('TDD: Verify NostrService stream works correctly (control test)', () async {
-      Log.debug('🔍 TDD: Control test - verify our test setup works...', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
-      
+    test('TDD: Verify NostrService stream works correctly (control test)',
+        () async {
+      Log.debug('🔍 TDD: Control test - verify our test setup works...',
+          name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+
       // This should pass - verifying our test setup is correct
       final receivedEvents = <Event>[];
       final completer = Completer<void>();
-      
+
       // Listen directly to the stream (bypassing SubscriptionManager)
-      final directStream = mockNostrService.subscribeToEvents(filters: [Filter(kinds: [22])]);
+      final directStream = mockNostrService.subscribeToEvents(filters: [
+        Filter(kinds: [22])
+      ]);
       final subscription = directStream.listen(
         (event) {
-          Log.info('✅ TDD: Direct stream received: ${event.id.substring(0, 8)}', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
+          Log.info('✅ TDD: Direct stream received: ${event.id.substring(0, 8)}',
+              name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
           receivedEvents.add(event);
           if (receivedEvents.length >= 2) {
             completer.complete();
@@ -123,21 +151,33 @@ void main() {
       );
 
       // Send the same test events (using valid hex pubkeys)
-      final testEvent1 = Event('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 22, [], 'Test 1');
-      final testEvent2 = Event('fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210', 22, [], 'Test 2');
-      
+      final testEvent1 = Event(
+          '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+          22,
+          [],
+          'Test 1');
+      final testEvent2 = Event(
+          'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
+          22,
+          [],
+          'Test 2');
+
       testEventController.add(testEvent1);
       await Future.delayed(Duration(milliseconds: 100));
       testEventController.add(testEvent2);
-      
+
       await completer.future.timeout(Duration(seconds: 2));
       subscription.cancel();
-      
-      Log.debug('📊 TDD: Direct stream received ${receivedEvents.length} events', name: 'SubscriptionManagerTDDTest', category: LogCategory.system);
-      
+
+      Log.debug(
+          '📊 TDD: Direct stream received ${receivedEvents.length} events',
+          name: 'SubscriptionManagerTDDTest',
+          category: LogCategory.system);
+
       // This should pass - proving our test setup works
-      expect(receivedEvents.length, equals(2), 
-        reason: 'Direct stream should receive events (proves test setup is correct)');
+      expect(receivedEvents.length, equals(2),
+          reason:
+              'Direct stream should receive events (proves test setup is correct)');
     });
   });
 }

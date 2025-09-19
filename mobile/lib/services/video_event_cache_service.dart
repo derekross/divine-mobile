@@ -14,7 +14,7 @@ import 'package:openvine/utils/unified_logger.dart';
 /// - Memory management (500 video limit)
 /// - Cache queries by author
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class VideoEventCacheService  {
+class VideoEventCacheService {
   final List<VideoEvent> _videoEvents = [];
   int _duplicateVideoEventCount = 0;
 
@@ -44,14 +44,12 @@ class VideoEventCacheService  {
   void addVideo(VideoEvent videoEvent) {
     _addVideoWithPriority(videoEvent);
     _trimCacheIfNeeded();
-
   }
 
   /// Clear all videos from the cache
   void clear() {
     _videoEvents.clear();
     _duplicateVideoEventCount = 0;
-
   }
 
   /// Add default videos if cache is empty or ensure they're prioritized
@@ -72,8 +70,6 @@ class VideoEventCacheService  {
           category: LogCategory.video,
         );
       }
-
-
     } else {
       // We have videos - ensure default videos are present with correct priority
       final defaultVideoIds = defaultVideos.map((v) => v.id).toSet();
@@ -91,7 +87,6 @@ class VideoEventCacheService  {
         defaultVideos.forEach(_addVideoWithPriority);
 
         _trimCacheIfNeeded();
-
       }
     }
   }
@@ -148,7 +143,6 @@ class VideoEventCacheService  {
       category: LogCategory.video,
     );
   }
-
 
   void _insertRegularVideo(VideoEvent videoEvent) {
     // Regular video - insert after classic vines

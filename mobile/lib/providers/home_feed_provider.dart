@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/providers/social_providers.dart' as social;
@@ -27,7 +28,7 @@ class HomeFeed extends _$HomeFeed {
       name: 'HomeFeedProvider',
       category: LogCategory.video,
     );
-    
+
     // Clean up timer on dispose
     ref.onDispose(() {
       _profileFetchTimer?.cancel();
@@ -36,7 +37,7 @@ class HomeFeed extends _$HomeFeed {
     // Get social data to check following list
     final socialData = ref.watch(social.socialNotifierProvider);
     final followingPubkeys = socialData.followingPubkeys;
-    
+
     Log.info(
       '🏠 HomeFeed: User is following ${followingPubkeys.length} people',
       name: 'HomeFeedProvider',
@@ -54,19 +55,43 @@ class HomeFeed extends _$HomeFeed {
       );
     }
 
-    // Get video event service and subscribe to following feed  
+    // Get video event service and subscribe to following feed
     final videoEventService = ref.watch(videoEventServiceProvider);
-    
+
     // Subscribe to home feed videos from followed authors using dedicated subscription type
     // NostrService now handles deduplication automatically
     await videoEventService.subscribeToHomeFeed(followingPubkeys, limit: 100);
-    
-    // Give a moment for the subscription to establish and receive initial events
-    await Future.delayed(const Duration(milliseconds: 500));
-    
+
+    // Wait for initial events by listening to video service notifications
+    // This replaces crude timing with proper reactive state management
+    final completer = Completer<void>();
+    late VoidCallback listener;
+
+    listener = () {
+      if (videoEventService.homeFeedVideos.isNotEmpty) {
+        videoEventService.removeListener(listener);
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }
+    };
+
+    videoEventService.addListener(listener);
+
+    // Set a reasonable timeout to prevent hanging
+    Timer(const Duration(seconds: 5), () {
+      videoEventService.removeListener(listener);
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    });
+
+    await completer.future;
+
     // Get videos from the dedicated home feed list (server-side filtered to only following)
-    final followingVideos = List<VideoEvent>.from(videoEventService.homeFeedVideos);
-    
+    final followingVideos =
+        List<VideoEvent>.from(videoEventService.homeFeedVideos);
+
     Log.info(
       '🏠 HomeFeed: Server-side filtered to ${followingVideos.length} videos from following',
       name: 'HomeFeedProvider',
@@ -86,16 +111,15 @@ class HomeFeed extends _$HomeFeed {
       error: null,
       lastUpdated: DateTime.now(),
     );
-    
+
     Log.info(
       '📋 HomeFeed: Home feed complete - ${followingVideos.length} videos from following',
       name: 'HomeFeedProvider',
       category: LogCategory.video,
     );
-    
+
     return feedState;
   }
-
 
   Future<void> _scheduleBatchProfileFetch(List<VideoEvent> videos) async {
     // Cancel any existing timer
@@ -119,7 +143,7 @@ class HomeFeed extends _$HomeFeed {
 
       // Wait for profiles to be fetched before continuing
       await profilesProvider.fetchMultipleProfiles(newPubkeys);
-      
+
       Log.debug(
         'HomeFeed: Profile fetching completed for ${newPubkeys.length} profiles',
         name: 'HomeFeedProvider',
@@ -137,13 +161,13 @@ class HomeFeed extends _$HomeFeed {
   /// Load more historical events from followed authors
   Future<void> loadMore() async {
     final currentState = await future;
-    
+
     Log.info(
       'HomeFeed: loadMore() called - isLoadingMore: ${currentState.isLoadingMore}',
       name: 'HomeFeedProvider',
       category: LogCategory.video,
     );
-    
+
     if (currentState.isLoadingMore) {
       return;
     }
@@ -155,7 +179,7 @@ class HomeFeed extends _$HomeFeed {
       final videoEventService = ref.read(videoEventServiceProvider);
       final socialData = ref.read(social.socialNotifierProvider);
       final followingPubkeys = socialData.followingPubkeys;
-      
+
       if (followingPubkeys.isEmpty) {
         // No one to load more from
         state = AsyncData(currentState.copyWith(
@@ -164,13 +188,16 @@ class HomeFeed extends _$HomeFeed {
         ));
         return;
       }
-      
-      final eventCountBefore = videoEventService.getEventCount(SubscriptionType.homeFeed);
-      
+
+      final eventCountBefore =
+          videoEventService.getEventCount(SubscriptionType.homeFeed);
+
       // Load more events for home feed subscription type
-      await videoEventService.loadMoreEvents(SubscriptionType.homeFeed, limit: 50);
-      
-      final eventCountAfter = videoEventService.getEventCount(SubscriptionType.homeFeed);
+      await videoEventService.loadMoreEvents(SubscriptionType.homeFeed,
+          limit: 50);
+
+      final eventCountAfter =
+          videoEventService.getEventCount(SubscriptionType.homeFeed);
       final newEventsLoaded = eventCountAfter - eventCountBefore;
 
       Log.info(
@@ -178,7 +205,7 @@ class HomeFeed extends _$HomeFeed {
         name: 'HomeFeedProvider',
         category: LogCategory.video,
       );
-      
+
       // Reset loading state - state will auto-update via dependencies
       final newState = await future;
       state = AsyncData(newState.copyWith(

@@ -57,8 +57,30 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
             final stats = hashtagService.getHashtagStats(widget.hashtag);
 
             if (videoService.isLoading && videos.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(color: VineTheme.vineGreen),
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(color: VineTheme.vineGreen),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Fetching videos from relays...',
+                      style: TextStyle(
+                        color: VineTheme.primaryText,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'This may take a few moments',
+                      style: TextStyle(
+                        color: VineTheme.secondaryText,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               );
             }
 

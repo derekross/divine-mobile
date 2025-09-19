@@ -8,7 +8,6 @@ import 'package:path/path.dart' as path;
 import 'package:openvine/utils/unified_logger.dart';
 
 class FutureDelayedOccurrence {
-
   FutureDelayedOccurrence({
     required this.file,
     required this.line,
@@ -33,13 +32,15 @@ void main(List<String> args) async {
     ..addFlag('suggest', defaultsTo: true, help: 'Show replacement suggestions')
     ..addFlag('include-tests', defaultsTo: false, help: 'Include test files')
     ..addFlag('fix', defaultsTo: false, help: 'Automatically fix simple cases')
-    ..addOption('format', defaultsTo: 'text', allowed: ['text', 'json'], help: 'Output format');
+    ..addOption('format',
+        defaultsTo: 'text', allowed: ['text', 'json'], help: 'Output format');
 
   final argResults = parser.parse(args);
   final paths = argResults.rest;
 
   if (paths.isEmpty) {
-    Log.info('Usage: dart detect_future_delayed.dart [options] <path>...', name: 'FutureDelayedDetector');
+    Log.info('Usage: dart detect_future_delayed.dart [options] <path>...',
+        name: 'FutureDelayedDetector');
     Log.info(parser.usage, name: 'FutureDelayedDetector');
     exit(1);
   }
@@ -163,7 +164,8 @@ bool _isRetryPattern(List<String> lines, int lineIndex) {
   for (var i = lineIndex - 5; i <= lineIndex + 5 && i < lines.length; i++) {
     if (i < 0) continue;
     final line = lines[i].toLowerCase();
-    if (line.contains('retry') || line.contains('attempt') || 
+    if (line.contains('retry') ||
+        line.contains('attempt') ||
         (line.contains('try') && line.contains('catch'))) {
       return true;
     }
@@ -176,7 +178,8 @@ bool _isDebouncePattern(List<String> lines, int lineIndex) {
   for (var i = lineIndex - 3; i <= lineIndex + 3 && i < lines.length; i++) {
     if (i < 0) continue;
     final line = lines[i].toLowerCase();
-    if (line.contains('debounce') || line.contains('throttle') || 
+    if (line.contains('debounce') ||
+        line.contains('throttle') ||
         line.contains('timer?.cancel')) {
       return true;
     }
@@ -186,7 +189,7 @@ bool _isDebouncePattern(List<String> lines, int lineIndex) {
 
 Future<bool> _fixOccurrences(List<FutureDelayedOccurrence> occurrences) async {
   final fileGroups = <String, List<FutureDelayedOccurrence>>{};
-  
+
   // Group occurrences by file
   for (final occurrence in occurrences) {
     fileGroups.putIfAbsent(occurrence.file, () => []).add(occurrence);
@@ -197,7 +200,7 @@ Future<bool> _fixOccurrences(List<FutureDelayedOccurrence> occurrences) async {
   for (final entry in fileGroups.entries) {
     final file = File(entry.key);
     final fileOccurrences = entry.value;
-    
+
     final content = await file.readAsString();
     final lines = content.split('\n');
     var modified = false;
@@ -209,9 +212,10 @@ Future<bool> _fixOccurrences(List<FutureDelayedOccurrence> occurrences) async {
     for (final occurrence in fileOccurrences) {
       final lineIndex = occurrence.line - 1;
       final line = lines[lineIndex];
-      
+
       // Simple delay without callback - replace with Timer
-      if (!line.contains(',') || (!line.contains('=>') && !line.contains('{'))) {
+      if (!line.contains(',') ||
+          (!line.contains('=>') && !line.contains('{'))) {
         final durationMatch = RegExp(r'Duration\s*\([^)]+\)').firstMatch(line);
         if (durationMatch != null) {
           final duration = durationMatch.group(0)!;
@@ -237,7 +241,8 @@ Future<bool> _fixOccurrences(List<FutureDelayedOccurrence> occurrences) async {
     }
   }
 
-  Log.info('Fixed $fixedCount occurrence${fixedCount == 1 ? '' : 's'}', name: 'FutureDelayedDetector');
+  Log.info('Fixed $fixedCount occurrence${fixedCount == 1 ? '' : 's'}',
+      name: 'FutureDelayedDetector');
   return fixedCount > 0;
 }
 
@@ -247,12 +252,14 @@ void _reportResults(
   bool showSuggestions,
 ) {
   if (format == 'json') {
-    Log.info(json.encode(occurrences.map((o) => o.toJson()).toList()), name: 'FutureDelayedDetector');
+    Log.info(json.encode(occurrences.map((o) => o.toJson()).toList()),
+        name: 'FutureDelayedDetector');
     return;
   }
 
   if (occurrences.isEmpty) {
-    Log.info('No Future.delayed found in source files ✓', name: 'FutureDelayedDetector');
+    Log.info('No Future.delayed found in source files ✓',
+        name: 'FutureDelayedDetector');
     return;
   }
 
@@ -267,15 +274,20 @@ void _reportResults(
   for (final entry in fileGroups.entries) {
     Log.info('\n${entry.key}:', name: 'FutureDelayedDetector');
     for (final occurrence in entry.value) {
-      Log.info('  Line ${occurrence.line}: ${occurrence.code}', name: 'FutureDelayedDetector');
+      Log.info('  Line ${occurrence.line}: ${occurrence.code}',
+          name: 'FutureDelayedDetector');
       if (showSuggestions) {
-        Log.info('    → ${occurrence.suggestion}', name: 'FutureDelayedDetector');
+        Log.info('    → ${occurrence.suggestion}',
+            name: 'FutureDelayedDetector');
       }
     }
   }
 
   Log.info('\n${'─' * 80}', name: 'FutureDelayedDetector');
-  Log.info('Total Future.delayed occurrences: ${occurrences.length}', name: 'FutureDelayedDetector');
-  Log.info('Files affected: ${fileGroups.length}', name: 'FutureDelayedDetector');
-  Log.info('\nConsider using AsyncUtils for proper async patterns.', name: 'FutureDelayedDetector');
+  Log.info('Total Future.delayed occurrences: ${occurrences.length}',
+      name: 'FutureDelayedDetector');
+  Log.info('Files affected: ${fileGroups.length}',
+      name: 'FutureDelayedDetector');
+  Log.info('\nConsider using AsyncUtils for proper async patterns.',
+      name: 'FutureDelayedDetector');
 }

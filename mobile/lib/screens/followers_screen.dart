@@ -13,8 +13,9 @@ import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/widgets/user_profile_tile.dart';
 
 class FollowersScreen extends ConsumerStatefulWidget {
-  const FollowersScreen({super.key, required this.pubkey, required this.displayName});
-  
+  const FollowersScreen(
+      {super.key, required this.pubkey, required this.displayName});
+
   final String pubkey;
   final String displayName;
 
@@ -43,7 +44,8 @@ class _FollowersScreenState extends ConsumerState<FollowersScreen> {
       // Start streaming followers from Nostr - updates will happen in real-time
       await _fetchFollowersFromNostr(widget.pubkey);
     } catch (e) {
-      Log.error('Failed to load followers: $e', name: 'FollowersScreen', category: LogCategory.ui);
+      Log.error('Failed to load followers: $e',
+          name: 'FollowersScreen', category: LogCategory.ui);
       if (mounted) {
         setState(() {
           _error = 'Failed to load followers';
@@ -55,7 +57,7 @@ class _FollowersScreenState extends ConsumerState<FollowersScreen> {
 
   Future<void> _fetchFollowersFromNostr(String pubkey) async {
     final nostrService = ref.read(nostrServiceProvider);
-    
+
     // Subscribe to kind 3 events that mention this pubkey in p tags
     final subscription = nostrService.subscribeToEvents(
       filters: [
@@ -74,13 +76,15 @@ class _FollowersScreenState extends ConsumerState<FollowersScreen> {
           if (mounted) {
             setState(() {
               _followers.add(event.pubkey);
-              _isLoading = false; // Stop loading as soon as we have first follower
+              _isLoading =
+                  false; // Stop loading as soon as we have first follower
             });
           }
         }
       },
       onError: (error) {
-        Log.error('Error in followers subscription: $error', name: 'FollowersScreen', category: LogCategory.relay);
+        Log.error('Error in followers subscription: $error',
+            name: 'FollowersScreen', category: LogCategory.relay);
         if (mounted) {
           setState(() {
             _error = 'Failed to load followers';

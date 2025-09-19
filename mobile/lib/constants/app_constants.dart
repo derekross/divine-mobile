@@ -48,7 +48,7 @@ class AppConstants {
 
   /// Maximum videos to show in Featured
   static const int featuredLimit = 25;
-  
+
   /// Default pagination size for hashtags and explore sections
   static const int defaultPaginationSize = 25;
 

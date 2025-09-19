@@ -33,8 +33,10 @@ class VideoStopNavigatorObserver extends NavigatorObserver {
   void _stopAllVideos(String action, String? routeName) {
     try {
       GlobalVideoRegistry().pauseAllControllers();
-      Log.info('⏸️ Stopped all videos on navigation $action to route: ${routeName ?? 'unnamed'}',
-          name: 'VideoStopNavigatorObserver', category: LogCategory.system);
+      Log.info(
+          '⏸️ Stopped all videos on navigation $action to route: ${routeName ?? 'unnamed'}',
+          name: 'VideoStopNavigatorObserver',
+          category: LogCategory.system);
     } catch (e) {
       Log.error('Failed to stop videos on navigation: $e',
           name: 'VideoStopNavigatorObserver', category: LogCategory.system);

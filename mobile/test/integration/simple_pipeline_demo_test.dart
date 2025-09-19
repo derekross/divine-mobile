@@ -39,10 +39,14 @@ void main() {
       registerFallbackValue(Uri.parse('https://example.com'));
       registerFallbackValue(<String, String>{});
       registerFallbackValue(UploadStatus.pending);
-      
+
       // Register Event fallback for mocktail
-      registerFallbackValue(Event('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 22, [], 'test'));
-      
+      registerFallbackValue(Event(
+          '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+          22,
+          [],
+          'test'));
+
       // Register BaseRequest fallback for http mocking
       registerFallbackValue(FakeBaseRequest());
     });
@@ -169,13 +173,19 @@ void main() {
       // Verify NIP-94 tag generation
       final nip94Tags = readyEvent.nip94Tags;
       expect(nip94Tags, isNotEmpty);
-      
+
       // Check tags by finding them in the list
-      final hasUrlTag = nip94Tags.any((tag) => tag.length >= 2 && tag[0] == 'url' && tag[1] == 'https://demo.cloudinary.com/video.mp4');
-      final hasMimeTag = nip94Tags.any((tag) => tag.length >= 2 && tag[0] == 'm' && tag[1] == 'video/mp4');
-      final hasDimTag = nip94Tags.any((tag) => tag.length >= 2 && tag[0] == 'dim' && tag[1] == '1920x1080');
-      final hasDurationTag = nip94Tags.any((tag) => tag.length >= 2 && tag[0] == 'duration' && tag[1] == '6');
-      
+      final hasUrlTag = nip94Tags.any((tag) =>
+          tag.length >= 2 &&
+          tag[0] == 'url' &&
+          tag[1] == 'https://demo.cloudinary.com/video.mp4');
+      final hasMimeTag = nip94Tags.any(
+          (tag) => tag.length >= 2 && tag[0] == 'm' && tag[1] == 'video/mp4');
+      final hasDimTag = nip94Tags.any(
+          (tag) => tag.length >= 2 && tag[0] == 'dim' && tag[1] == '1920x1080');
+      final hasDurationTag = nip94Tags.any(
+          (tag) => tag.length >= 2 && tag[0] == 'duration' && tag[1] == '6');
+
       expect(hasUrlTag, isTrue, reason: 'Should contain URL tag');
       expect(hasMimeTag, isTrue, reason: 'Should contain MIME type tag');
       expect(hasDimTag, isTrue, reason: 'Should contain dimensions tag');

@@ -21,17 +21,19 @@ void main() {
 
     setUp(() {
       mockPrefs = MockSharedPreferences();
-      
+
       // Set up default stubs for all flags
       for (final flag in FeatureFlag.values) {
         when(mockPrefs.getBool('ff_${flag.name}')).thenReturn(null);
-        when(mockPrefs.setBool('ff_${flag.name}', any)).thenAnswer((_) async => true);
+        when(mockPrefs.setBool('ff_${flag.name}', any))
+            .thenAnswer((_) async => true);
         when(mockPrefs.remove('ff_${flag.name}')).thenAnswer((_) async => true);
         when(mockPrefs.containsKey('ff_${flag.name}')).thenReturn(false);
       }
     });
 
-    testWidgets('should provide complete feature flag management workflow', (tester) async {
+    testWidgets('should provide complete feature flag management workflow',
+        (tester) async {
       // Create a complete app with both settings screen and feature-gated content
       await tester.pumpWidget(
         ProviderScope(
@@ -49,8 +51,7 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(TestHomeScreen))
-      );
+          tester.element(find.byType(TestHomeScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
@@ -114,7 +115,8 @@ void main() {
                     builder: (context) => ElevatedButton(
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const FeatureFlagScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const FeatureFlagScreen()),
                       ),
                       child: const Text('Open Settings'),
                     ),
@@ -128,8 +130,7 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagWidget).first)
-      );
+          tester.element(find.byType(FeatureFlagWidget).first));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
@@ -143,13 +144,14 @@ void main() {
       // Navigate to settings to verify switch states
       await tester.tap(find.text('Open Settings'));
       await tester.pumpAndSettle();
-      
+
       // Verify switch states in settings
       final switches = tester.widgetList<Switch>(find.byType(Switch));
       expect(switches.length, equals(FeatureFlag.values.length));
     });
 
-    testWidgets('should persist flag changes across app restarts', (tester) async {
+    testWidgets('should persist flag changes across app restarts',
+        (tester) async {
       // Simulate first app launch with user changing flags
       await tester.pumpWidget(
         ProviderScope(
@@ -162,8 +164,7 @@ void main() {
 
       // Initialize service
       final container1 = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service1 = container1.read(featureFlagServiceProvider);
       await service1.initialize();
       await tester.pumpAndSettle();
@@ -194,8 +195,7 @@ void main() {
 
       // Initialize service in new app instance
       final container2 = ProviderScope.containerOf(
-        tester.element(find.byType(TestContentScreen))
-      );
+          tester.element(find.byType(TestContentScreen)));
       final service2 = container2.read(featureFlagServiceProvider);
       await service2.initialize();
       await tester.pumpAndSettle();
@@ -236,8 +236,7 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagWidget))
-      );
+          tester.element(find.byType(FeatureFlagWidget)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
@@ -284,8 +283,7 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagScreen))
-      );
+          tester.element(find.byType(FeatureFlagScreen)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();
@@ -321,7 +319,8 @@ void main() {
                     builder: (context) => ElevatedButton(
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const FeatureFlagScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const FeatureFlagScreen()),
                       ),
                       child: const Text('Open Settings'),
                     ),
@@ -335,8 +334,7 @@ void main() {
 
       // Initialize service
       final container = ProviderScope.containerOf(
-        tester.element(find.byType(FeatureFlagWidget))
-      );
+          tester.element(find.byType(FeatureFlagWidget)));
       final service = container.read(featureFlagServiceProvider);
       await service.initialize();
       await tester.pumpAndSettle();

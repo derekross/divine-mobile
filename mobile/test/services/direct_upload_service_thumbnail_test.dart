@@ -158,10 +158,7 @@ void main() {
       await videoFile.writeAsBytes(
           Uint8List.fromList(List.generate(1000, (i) => i % 256)));
 
-      // Track progress
-      void onProgress(double progress) {
-        progressValues.add(progress);
-      }
+      // Track progress - removed unused onProgress function
 
       // The first progress update should be 0.05 (5%) for thumbnail generation
       // This would be verified in an actual integration test

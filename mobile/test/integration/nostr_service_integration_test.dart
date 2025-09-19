@@ -14,7 +14,7 @@ void main() {
     test('receives events from relay', () async {
       // Setup test environment with platform channel mocks
       await RealIntegrationTestHelper.setupTestEnvironment();
-      
+
       // Create real key manager
       final keyManager = NostrKeyManager();
       await keyManager.initialize();
@@ -56,7 +56,7 @@ void main() {
             completer.complete();
           }
         });
-        
+
         // Also complete early if we get events
         if (events.isNotEmpty) {
           Timer(const Duration(milliseconds: 100), () {
@@ -65,7 +65,7 @@ void main() {
             }
           });
         }
-        
+
         await completer.future;
 
         // Cancel subscription

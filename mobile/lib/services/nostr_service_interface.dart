@@ -54,7 +54,7 @@ abstract class INostrService {
   int get connectedRelayCount;
   List<String> get relays;
   Map<String, dynamic> get relayStatuses;
-  
+
   // AUTH state tracking
   Map<String, bool> get relayAuthStates;
   Stream<Map<String, bool>> get authStateStream;
@@ -76,7 +76,6 @@ abstract class INostrService {
     List<String> hashtags = const [],
   });
 
-
   // Relay management methods
   Future<bool> addRelay(String relayUrl);
   Future<void> removeRelay(String relayUrl);
@@ -94,7 +93,8 @@ abstract class INostrService {
   });
 
   // NIP-50 Search functionality
-  Stream<Event> searchVideos(String query, {
+  Stream<Event> searchVideos(
+    String query, {
     List<String>? authors,
     DateTime? since,
     DateTime? until,

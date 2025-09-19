@@ -17,13 +17,13 @@ class FeatureFlagWidget extends ConsumerWidget {
 
   /// The feature flag to check
   final FeatureFlag flag;
-  
+
   /// Widget to show when flag is enabled
   final Widget child;
-  
+
   /// Widget to show when flag is disabled (optional)
   final Widget? disabled;
-  
+
   /// Widget to show during loading state (optional)
   final Widget? loading;
 
@@ -31,7 +31,7 @@ class FeatureFlagWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the specific flag state
     final isEnabled = ref.watch(isFeatureEnabledProvider(flag));
-    
+
     // Return appropriate widget based on flag state
     if (isEnabled) {
       return child;

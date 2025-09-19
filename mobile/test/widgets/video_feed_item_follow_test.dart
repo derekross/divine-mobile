@@ -77,7 +77,7 @@ void main() {
           userProfileServiceProvider.overrideWithValue(mockUserProfileService),
         ],
       );
-      
+
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
@@ -116,7 +116,7 @@ void main() {
           userProfileServiceProvider.overrideWithValue(mockUserProfileService),
         ],
       );
-      
+
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
@@ -153,7 +153,7 @@ void main() {
           userProfileServiceProvider.overrideWithValue(mockUserProfileService),
         ],
       );
-      
+
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
@@ -193,7 +193,7 @@ void main() {
           userProfileServiceProvider.overrideWithValue(mockUserProfileService),
         ],
       );
-      
+
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,

@@ -17,12 +17,12 @@ void main() {
 
     setUp(() {
       mockKeyManager = MockNostrKeyManager();
-      
+
       // Mock key manager properties
       when(mockKeyManager.publicKey).thenReturn('test_public_key');
       when(mockKeyManager.privateKey).thenReturn('test_private_key');
       when(mockKeyManager.hasKeys).thenReturn(true);
-      
+
       nostrService = NostrService(mockKeyManager);
     });
 
@@ -30,7 +30,7 @@ void main() {
       // Since we can't actually initialize without platform channels,
       // we can verify the service is configured correctly
       expect(nostrService.isInitialized, isFalse);
-      
+
       // The service should be ready to use relay3.openvine.co once initialized
       // This demonstrates the integration is properly configured
     });

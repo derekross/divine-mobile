@@ -15,9 +15,19 @@ void main() {
         [
           ['d', '5gITeYOlL7g'],
           ['title', 'A low quality edit with high quality content. ✨'],
-          ['streaming', 'https://cdn.divine.video/cfd0c51a0db4c2a9ff23f9c5ada7db8b/manifest/video.m3u8', 'hls'],
-          ['thumb', 'https://cdn.divine.video/cfd0c51a0db4c2a9ff23f9c5ada7db8b/thumbnails/thumbnail.jpg'],
-          ['preview', 'https://cdn.divine.video/cfd0c51a0db4c2a9ff23f9c5ada7db8b/thumbnails/thumbnail.gif'],
+          [
+            'streaming',
+            'https://cdn.divine.video/cfd0c51a0db4c2a9ff23f9c5ada7db8b/manifest/video.m3u8',
+            'hls'
+          ],
+          [
+            'thumb',
+            'https://cdn.divine.video/cfd0c51a0db4c2a9ff23f9c5ada7db8b/thumbnails/thumbnail.jpg'
+          ],
+          [
+            'preview',
+            'https://cdn.divine.video/cfd0c51a0db4c2a9ff23f9c5ada7db8b/thumbnails/thumbnail.gif'
+          ],
           ['vine_id', '5gITeYOlL7g'],
           ['loops', '13565'],
           ['likes', '732'],
@@ -30,14 +40,19 @@ void main() {
       final videoEvent = VideoEvent.fromNostrEvent(nostrEvent);
 
       // Assert
-      expect(videoEvent.videoUrl, equals('https://cdn.divine.video/cfd0c51a0db4c2a9ff23f9c5ada7db8b/manifest/video.m3u8'));
-      expect(videoEvent.title, equals('A low quality edit with high quality content. ✨'));
+      expect(
+          videoEvent.videoUrl,
+          equals(
+              'https://cdn.divine.video/cfd0c51a0db4c2a9ff23f9c5ada7db8b/manifest/video.m3u8'));
+      expect(videoEvent.title,
+          equals('A low quality edit with high quality content. ✨'));
       expect(videoEvent.vineId, equals('5gITeYOlL7g'));
       expect(videoEvent.originalLoops, equals(13565));
       expect(videoEvent.originalLikes, equals(732));
     });
 
-    test('should NOT use preview GIF as thumbnail (uses static thumb instead)', () {
+    test('should NOT use preview GIF as thumbnail (uses static thumb instead)',
+        () {
       // Arrange
       final nostrEvent = Event(
         '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
@@ -54,7 +69,8 @@ void main() {
       final videoEvent = VideoEvent.fromNostrEvent(nostrEvent);
 
       // Assert - Should use static thumbnail, not GIF
-      expect(videoEvent.thumbnailUrl, equals('https://example.com/static-thumbnail.jpg'));
+      expect(videoEvent.thumbnailUrl,
+          equals('https://example.com/static-thumbnail.jpg'));
     });
 
     test('should accept video URLs from any domain (open protocol)', () {
@@ -82,8 +98,8 @@ void main() {
         final videoEvent = VideoEvent.fromNostrEvent(nostrEvent);
 
         // Assert
-        expect(videoEvent.videoUrl, equals(url), 
-          reason: 'Should accept video from $url (open protocol)');
+        expect(videoEvent.videoUrl, equals(url),
+            reason: 'Should accept video from $url (open protocol)');
       }
     });
 
@@ -126,7 +142,8 @@ void main() {
         32222,
         [
           ['url', 'https://cdn.divine.video/test/video.m3u8'],
-          ['imeta', 
+          [
+            'imeta',
             'url https://cdn.divine.video/test/video.mp4',
             'm video/mp4',
             'dim 480x480',
@@ -143,10 +160,12 @@ void main() {
       final videoEvent = VideoEvent.fromNostrEvent(nostrEvent);
 
       // Assert
-      expect(videoEvent.blurhash, equals('U~L;mea|M{t7WBj[j[ay~qoft7j[%MWBayj['));
+      expect(
+          videoEvent.blurhash, equals('U~L;mea|M{t7WBj[j[ay~qoft7j[%MWBayj['));
       expect(videoEvent.dimensions, equals('480x480'));
       expect(videoEvent.duration, equals(6));
-      expect(videoEvent.thumbnailUrl, equals('https://cdn.divine.video/test/thumbnail.jpg'));
+      expect(videoEvent.thumbnailUrl,
+          equals('https://cdn.divine.video/test/thumbnail.jpg'));
     });
 
     test('should not require specific file extensions for video URLs', () {
@@ -155,7 +174,7 @@ void main() {
         '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
         32222,
         [
-          ['url', 'https://api.example.com/stream/12345'],  // No file extension
+          ['url', 'https://api.example.com/stream/12345'], // No file extension
         ],
         'Test video',
         createdAt: 1757385263,
@@ -165,7 +184,8 @@ void main() {
       final videoEvent = VideoEvent.fromNostrEvent(nostrEvent);
 
       // Assert
-      expect(videoEvent.videoUrl, equals('https://api.example.com/stream/12345'));
+      expect(
+          videoEvent.videoUrl, equals('https://api.example.com/stream/12345'));
     });
 
     test('should reject non-HTTP/HTTPS URLs', () {
@@ -174,7 +194,7 @@ void main() {
         '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
         32222,
         [
-          ['url', 'ftp://example.com/video.mp4'],  // FTP protocol
+          ['url', 'ftp://example.com/video.mp4'], // FTP protocol
         ],
         'Test video',
         createdAt: 1757385263,

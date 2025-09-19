@@ -10,7 +10,7 @@ import 'package:openvine/utils/unified_logger.dart';
 /// should be filtered from all general feeds (home, explore, hashtag feeds).
 /// Users can still explicitly visit blocked profiles if they choose to follow them.
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class ContentBlocklistService  {
+class ContentBlocklistService {
   ContentBlocklistService() {
     // Initialize with the specific npub requested
     _addInitialBlockedContent();

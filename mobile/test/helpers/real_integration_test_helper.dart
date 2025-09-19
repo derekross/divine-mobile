@@ -3,7 +3,6 @@
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:openvine/config/app_config.dart';
 import 'package:openvine/services/nostr_service.dart';
 import 'package:openvine/services/nostr_key_manager.dart';
 
@@ -30,7 +29,7 @@ class RealIntegrationTestHelper {
 
     final keyManager = NostrKeyManager();
     // Note: May need to set up test keys differently based on actual API
-    
+
     final nostrService = NostrService(keyManager);
     await nostrService.initialize();
 
@@ -43,14 +42,17 @@ class RealIntegrationTestHelper {
   /// Setup minimal platform channel mocks (only what's needed, not business logic)
   static void _setupPlatformChannelMocks() {
     // Mock SharedPreferences
-    const MethodChannel prefsChannel = MethodChannel('plugins.flutter.io/shared_preferences');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel prefsChannel =
+        MethodChannel('plugins.flutter.io/shared_preferences');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       prefsChannel,
       (MethodCall methodCall) async {
         if (methodCall.method == 'getAll') {
           return <String, dynamic>{};
         }
-        if (methodCall.method == 'setString' || methodCall.method == 'setStringList') {
+        if (methodCall.method == 'setString' ||
+            methodCall.method == 'setStringList') {
           return true;
         }
         if (methodCall.method == 'setBool') {
@@ -73,8 +75,10 @@ class RealIntegrationTestHelper {
     );
 
     // Mock connectivity
-    const MethodChannel connectivityChannel = MethodChannel('dev.fluttercommunity.plus/connectivity');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel connectivityChannel =
+        MethodChannel('dev.fluttercommunity.plus/connectivity');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       connectivityChannel,
       (MethodCall methodCall) async {
         if (methodCall.method == 'check') {
@@ -85,8 +89,10 @@ class RealIntegrationTestHelper {
     );
 
     // Mock secure storage
-    const MethodChannel secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel secureStorageChannel =
+        MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       secureStorageChannel,
       (MethodCall methodCall) async {
         if (methodCall.method == 'write') {
@@ -103,8 +109,10 @@ class RealIntegrationTestHelper {
     );
 
     // Mock path_provider
-    const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel pathProviderChannel =
+        MethodChannel('plugins.flutter.io/path_provider');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       pathProviderChannel,
       (MethodCall methodCall) async {
         if (methodCall.method == 'getApplicationDocumentsDirectory') {

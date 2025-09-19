@@ -61,7 +61,8 @@ void main() {
       expect(service, isA<VideoSharingService>());
     });
 
-    test('VideoVisibilityManager provider should exist (should already pass)', () {
+    test('VideoVisibilityManager provider should exist (should already pass)',
+        () {
       // This should PASS - videoVisibilityManagerProvider already exists
       final service = container.read(videoVisibilityManagerProvider);
       expect(service, isA<VideoVisibilityManager>());
@@ -77,14 +78,19 @@ void main() {
         container.read(videoSharingServiceProvider);
         container.read(videoVisibilityManagerProvider);
       }, returnsNormally);
-      
+
       // Verify they return expected types
       expect(container.read(videoManagerProvider.notifier), isNotNull);
-      expect(container.read(contentDeletionServiceProvider), isA<ContentDeletionService>());
-      expect(container.read(contentReportingServiceProvider), isA<ContentReportingService>());
-      expect(container.read(curatedListServiceProvider), isA<CuratedListService>());
-      expect(container.read(videoSharingServiceProvider), isA<VideoSharingService>());
-      expect(container.read(videoVisibilityManagerProvider), isA<VideoVisibilityManager>());
+      expect(container.read(contentDeletionServiceProvider),
+          isA<ContentDeletionService>());
+      expect(container.read(contentReportingServiceProvider),
+          isA<ContentReportingService>());
+      expect(container.read(curatedListServiceProvider),
+          isA<CuratedListService>());
+      expect(container.read(videoSharingServiceProvider),
+          isA<VideoSharingService>());
+      expect(container.read(videoVisibilityManagerProvider),
+          isA<VideoVisibilityManager>());
     });
   });
 }

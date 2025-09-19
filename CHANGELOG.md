@@ -8,6 +8,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased Changes]
 
 ### Added
+- **Multi-Account Support Planning**: Comprehensive implementation plan for multiple user accounts
+  - Detailed 40+ page implementation guide at `docs/MULTI_ACCOUNT_IMPLEMENTATION.md`
+  - Secure AccountManager architecture with biometric authentication design
+  - 5-phase implementation roadmap (Foundation, Core, Integration, UI, Testing)
+  - Shared embedded relay with account-specific subscriptions architecture
+  - Secure key storage using flutter_secure_storage
+  - Data models for UserAccount, AccountState, and RelayConfig
+  - Migration strategy for existing single-account users
+  - Target <500ms account switching performance with security-first approach
+
+- **Blossom Media Server Integration**: Support for user-configurable Blossom media servers
+  - New `BlossomUploadService` for uploading videos to any Blossom-compatible server
+  - `BlossomSettingsScreen` for configuring custom media servers
+  - NIP-98 authentication support for Blossom uploads
+  - User-selectable upload destination (OpenVine servers vs. custom Blossom servers)
+  - Decentralized media hosting capabilities
+
+- **Firebase Crash Reporting Infrastructure**: Development infrastructure for crash tracking
+  - Firebase integration setup with platform-specific configurations
+  - `firebase_options.dart` with multi-platform support structure
+  - Crash reporting setup documentation at `docs/CRASH_REPORTING_SETUP.md`
+  - TestFlight build script with crash reporting integration (`build_testflight.sh`)
+  - Enhanced debugging and monitoring capabilities
+
+- **CDN Infrastructure Improvements**: Enhanced media delivery with fallback systems
+  - `VineCdnHttpOverrides` for DNS routing to working edge servers
+  - Preserves TLS SNI and Host headers while fixing DNS resolution
+  - Fallback mechanisms for CDN reliability
+  - Improved media loading performance and reliability
+
+- **Performance Optimization**: Significant performance improvements for tab-based navigation
+  - Background Riverpod provider optimization with autoDispose for heavy providers
+  - Scoped feed streams to visible tabs only (VideoEvents, LatestVideos, HomeFeed)
+  - Gated discovery subscriptions to Explore tab visibility only
+  - Prevents off-screen providers from maintaining live subscriptions and timers
+  - Reduced background network requests and profile prefetches
+  - Guards for off-screen network churn and unnecessary API calls
+
+### Changed
+- **iOS Distribution**: Bumped iOS build number to 8 for TestFlight distribution
 - **Enhanced Error Handling and Recovery**: Comprehensive global error management system
   - Global error handler with graceful UI fallback for unhandled exceptions
   - Custom error widget with retry capability for runtime errors

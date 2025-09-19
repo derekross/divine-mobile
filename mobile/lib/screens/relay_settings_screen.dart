@@ -13,7 +13,8 @@ class RelaySettingsScreen extends ConsumerStatefulWidget {
   const RelaySettingsScreen({super.key});
 
   @override
-  ConsumerState<RelaySettingsScreen> createState() => _RelaySettingsScreenState();
+  ConsumerState<RelaySettingsScreen> createState() =>
+      _RelaySettingsScreenState();
 }
 
 class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
@@ -30,8 +31,8 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
   Widget build(BuildContext context) {
     final nostrService = ref.watch(nostrServiceProvider);
     final externalRelays = nostrService.relays;
-    
-    Log.info('Displaying ${externalRelays.length} external relays', 
+
+    Log.info('Displaying ${externalRelays.length} external relays',
         name: 'RelaySettingsScreen');
 
     return Scaffold(
@@ -60,7 +61,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
               ],
             ),
           ),
-          
+
           // Relay list
           Expanded(
             child: externalRelays.isEmpty
@@ -68,25 +69,30 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.cloud_off, color: Colors.grey[600], size: 64),
+                        Icon(Icons.cloud_off,
+                            color: Colors.grey[600], size: 64),
                         const SizedBox(height: 16),
                         Text(
                           'No external relays configured',
-                          style: TextStyle(color: Colors.grey[400], fontSize: 16),
+                          style:
+                              TextStyle(color: Colors.grey[400], fontSize: 16),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Add relays to sync your content',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 14),
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
                           onPressed: () => _retryConnection(),
                           icon: const Icon(Icons.refresh, color: Colors.white),
-                          label: const Text('Retry Connection', style: TextStyle(color: Colors.white)),
+                          label: const Text('Retry Connection',
+                              style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: VineTheme.vineGreen,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
                           ),
                         ),
                       ],
@@ -100,10 +106,12 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                         child: ElevatedButton.icon(
                           onPressed: () => _retryConnection(),
                           icon: const Icon(Icons.refresh, color: Colors.white),
-                          label: const Text('Retry Connection', style: TextStyle(color: Colors.white)),
+                          label: const Text('Retry Connection',
+                              style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: VineTheme.vineGreen,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
                             minimumSize: const Size(double.infinity, 44),
                           ),
                         ),
@@ -113,7 +121,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                           itemCount: externalRelays.length,
                           itemBuilder: (context, index) {
                             final relay = externalRelays[index];
-                            
+
                             return ListTile(
                               leading: Icon(
                                 Icons.cloud,
@@ -132,7 +140,8 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                                 ),
                               ),
                               trailing: IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () => _removeRelay(relay),
                               ),
                             );
@@ -216,30 +225,30 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
 
   Future<void> _addRelay() async {
     final relayUrl = _relayController.text.trim();
-    
+
     if (relayUrl.isEmpty) {
       _showError('Please enter a relay URL');
       return;
     }
-    
+
     if (!relayUrl.startsWith('wss://') && !relayUrl.startsWith('ws://')) {
       _showError('Relay URL must start with wss:// or ws://');
       return;
     }
-    
+
     setState(() => _isAddingRelay = true);
-    
+
     try {
       final nostrService = ref.read(nostrServiceProvider);
-      
+
       // Check if relay already exists
       if (nostrService.relays.contains(relayUrl)) {
         _showError('This relay is already configured');
         return;
       }
-      
+
       await nostrService.addRelay(relayUrl);
-      
+
       _relayController.clear();
       if (mounted) {
         Navigator.of(context).pop();
@@ -250,8 +259,8 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
           ),
         );
       }
-      
-      Log.info('Successfully added relay: $relayUrl', 
+
+      Log.info('Successfully added relay: $relayUrl',
           name: 'RelaySettingsScreen');
     } catch (e) {
       Log.error('Failed to add relay: $e', name: 'RelaySettingsScreen');
@@ -295,13 +304,13 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
         ],
       ),
     );
-    
+
     if (confirm != true) return;
-    
+
     try {
       final nostrService = ref.read(nostrServiceProvider);
       await nostrService.removeRelay(relayUrl);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -310,8 +319,8 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
           ),
         );
       }
-      
-      Log.info('Successfully removed relay: $relayUrl', 
+
+      Log.info('Successfully removed relay: $relayUrl',
           name: 'RelaySettingsScreen');
     } catch (e) {
       Log.error('Failed to remove relay: $e', name: 'RelaySettingsScreen');
@@ -328,23 +337,23 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
       ),
     );
   }
-  
+
   Future<void> _retryConnection() async {
     try {
       final nostrService = ref.read(nostrServiceProvider);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Retrying relay connections...'),
           backgroundColor: Colors.orange,
         ),
       );
-      
+
       await nostrService.retryInitialization();
-      
+
       // Check if any relays are now connected
       final connectedCount = nostrService.connectedRelayCount;
-      
+
       if (connectedCount > 0) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -354,7 +363,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
             ),
           );
         }
-        
+
         // Trigger a refresh of video feeds
         final videoService = ref.read(videoEventServiceProvider);
         await videoService.subscribeToVideoFeed(
@@ -362,7 +371,8 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
           replace: true,
         );
       } else {
-        _showError('Failed to connect to relays. Please check your network connection.');
+        _showError(
+            'Failed to connect to relays. Please check your network connection.');
       }
     } catch (e) {
       Log.error('Failed to retry connection: $e', name: 'RelaySettingsScreen');

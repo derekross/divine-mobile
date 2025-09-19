@@ -14,7 +14,7 @@ void main() {
   group('Hashtag Sorting Tests', () {
     late HashtagService hashtagService;
     late MockVideoEventService mockVideoService;
-    
+
     setUp(() {
       mockVideoService = MockVideoEventService();
       hashtagService = HashtagService(mockVideoService);
@@ -29,27 +29,27 @@ void main() {
         _createVideoWithHashtags(['trending']),
         _createVideoWithHashtags(['rare']),
       ];
-      
+
       // Mock the video service to return our test videos
       when(() => mockVideoService.discoveryVideos).thenReturn(testVideos);
       when(() => mockVideoService.homeFeedVideos).thenReturn([]);
       when(() => mockVideoService.getEventCount(any())).thenReturn(0);
       when(() => mockVideoService.getVideos(any())).thenReturn([]);
-      
+
       // Act - Update hashtag stats
       hashtagService.refreshHashtagStats();
       final popularHashtags = hashtagService.getPopularHashtags(limit: 10);
-      
+
       // Assert - Check that hashtags are sorted by count
       expect(popularHashtags.first, equals('popular')); // 3 videos
       expect(popularHashtags[1], equals('trending')); // 2 videos
       expect(popularHashtags.length, greaterThanOrEqualTo(3));
-      
+
       // Verify counts
       final popularStats = hashtagService.getHashtagStats('popular');
       final trendingStats = hashtagService.getHashtagStats('trending');
       final rareStats = hashtagService.getHashtagStats('rare');
-      
+
       expect(popularStats?.videoCount, equals(3));
       expect(trendingStats?.videoCount, equals(2));
       expect(rareStats?.videoCount, equals(1));
@@ -59,42 +59,35 @@ void main() {
       // This test would verify that the explore screen properly combines
       // hashtags from TopHashtagsService and local HashtagService
       // and sorts them by total count
-      
+
       // Arrange
-      final jsonHashtags = {
-        'vine': 1000,
-        'comedy': 800,
-        'dance': 600,
-      };
-      
-      final localHashtags = {
-        'vine': 50,    // Should add to JSON count
-        'local': 100,  // Only in local
-        'dance': 700,  // Higher than JSON, should use this
-      };
-      
+      // Test data (not yet implemented - variables removed to fix warnings):
+      // jsonHashtags: {'vine': 1000, 'comedy': 800, 'dance': 600}
+      // localHashtags: {'vine': 50, 'local': 100, 'dance': 700}
+
       // Expected result after combining and sorting:
       // 'dance': 700 (from local, higher than JSON's 600)
       // 'vine': 1050 (1000 from JSON + 50 from local)
       // 'comedy': 800 (from JSON only)
       // 'local': 100 (from local only)
-      
+
       // The actual implementation should sort these properly
     });
   });
 
   group('Relay Hashtag Fetching Tests', () {
-    late VideoEventService videoService;
-    late MockVideoEventService mockVideoService;
-    
+    // TODO: Implement relay hashtag tests
+    // Services would be: VideoEventService, MockVideoEventService
+
     setUp(() {
-      mockVideoService = MockVideoEventService();
+      // Test setup to be implemented
     });
 
-    test('should create subscription with hashtag filter for relay query', () async {
+    test('should create subscription with hashtag filter for relay query',
+        () async {
       // This test verifies that when subscribing to hashtag videos,
       // the correct filter with 't' tags is created
-      
+
       // The subscription should:
       // 1. Use SubscriptionType.hashtag
       // 2. Include hashtag in the filter's 't' field
@@ -105,7 +98,7 @@ void main() {
     test('should fetch videos from relay when hashtag is clicked', () async {
       // This test simulates clicking a hashtag and verifies
       // that videos are fetched from relays, not just local cache
-      
+
       // Expected behavior:
       // 1. Create new subscription with hashtag filter
       // 2. Send REQ to relays with filter including #t: ['hashtag']
@@ -129,7 +122,7 @@ VideoEvent _createVideoWithHashtags(List<String> hashtags) {
     hashtags: hashtags,
     thumbnailUrl: null,
     blurhash: null,
-    vineId: 'test_vine_${timestamp}',
+    vineId: 'test_vine_$timestamp',
     isRepost: false,
   );
 }

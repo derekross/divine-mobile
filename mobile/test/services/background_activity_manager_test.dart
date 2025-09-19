@@ -6,7 +6,7 @@ import 'package:openvine/services/background_activity_manager.dart';
 class TestBackgroundService implements BackgroundAwareService {
   @override
   String get serviceName => 'TestService';
-  
+
   bool backgroundCalled = false;
   bool extendedBackgroundCalled = false;
   bool resumedCalled = false;
@@ -41,7 +41,7 @@ void main() {
     setUp(() {
       manager = BackgroundActivityManager();
       testService = TestBackgroundService();
-      
+
       // Clear any previously registered services for clean test state
       // In a real implementation, we might want a reset method for testing
     });
@@ -53,38 +53,39 @@ void main() {
 
     test('should register and notify services', () {
       manager.registerService(testService);
-      
+
       // Simulate app going to background
       manager.onAppLifecycleStateChanged(AppLifecycleState.paused);
-      
+
       expect(manager.isAppInBackground, isTrue);
       expect(testService.backgroundCalled, isTrue);
     });
 
     test('should handle app resume', () {
       manager.registerService(testService);
-      
+
       // Go to background then resume
       manager.onAppLifecycleStateChanged(AppLifecycleState.paused);
       manager.onAppLifecycleStateChanged(AppLifecycleState.resumed);
-      
+
       expect(manager.isAppInForeground, isTrue);
       expect(testService.resumedCalled, isTrue);
     });
 
     test('should unregister services', () {
       final initialCount = manager.getStatus()['registeredServices'] as int;
-      
+
       manager.registerService(testService);
-      expect(manager.getStatus()['registeredServices'], equals(initialCount + 1));
-      
+      expect(
+          manager.getStatus()['registeredServices'], equals(initialCount + 1));
+
       manager.unregisterService(testService);
       expect(manager.getStatus()['registeredServices'], equals(initialCount));
     });
 
     test('should provide status information', () {
       manager.registerService(testService);
-      
+
       final status = manager.getStatus();
       expect(status['isAppInForeground'], isTrue);
       expect(status['registeredServices'], greaterThanOrEqualTo(1));

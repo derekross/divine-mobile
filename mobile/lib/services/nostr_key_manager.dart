@@ -26,7 +26,7 @@ class Keychain {
 /// Secure management of Nostr private keys with hardware-backed persistence
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
 /// SECURITY: Now uses SecureKeyStorageService for hardware-backed key storage
-class NostrKeyManager  {
+class NostrKeyManager {
   static const String _keyPairKey = 'nostr_keypair';
   static const String _keyVersionKey = 'nostr_key_version';
   static const String _backupHashKey = 'nostr_backup_hash';
@@ -35,7 +35,7 @@ class NostrKeyManager  {
   Keychain? _keyPair;
   bool _isInitialized = false;
   String? _backupHash;
-  
+
   NostrKeyManager() : _secureStorage = SecureKeyStorageService();
 
   // Getters
@@ -59,7 +59,7 @@ class NostrKeyManager  {
       if (await _secureStorage.hasKeys()) {
         Log.debug('📱 Loading existing Nostr keys from secure storage...',
             name: 'NostrKeyManager', category: LogCategory.relay);
-        
+
         final secureContainer = await _secureStorage.getKeyContainer();
         if (secureContainer != null) {
           // Convert from secure container to our Keychain format
@@ -68,7 +68,7 @@ class NostrKeyManager  {
             _keyPair = Keychain(privateKeyHex);
           });
           secureContainer.dispose(); // Clean up secure memory
-          
+
           Log.info('Keys loaded from secure storage',
               name: 'NostrKeyManager', category: LogCategory.relay);
         }
@@ -84,8 +84,10 @@ class NostrKeyManager  {
       _isInitialized = true;
 
       if (hasKeys) {
-        Log.info('Key manager initialized with existing identity (secure storage)',
-            name: 'NostrKeyManager', category: LogCategory.relay);
+        Log.info(
+            'Key manager initialized with existing identity (secure storage)',
+            name: 'NostrKeyManager',
+            category: LogCategory.relay);
       } else {
         Log.info('Key manager initialized, ready for key generation',
             name: 'NostrKeyManager', category: LogCategory.relay);
@@ -109,17 +111,15 @@ class NostrKeyManager  {
 
       // Generate and store keys securely
       final secureContainer = await _secureStorage.generateAndStoreKeys();
-      
+
       // Keep a copy in memory for immediate use
       // Use withPrivateKey to safely access the private key
       secureContainer.withPrivateKey((privateKeyHex) {
         _keyPair = Keychain(privateKeyHex);
       });
-      
+
       // Clean up secure container after extracting what we need
       secureContainer.dispose();
-
-
 
       Log.info('New Nostr key pair generated and saved',
           name: 'NostrKeyManager', category: LogCategory.relay);
@@ -151,17 +151,15 @@ class NostrKeyManager  {
 
       // Convert to nsec format for secure storage
       final nsec = _hexToNsec(privateKey);
-      
+
       // Import and store in secure storage
       final secureContainer = await _secureStorage.importFromNsec(nsec);
-      
+
       // Keep a copy in memory for immediate use
       _keyPair = Keychain(privateKey);
-      
+
       // Clean up secure container
       secureContainer.dispose();
-
-
 
       Log.info('Private key imported successfully',
           name: 'NostrKeyManager', category: LogCategory.relay);
@@ -219,8 +217,6 @@ class NostrKeyManager  {
       // Save backup hash
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_backupHashKey, _backupHash!);
-
-
 
       Log.info('Mnemonic backup created',
           name: 'NostrKeyManager', category: LogCategory.relay);
@@ -289,7 +285,7 @@ class NostrKeyManager  {
 
       // Clear from secure storage
       await _secureStorage.deleteKeys();
-      
+
       // Clear legacy keys from SharedPreferences if they exist
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_keyPairKey);
@@ -298,8 +294,6 @@ class NostrKeyManager  {
 
       _keyPair = null;
       _backupHash = null;
-
-
 
       Log.info('Nostr keys cleared successfully',
           name: 'NostrKeyManager', category: LogCategory.relay);
@@ -315,33 +309,36 @@ class NostrKeyManager  {
     try {
       final prefs = await SharedPreferences.getInstance();
       final existingKeyData = prefs.getString(_keyPairKey);
-      
+
       if (existingKeyData != null) {
-        Log.warning('⚠️ Found legacy keys in SharedPreferences, migrating to secure storage...',
-            name: 'NostrKeyManager', category: LogCategory.relay);
-        
+        Log.warning(
+            '⚠️ Found legacy keys in SharedPreferences, migrating to secure storage...',
+            name: 'NostrKeyManager',
+            category: LogCategory.relay);
+
         try {
           final keyData = jsonDecode(existingKeyData) as Map<String, dynamic>;
           final privateKey = keyData['private'] as String?;
           final publicKey = keyData['public'] as String?;
-          
-          if (privateKey != null && publicKey != null && 
-              _isValidPrivateKey(privateKey) && _isValidPublicKey(publicKey)) {
-            
+
+          if (privateKey != null &&
+              publicKey != null &&
+              _isValidPrivateKey(privateKey) &&
+              _isValidPublicKey(publicKey)) {
             // Convert to nsec and import to secure storage
             final nsec = _hexToNsec(privateKey);
             final secureContainer = await _secureStorage.importFromNsec(nsec);
-            
+
             // Keep in memory
             _keyPair = Keychain(privateKey);
-            
+
             // Clean up secure container
             secureContainer.dispose();
-            
+
             // Remove legacy keys from SharedPreferences
             await prefs.remove(_keyPairKey);
             await prefs.remove(_keyVersionKey);
-            
+
             Log.info('✅ Successfully migrated keys to secure storage',
                 name: 'NostrKeyManager', category: LogCategory.relay);
           }
@@ -356,7 +353,7 @@ class NostrKeyManager  {
           name: 'NostrKeyManager', category: LogCategory.relay);
     }
   }
-  
+
   /// Convert hex private key to nsec (bech32) format
   String _hexToNsec(String hexPrivateKey) {
     // Use NostrEncoding utility for proper bech32 encoding

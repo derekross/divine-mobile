@@ -15,7 +15,7 @@ import 'package:openvine/utils/unified_logger.dart';
 
 /// Enhanced notification service with social features
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class NotificationServiceEnhanced  {
+class NotificationServiceEnhanced {
   /// Factory constructor that returns the singleton instance
   factory NotificationServiceEnhanced() => instance;
 
@@ -210,10 +210,10 @@ class NotificationServiceEnhanced  {
 
     // Get actor info - try multiple profile fields
     final actorProfile = await _profileService?.fetchProfile(event.pubkey);
-    final actorName = actorProfile?.name ?? 
-                     actorProfile?.displayName ?? 
-                     actorProfile?.nip05?.split('@').first ??
-                     'Unknown user';
+    final actorName = actorProfile?.name ??
+        actorProfile?.displayName ??
+        actorProfile?.nip05?.split('@').first ??
+        'Unknown user';
 
     // Get video info
     final videoEvent = _videoService?.getVideoEventById(videoEventId);
@@ -248,10 +248,10 @@ class NotificationServiceEnhanced  {
 
     // Get actor info - try multiple profile fields
     final actorProfile = await _profileService?.fetchProfile(event.pubkey);
-    final actorName = actorProfile?.name ?? 
-                     actorProfile?.displayName ?? 
-                     actorProfile?.nip05?.split('@').first ??
-                     'Unknown user';
+    final actorName = actorProfile?.name ??
+        actorProfile?.displayName ??
+        actorProfile?.nip05?.split('@').first ??
+        'Unknown user';
 
     // Get video info
     final videoEvent = _videoService?.getVideoEventById(videoEventId);
@@ -279,10 +279,10 @@ class NotificationServiceEnhanced  {
   Future<void> _handleFollowEvent(Event event) async {
     // Get actor info - try multiple profile fields
     final actorProfile = await _profileService?.fetchProfile(event.pubkey);
-    final actorName = actorProfile?.name ?? 
-                     actorProfile?.displayName ?? 
-                     actorProfile?.nip05?.split('@').first ??
-                     'Unknown user';
+    final actorName = actorProfile?.name ??
+        actorProfile?.displayName ??
+        actorProfile?.nip05?.split('@').first ??
+        'Unknown user';
 
     final notification = NotificationModel(
       id: event.id,
@@ -301,10 +301,10 @@ class NotificationServiceEnhanced  {
   Future<void> _handleMentionEvent(Event event) async {
     // Get actor info - try multiple profile fields
     final actorProfile = await _profileService?.fetchProfile(event.pubkey);
-    final actorName = actorProfile?.name ?? 
-                     actorProfile?.displayName ?? 
-                     actorProfile?.nip05?.split('@').first ??
-                     'Unknown user';
+    final actorName = actorProfile?.name ??
+        actorProfile?.displayName ??
+        actorProfile?.nip05?.split('@').first ??
+        'Unknown user';
 
     final notification = NotificationModel(
       id: event.id,
@@ -336,10 +336,10 @@ class NotificationServiceEnhanced  {
 
     // Get actor info - try multiple profile fields
     final actorProfile = await _profileService?.fetchProfile(event.pubkey);
-    final actorName = actorProfile?.name ?? 
-                     actorProfile?.displayName ?? 
-                     actorProfile?.nip05?.split('@').first ??
-                     'Unknown user';
+    final actorName = actorProfile?.name ??
+        actorProfile?.displayName ??
+        actorProfile?.nip05?.split('@').first ??
+        'Unknown user';
 
     // Get video info
     final videoEvent = _videoService?.getVideoEventById(videoEventId);
@@ -385,8 +385,6 @@ class NotificationServiceEnhanced  {
     if (_notifications.length > 100) {
       _notifications.removeRange(100, _notifications.length);
     }
-
-
   }
 
   /// Mark notification as read
@@ -396,7 +394,6 @@ class NotificationServiceEnhanced  {
       _notifications[index] = _notifications[index].copyWith(isRead: true);
       _updateUnreadCount();
       await _saveNotificationToCache(_notifications[index]);
-
     }
   }
 
@@ -409,14 +406,14 @@ class NotificationServiceEnhanced  {
       }
     }
     _updateUnreadCount();
-
   }
 
   /// Handle notification tap/click for navigation
   Future<void> handleNotificationTap(String notificationId) async {
     final notification = _notifications.firstWhere(
       (n) => n.id == notificationId,
-      orElse: () => throw ArgumentError('Notification not found: $notificationId'),
+      orElse: () =>
+          throw ArgumentError('Notification not found: $notificationId'),
     );
 
     // Mark as read
@@ -520,7 +517,6 @@ class NotificationServiceEnhanced  {
     // Clear cache
     await _notificationBox?.clear();
 
-
     Log.debug('📱️ Cleared all notifications',
         name: 'NotificationServiceEnhanced', category: LogCategory.system);
   }
@@ -572,8 +568,6 @@ class NotificationServiceEnhanced  {
 
     // Close Hive box
     _notificationBox?.close();
-
-    
   }
 
   /// Check if this service is still mounted/active

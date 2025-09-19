@@ -1,7 +1,6 @@
 // ABOUTME: Test helper utilities for creating mock data and testing video system
 // ABOUTME: Provides consistent test data generation and common testing patterns
 
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -423,12 +422,13 @@ class TimeoutException implements Exception {
 Future<void> setupTestEnvironment() async {
   // Initialize Flutter binding for secure storage tests
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize platform channel mocks
   ServiceInitHelper.initializeTestEnvironment();
-  
+
   // Initialize any test environment configuration
-  Log.debug('Setting up ProofMode test environment', category: LogCategory.system);
+  Log.debug('Setting up ProofMode test environment',
+      category: LogCategory.system);
 }
 
 /// Get test SharedPreferences instance
@@ -442,32 +442,73 @@ class MockSecureStorage implements FlutterSecureStorage {
   final Map<String, String> _storage = {};
 
   @override
-  Future<bool> containsKey({required String key, IOSOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, WebOptions? webOptions, MacOsOptions? mOptions, WindowsOptions? wOptions}) async {
+  Future<bool> containsKey(
+      {required String key,
+      IOSOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      WebOptions? webOptions,
+      MacOsOptions? mOptions,
+      WindowsOptions? wOptions}) async {
     return _storage.containsKey(key);
   }
 
   @override
-  Future<void> delete({required String key, IOSOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, WebOptions? webOptions, MacOsOptions? mOptions, WindowsOptions? wOptions}) async {
+  Future<void> delete(
+      {required String key,
+      IOSOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      WebOptions? webOptions,
+      MacOsOptions? mOptions,
+      WindowsOptions? wOptions}) async {
     _storage.remove(key);
   }
 
   @override
-  Future<void> deleteAll({IOSOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, WebOptions? webOptions, MacOsOptions? mOptions, WindowsOptions? wOptions}) async {
+  Future<void> deleteAll(
+      {IOSOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      WebOptions? webOptions,
+      MacOsOptions? mOptions,
+      WindowsOptions? wOptions}) async {
     _storage.clear();
   }
 
   @override
-  Future<String?> read({required String key, IOSOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, WebOptions? webOptions, MacOsOptions? mOptions, WindowsOptions? wOptions}) async {
+  Future<String?> read(
+      {required String key,
+      IOSOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      WebOptions? webOptions,
+      MacOsOptions? mOptions,
+      WindowsOptions? wOptions}) async {
     return _storage[key];
   }
 
   @override
-  Future<Map<String, String>> readAll({IOSOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, WebOptions? webOptions, MacOsOptions? mOptions, WindowsOptions? wOptions}) async {
+  Future<Map<String, String>> readAll(
+      {IOSOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      WebOptions? webOptions,
+      MacOsOptions? mOptions,
+      WindowsOptions? wOptions}) async {
     return Map<String, String>.from(_storage);
   }
 
   @override
-  Future<void> write({required String key, required String? value, IOSOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions, WebOptions? webOptions, MacOsOptions? mOptions, WindowsOptions? wOptions}) async {
+  Future<void> write(
+      {required String key,
+      required String? value,
+      IOSOptions? iOptions,
+      AndroidOptions? aOptions,
+      LinuxOptions? lOptions,
+      WebOptions? webOptions,
+      MacOsOptions? mOptions,
+      WindowsOptions? wOptions}) async {
     if (value == null) {
       _storage.remove(key);
     } else {
@@ -480,16 +521,16 @@ class MockSecureStorage implements FlutterSecureStorage {
 
   @override
   IOSOptions get iOptions => throw UnimplementedError();
-  
+
   @override
   LinuxOptions get lOptions => throw UnimplementedError();
-  
+
   @override
   MacOsOptions get mOptions => throw UnimplementedError();
-  
+
   @override
   WebOptions get webOptions => throw UnimplementedError();
-  
+
   @override
   WindowsOptions get wOptions => throw UnimplementedError();
 
@@ -500,7 +541,8 @@ class MockSecureStorage implements FlutterSecureStorage {
   Stream<bool>? get onCupertinoProtectedDataAvailabilityChanged => null;
 
   @override
-  void registerListener({required String key, required void Function(String key) listener}) {}
+  void registerListener(
+      {required String key, required void Function(String key) listener}) {}
 
   @override
   void unregisterAllListeners() {}
@@ -509,5 +551,6 @@ class MockSecureStorage implements FlutterSecureStorage {
   void unregisterAllListenersForKey({required String key}) {}
 
   @override
-  void unregisterListener({required String key, required void Function(String key) listener}) {}
+  void unregisterListener(
+      {required String key, required void Function(String key) listener}) {}
 }

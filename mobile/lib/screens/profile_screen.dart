@@ -17,6 +17,7 @@ import 'package:openvine/screens/debug_video_test.dart';
 import 'package:openvine/screens/key_import_screen.dart';
 import 'package:openvine/screens/profile_setup_screen.dart';
 import 'package:openvine/screens/relay_settings_screen.dart';
+import 'package:openvine/screens/blossom_settings_screen.dart';
 import 'package:openvine/screens/universal_camera_screen.dart';
 import 'package:openvine/services/global_video_registry.dart';
 import 'package:openvine/services/social_service.dart';
@@ -27,6 +28,7 @@ import 'package:openvine/providers/optimistic_follow_provider.dart';
 import 'package:openvine/providers/tab_visibility_provider.dart';
 import 'package:openvine/screens/followers_screen.dart';
 import 'package:openvine/screens/following_screen.dart';
+import 'package:openvine/widgets/user_avatar.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   // If null, shows current user's profile
@@ -43,7 +45,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   late TabController _tabController;
   bool _isOwnProfile = true;
   String? _targetPubkey;
-  
+
   // Video feed state for embedded video viewing
   bool _isInVideoMode = false;
   VideoEvent? _selectedVideo;
@@ -58,14 +60,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       _initializeProfile();
     });
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Force refresh when returning to profile tab after publishing
     if (_isOwnProfile && _targetPubkey != null) {
       final tabIndex = ref.watch(tabVisibilityProvider);
-      if (tabIndex == 3) { // Profile tab is index 3
+      if (tabIndex == 3) {
+        // Profile tab is index 3
         // Refresh profile data when tab becomes active
         _refreshProfileData();
       }
@@ -74,30 +77,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   Future<void> _initializeProfile() async {
     final authService = ref.read(authServiceProvider);
-    
+
     // Wait for AuthService to be properly initialized
     if (!authService.isAuthenticated) {
       Log.warning('AuthService not ready, waiting for authentication',
           name: 'ProfileScreen', category: LogCategory.ui);
-      
+
       // Use proper async pattern instead of Future.delayed
       final completer = Completer<void>();
-      
+
       void checkAuth() {
-        if (authService.isAuthenticated && authService.currentPublicKeyHex != null) {
+        if (authService.isAuthenticated &&
+            authService.currentPublicKeyHex != null) {
           completer.complete();
         } else {
           // Check again on next frame
           WidgetsBinding.instance.addPostFrameCallback((_) => checkAuth());
         }
       }
-      
+
       checkAuth();
       await completer.future;
     }
-    
-    final currentUserPubkey = authService.currentPublicKeyHex;
 
+    final currentUserPubkey = authService.currentPublicKeyHex;
 
     // Determine target pubkey and ownership
     setState(() {
@@ -111,12 +114,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         '  - widget.profilePubkey: ${widget.profilePubkey?.substring(0, 8) ?? "null"}',
         name: 'ProfileScreen',
         category: LogCategory.ui);
-    Log.info('  - currentUserPubkey: ${currentUserPubkey?.substring(0, 8) ?? "unknown"}',
-        name: 'ProfileScreen', category: LogCategory.ui);
+    Log.info(
+        '  - currentUserPubkey: ${currentUserPubkey?.substring(0, 8) ?? "unknown"}',
+        name: 'ProfileScreen',
+        category: LogCategory.ui);
     Log.info('  - _isOwnProfile: $_isOwnProfile',
         name: 'ProfileScreen', category: LogCategory.ui);
-    Log.info('  - _targetPubkey: ${_targetPubkey != null ? _targetPubkey!.substring(0, 8) : "null"}',
-        name: 'ProfileScreen', category: LogCategory.ui);
+    Log.info(
+        '  - _targetPubkey: ${_targetPubkey != null ? _targetPubkey!.substring(0, 8) : "null"}',
+        name: 'ProfileScreen',
+        category: LogCategory.ui);
 
     // Log current cached profile
     final profileState = ref.read(userProfileNotifierProvider);
@@ -147,10 +154,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         '  - Current user pubkey: ${ref.read(authServiceProvider).currentPublicKeyHex?.substring(0, 8) ?? "null"}',
         name: 'ProfileScreen',
         category: LogCategory.ui);
-    Log.info(
-        '  - Target pubkey: ${_targetPubkey?.substring(0, 8) ?? "null"}',
-        name: 'ProfileScreen',
-        category: LogCategory.ui);
+    Log.info('  - Target pubkey: ${_targetPubkey?.substring(0, 8) ?? "null"}',
+        name: 'ProfileScreen', category: LogCategory.ui);
 
     // Load profile data for the target user
     if (_targetPubkey != null) {
@@ -175,7 +180,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   void _loadProfileStats() {
     if (_targetPubkey == null) return;
 
-    final profileStatsNotifier = ref.read(profileStatsNotifierProvider.notifier);
+    final profileStatsNotifier =
+        ref.read(profileStatsNotifierProvider.notifier);
     profileStatsNotifier.loadStats(_targetPubkey!);
   }
 
@@ -193,8 +199,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     try {
       // Clear cache first to force fresh load
       clearAllProfileVideosCache();
-      
-      final profileVideosNotifier = ref.read(profileVideosNotifierProvider.notifier);
+
+      final profileVideosNotifier =
+          ref.read(profileVideosNotifierProvider.notifier);
       profileVideosNotifier.loadVideosForUser(_targetPubkey!).then((_) {
         Log.info(
             'Profile videos load completed for ${_targetPubkey!.substring(0, 8)}',
@@ -226,16 +233,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _refreshProfileData() {
     if (_targetPubkey == null) return;
-    
+
     Log.info('🔄 Refreshing profile data for ${_targetPubkey!.substring(0, 8)}',
         name: 'ProfileScreen', category: LogCategory.ui);
-    
+
     // Clear caches and reload everything
     clearAllProfileVideosCache();
     ref.invalidate(profileVideosNotifierProvider);
     ref.invalidate(profileStatsNotifierProvider);
     ref.invalidate(userProfileNotifierProvider);
-    
+
     // Reload data
     _loadProfileStats();
     _loadProfileVideos();
@@ -247,12 +254,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
     // Defer profile loading to avoid triggering during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final userProfileNotifier = ref.read(userProfileNotifierProvider.notifier);
-      
+      final userProfileNotifier =
+          ref.read(userProfileNotifierProvider.notifier);
+
       // Only fetch if not already cached - show cached data immediately
       if (!userProfileNotifier.hasProfile(_targetPubkey!)) {
-        Log.debug('📥 Fetching uncached profile: ${_targetPubkey!.substring(0, 8)}',
-            name: 'ProfileScreen', category: LogCategory.ui);
+        Log.debug(
+            '📥 Fetching uncached profile: ${_targetPubkey!.substring(0, 8)}',
+            name: 'ProfileScreen',
+            category: LogCategory.ui);
         userProfileNotifier.fetchProfile(_targetPubkey!);
       } else {
         Log.debug('📋 Using cached profile: ${_targetPubkey!.substring(0, 8)}',
@@ -282,7 +292,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    
+
     super.dispose();
   }
 
@@ -296,21 +306,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
       // Get profile for display name in app bar
       final authProfile = _isOwnProfile ? authService.currentProfile : null;
-      
+
       // Use the unified Riverpod provider for synchronous access
       final profileState = ref.watch(userProfileNotifierProvider);
-      final cachedProfile = _targetPubkey != null 
+      final cachedProfile = _targetPubkey != null
           ? profileState.getCachedProfile(_targetPubkey!)
           : null;
-      
+
       // Better fallback for display name
       String userName;
-      if (cachedProfile?.bestDisplayName != null && 
+      if (cachedProfile?.bestDisplayName != null &&
           !cachedProfile!.bestDisplayName.startsWith('npub1')) {
-        userName = cachedProfile!.bestDisplayName;
-      } else if (authProfile?.displayName != null && 
-                 authProfile!.displayName!.isNotEmpty) {
-        userName = authProfile!.displayName!;
+        userName = cachedProfile.bestDisplayName;
+      } else if (authProfile?.displayName != null &&
+          authProfile!.displayName.isNotEmpty) {
+        userName = authProfile.displayName;
       } else if (_targetPubkey != null) {
         // Use shortened pubkey while loading instead of showing npub
         userName = '${_targetPubkey!.substring(0, 8)}...';
@@ -318,73 +328,71 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         userName = 'Loading...';
       }
 
-          return Scaffold(
-            key: ValueKey('profile_screen_${_targetPubkey ?? 'unknown'}'),
-            backgroundColor: VineTheme.backgroundColor,
-            appBar: AppBar(
-              backgroundColor: VineTheme.vineGreen,
-              elevation: 1,
-              title: Row(
-                children: [
-                  const Icon(Icons.lock_outline,
-                      color: VineTheme.whiteText, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    userName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                if (_isOwnProfile) ...[
-                  IconButton(
-                    icon:
-                        const Icon(Icons.add_box_outlined, color: Colors.white),
-                    onPressed: _createNewVine,
-                  ),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () {
-                        Log.debug('📱 Hamburger menu tapped',
-                            name: 'ProfileScreen', category: LogCategory.ui);
-                        _showOptionsMenu();
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Icon(
-                          Icons.menu,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.white),
-                    onPressed: _showUserOptions,
-                  ),
-                ],
-              ],
-            ),
-            body: Stack(
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _isInVideoMode
-                      ? _buildVideoModeView()
-                      : _buildProfileView(socialService, profileStatsState),
+      return Scaffold(
+        key: ValueKey('profile_screen_${_targetPubkey ?? 'unknown'}'),
+        backgroundColor: VineTheme.backgroundColor,
+        appBar: AppBar(
+          backgroundColor: VineTheme.vineGreen,
+          elevation: 1,
+          title: Row(
+            children: [
+              const Icon(Icons.lock_outline,
+                  color: VineTheme.whiteText, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                userName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
-
-              ],
+              ),
+            ],
+          ),
+          actions: [
+            if (_isOwnProfile) ...[
+              IconButton(
+                icon: const Icon(Icons.add_box_outlined, color: Colors.white),
+                onPressed: _createNewVine,
+              ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    Log.debug('📱 Hamburger menu tapped',
+                        name: 'ProfileScreen', category: LogCategory.ui);
+                    _showOptionsMenu();
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.menu,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
+            ] else ...[
+              IconButton(
+                icon: const Icon(Icons.more_vert, color: Colors.white),
+                onPressed: _showUserOptions,
+              ),
+            ],
+          ],
+        ),
+        body: Stack(
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _isInVideoMode
+                  ? _buildVideoModeView()
+                  : _buildProfileView(socialService, profileStatsState),
             ),
-          );
+          ],
+        ),
+      );
     } catch (e, stackTrace) {
       Log.error('ProfileScreen build error: $e',
           name: 'ProfileScreen', category: LogCategory.ui);
@@ -420,445 +428,440 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
   }
 
-  Widget _buildProfileHeader(SocialService socialService,
-          ProfileStatsState profileStatsState) {
+  Widget _buildProfileHeader(
+      SocialService socialService, ProfileStatsState profileStatsState) {
     // Watch Riverpod providers directly
     final authService = ref.watch(authServiceProvider);
 
     // Get the profile data for the target user (could be current user or another user)
     final authProfile = _isOwnProfile ? authService.currentProfile : null;
-    
+
     // Use the unified Riverpod provider for synchronous access
     final profileState = ref.watch(userProfileNotifierProvider);
-    final cachedProfile = _targetPubkey != null 
+    final cachedProfile = _targetPubkey != null
         ? profileState.getCachedProfile(_targetPubkey!)
         : null;
 
-    final profilePictureUrl =
-        authProfile?.picture ?? cachedProfile?.picture;
+    final profilePictureUrl = authProfile?.picture ?? cachedProfile?.picture;
     // Always prefer cachedProfile (UserProfileService) over authProfile for display name
     // because UserProfileService has the most up-to-date data from the relay
     String displayName;
-    if (cachedProfile?.bestDisplayName != null && 
+    if (cachedProfile?.bestDisplayName != null &&
         !cachedProfile!.bestDisplayName.startsWith('npub1')) {
-      displayName = cachedProfile!.bestDisplayName;
-    } else if (authProfile?.displayName != null && 
-               authProfile!.displayName!.isNotEmpty) {
-      displayName = authProfile!.displayName!;
+      displayName = cachedProfile.bestDisplayName;
+    } else if (authProfile?.displayName != null &&
+        authProfile!.displayName.isNotEmpty) {
+      displayName = authProfile.displayName;
     } else if (_targetPubkey != null) {
       // Use shortened pubkey while loading instead of showing npub
       displayName = '${_targetPubkey!.substring(0, 8)}...';
     } else {
       displayName = 'Loading...';
     }
-    
-    final hasCustomName = displayName != 'Loading...' && 
-                         !displayName.contains('...') && 
-                         !displayName.startsWith('npub1');
+
+    final hasCustomName = displayName != 'Loading...' &&
+        !displayName.contains('...') &&
+        !displayName.startsWith('npub1');
 
     return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Setup profile banner for new users with default names (only on own profile)
-                if (_isOwnProfile && !hasCustomName)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Colors.purple, Colors.blue],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Setup profile banner for new users with default names (only on own profile)
+          if (_isOwnProfile && !hasCustomName)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colors.purple, Colors.blue],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.person_add, color: Colors.white, size: 24),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.person_add,
-                            color: Colors.white, size: 24),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Complete Your Profile',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Add your name, bio, and picture to get started',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          'Complete Your Profile',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        ElevatedButton(
-                          onPressed: _setupProfile,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.purple,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            'Set Up',
-                            style: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w600),
+                        SizedBox(height: 4),
+                        Text(
+                          'Add your name, bio, and picture to get started',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                // Profile picture and follow button row
-                Row(
-                  children: [
-                    // Profile picture
-                    Container(
-                      width: 86,
-                      height: 86,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Colors.purple, Colors.pink, Colors.orange],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.grey,
-                        backgroundImage: profilePictureUrl != null &&
-                                profilePictureUrl.isNotEmpty
-                            ? NetworkImage(profilePictureUrl)
-                            : null,
-                        child: profilePictureUrl == null ||
-                                profilePictureUrl.isEmpty
-                            ? const Icon(Icons.person,
-                                color: Colors.white, size: 40)
-                            : null,
+                  ElevatedButton(
+                    onPressed: _setupProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.purple,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    child: const Text(
+                      'Set Up',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-                    const SizedBox(width: 20),
+          // Profile picture and follow button row
+          Row(
+            children: [
+              // Profile picture
+              Container(
+                width: 86,
+                height: 86,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Colors.purple, Colors.pink, Colors.orange],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: UserAvatar(
+                      imageUrl: profilePictureUrl,
+                      name: null,
+                      size: 80,
+                    ),
+                  ),
+                ),
+              ),
 
-                    // Stats
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildDynamicStatColumn(
-                            profileStatsState.hasData
-                                ? profileStatsState.stats!.videoCount
-                                : null,
-                            'Vines',
-                            profileStatsState.isLoading,
-                          ),
-                          _buildDynamicStatColumn(
-                            profileStatsState.hasData
-                                ? profileStatsState.stats!.followers
-                                : null,
-                            'Followers',
-                            profileStatsState.isLoading,
-                            onTap: _showFollowersList,
-                          ),
-                          _buildDynamicStatColumn(
-                            profileStatsState.hasData
-                                ? profileStatsState.stats!.following
-                                : null,
-                            'Following',
-                            profileStatsState.isLoading,
-                            onTap: _showFollowingList,
-                          ),
-                        ],
-                      ),
+              const SizedBox(width: 20),
+
+              // Stats
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildDynamicStatColumn(
+                      profileStatsState.hasData
+                          ? profileStatsState.stats!.videoCount
+                          : null,
+                      'Vines',
+                      profileStatsState.isLoading,
+                    ),
+                    _buildDynamicStatColumn(
+                      profileStatsState.hasData
+                          ? profileStatsState.stats!.followers
+                          : null,
+                      'Followers',
+                      profileStatsState.isLoading,
+                      onTap: _showFollowersList,
+                    ),
+                    _buildDynamicStatColumn(
+                      profileStatsState.hasData
+                          ? profileStatsState.stats!.following
+                          : null,
+                      'Following',
+                      profileStatsState.isLoading,
+                      onTap: _showFollowingList,
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
 
-                const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-                // Name and bio
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          SelectableText(
-                            displayName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          // Add Vine verified badge if this was a verified Vine account
-                          if (cachedProfile?.vineVerified == true) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 12,
-                              ),
-                            ),
-                          ]
-                          // Add NIP-05 verification badge if verified
-                          else if ((authProfile?.nip05 ?? cachedProfile?.nip05) !=
-                                  null &&
-                              (authProfile?.nip05 ?? cachedProfile?.nip05)!
-                                  .isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
-                                color: Colors.blue,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 12,
-                              ),
-                            ),
-                          ],
-                          // Show Vine import badge
-                          if (cachedProfile?.isVineImport == true) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.purple.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: Colors.purple.withValues(alpha: 0.5)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.archive_outlined,
-                                    color: Colors.purple[300],
-                                    size: 12,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Vine Import',
-                                    style: TextStyle(
-                                      color: Colors.purple[300],
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
+          // Name and bio
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    SelectableText(
+                      displayName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                      const SizedBox(height: 4),
-                      // Show NIP-05 identifier if present
-                      if ((authProfile?.nip05 ?? cachedProfile?.nip05) !=
-                              null &&
-                          (authProfile?.nip05 ?? cachedProfile?.nip05)!
-                              .isNotEmpty)
-                        Text(
-                          authProfile?.nip05 ?? cachedProfile?.nip05 ?? '',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 13,
-                          ),
+                    ),
+                    // Add Vine verified badge if this was a verified Vine account
+                    if (cachedProfile?.vineVerified == true) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
                         ),
-                      const SizedBox(height: 4),
-                      if ((authProfile?.about ?? cachedProfile?.about) !=
-                              null &&
-                          (authProfile?.about ?? cachedProfile?.about)!
-                              .isNotEmpty)
-                        SelectableText(
-                          (authProfile?.about ?? cachedProfile?.about)!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            height: 1.3,
-                          ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 12,
                         ),
-                      const SizedBox(height: 8),
-                      // Show location if available
-                      if (cachedProfile?.location != null &&
-                          cachedProfile!.location!.isNotEmpty)
-                        Row(
+                      ),
+                    ]
+                    // Add NIP-05 verification badge if verified
+                    else if ((authProfile?.nip05 ?? cachedProfile?.nip05) !=
+                            null &&
+                        (authProfile?.nip05 ?? cachedProfile?.nip05)!
+                            .isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      ),
+                    ],
+                    // Show Vine import badge
+                    if (cachedProfile?.isVineImport == true) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                              color: Colors.purple.withValues(alpha: 0.5)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.location_on_outlined,
-                                size: 14, color: Colors.grey[400]),
+                            Icon(
+                              Icons.archive_outlined,
+                              color: Colors.purple[300],
+                              size: 12,
+                            ),
                             const SizedBox(width: 4),
                             Text(
-                              cachedProfile.location!,
+                              'Vine Import',
                               style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 13,
+                                color: Colors.purple[300],
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ),
-                      // Show Vine stats if this is an imported Vine account
-                      if (cachedProfile?.isVineImport == true) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.purple.withValues(alpha: 0.3),
-                              width: 1,
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                // Show NIP-05 identifier if present
+                if ((authProfile?.nip05 ?? cachedProfile?.nip05) != null &&
+                    (authProfile?.nip05 ?? cachedProfile?.nip05)!.isNotEmpty)
+                  Text(
+                    authProfile?.nip05 ?? cachedProfile?.nip05 ?? '',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 13,
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                if ((authProfile?.about ?? cachedProfile?.about) != null &&
+                    (authProfile?.about ?? cachedProfile?.about)!.isNotEmpty)
+                  SelectableText(
+                    (authProfile?.about ?? cachedProfile?.about)!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.3,
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                // Show location if available
+                if (cachedProfile?.location != null &&
+                    cachedProfile!.location!.isNotEmpty)
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined,
+                          size: 14, color: Colors.grey[400]),
+                      const SizedBox(width: 4),
+                      Text(
+                        cachedProfile.location!,
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                // Show Vine stats if this is an imported Vine account
+                if (cachedProfile?.isVineImport == true) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.purple.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.history,
+                                size: 14, color: Colors.purple[300]),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Original Vine Stats',
+                              style: TextStyle(
+                                color: Colors.purple[300],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            if (cachedProfile != null &&
+                                cachedProfile.vineLoops != null) ...[
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.history,
-                                      size: 14, color: Colors.purple[300]),
-                                  const SizedBox(width: 6),
                                   Text(
-                                    'Original Vine Stats',
+                                    _formatCount(cachedProfile.vineLoops!),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Loops',
                                     style: TextStyle(
-                                      color: Colors.purple[300],
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[400],
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Row(
+                              const SizedBox(width: 24),
+                            ],
+                            if (cachedProfile?.vineFollowers != null &&
+                                cachedProfile!.vineFollowers! > 0) ...[
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (cachedProfile != null && cachedProfile.vineLoops != null) ...[
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _formatCount(cachedProfile.vineLoops!),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Loops',
-                                          style: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ],
+                                  Text(
+                                    _formatCount(cachedProfile.vineFollowers!),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    const SizedBox(width: 24),
-                                  ],
-                                  if (cachedProfile?.vineFollowers != null &&
-                                      cachedProfile!.vineFollowers! > 0) ...[
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _formatCount(cachedProfile.vineFollowers!),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Vine Followers',
-                                          style: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ],
+                                  ),
+                                  Text(
+                                    'Vine Followers',
+                                    style: TextStyle(
+                                      color: Colors.grey[400],
+                                      fontSize: 11,
                                     ),
-                                  ],
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'This account was imported from the original Vine archive',
-                                style: TextStyle(
-                                  color: Colors.purple[200],
-                                  fontSize: 10,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
                             ],
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'This account was imported from the original Vine archive',
+                          style: TextStyle(
+                            color: Colors.purple[200],
+                            fontSize: 10,
+                            fontStyle: FontStyle.italic,
                           ),
                         ),
                       ],
-                      const SizedBox(height: 8),
-                      // Public key display with copy functionality
-                      if (_targetPubkey != null)
-                        GestureDetector(
-                          onTap: _copyNpubToClipboard,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[800],
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                  color: Colors.grey[600]!, width: 1),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SelectableText(
-                                  NostrEncoding.encodePublicKey(_targetPubkey!),
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                    fontFamily: 'monospace',
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Icon(
-                                  Icons.copy,
-                                  color: Colors.grey,
-                                  size: 14,
-                                ),
-                              ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                // Public key display with copy functionality
+                if (_targetPubkey != null)
+                  GestureDetector(
+                    onTap: _copyNpubToClipboard,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.grey[600]!, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SelectableText(
+                            NostrEncoding.encodePublicKey(_targetPubkey!),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontFamily: 'monospace',
                             ),
                           ),
-                        ),
-                    ],
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.copy,
+                            color: Colors.grey,
+                            size: 14,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
-          );
+          ),
+        ],
+      ),
+    );
   }
 
   /// Build a stat column with loading state support and optional tap handler
-  Widget _buildDynamicStatColumn(int? count, String label, bool isLoading, {VoidCallback? onTap}) {
+  Widget _buildDynamicStatColumn(int? count, String label, bool isLoading,
+      {VoidCallback? onTap}) {
     final content = Column(
       children: [
         AnimatedSwitcher(
@@ -1031,7 +1034,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               Expanded(
                 child: Consumer(
                   builder: (context, ref, child) {
-                    final isFollowing = ref.watch(isFollowingProvider(_targetPubkey!));
+                    final isFollowing =
+                        ref.watch(isFollowingProvider(_targetPubkey!));
                     return ElevatedButton(
                       onPressed: isFollowing ? _unfollowUser : _followUser,
                       style: ElevatedButton.styleFrom(
@@ -1072,266 +1076,306 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         padding: EdgeInsets.zero,
         child: Consumer(
           builder: (context, ref, child) {
-          final profileVideosState = ref.watch(profileVideosNotifierProvider);
-          Log.error(
-              '📱 ProfileVideosProvider state: loading=${profileVideosState.isLoading}, hasVideos=${profileVideosState.hasVideos}, hasError=${profileVideosState.hasError}, videoCount=${profileVideosState.videoCount}',
-              name: 'ProfileScreen',
-              category: LogCategory.ui);
+            final profileVideosState = ref.watch(profileVideosNotifierProvider);
+            Log.error(
+                '📱 ProfileVideosProvider state: loading=${profileVideosState.isLoading}, hasVideos=${profileVideosState.hasVideos}, hasError=${profileVideosState.hasError}, videoCount=${profileVideosState.videoCount}',
+                name: 'ProfileScreen',
+                category: LogCategory.ui);
 
-          // Show loading state ONLY if actually loading
-          if (profileVideosState.isLoading &&
-              profileVideosState.videoCount == 0) {
-            return Center(
-              child: GridView.builder(
-                padding: EdgeInsets.zero,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 1,
-                  crossAxisSpacing: 0,
-                  mainAxisSpacing: 0,
-                ),
-                itemCount: 9, // Show 9 placeholder tiles
-                itemBuilder: (context, index) => ColoredBox(
-                  color: Colors.grey.shade900,
-                  child: Center(
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade800,
-                        borderRadius: BorderRadius.circular(8),
+            // Show loading state ONLY if actually loading
+            if (profileVideosState.isLoading &&
+                profileVideosState.videoCount == 0) {
+              return Center(
+                child: GridView.builder(
+                  padding: EdgeInsets.zero,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1,
+                    crossAxisSpacing: 0,
+                    mainAxisSpacing: 0,
+                  ),
+                  itemCount: 9, // Show 9 placeholder tiles
+                  itemBuilder: (context, index) => ColoredBox(
+                    color: Colors.grey.shade900,
+                    child: Center(
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          }
+              );
+            }
 
-          // Show error state
-          if (profileVideosState.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Error loading videos',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    profileVideosState.error ?? 'Unknown error',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => ref.read(profileVideosNotifierProvider.notifier).refreshVideos(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: VineTheme.vineGreen,
-                      foregroundColor: VineTheme.whiteText,
+            // Show error state
+            if (profileVideosState.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.red, size: 48),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Error loading videos',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
                     ),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
+                    const SizedBox(height: 8),
+                    Text(
+                      profileVideosState.error ?? 'Unknown error',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref
+                          .read(profileVideosNotifierProvider.notifier)
+                          .refreshVideos(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: VineTheme.vineGreen,
+                        foregroundColor: VineTheme.whiteText,
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          // Show empty state
-          if (!profileVideosState.hasVideos) {
-            return Padding(
-              padding: const EdgeInsets.only(
-                  bottom: 80), // Add padding to avoid FAB overlap
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.videocam_outlined,
-                          color: Colors.grey, size: 64),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No Videos Yet',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _isOwnProfile
-                            ? 'Share your first video to see it here'
-                            : "This user hasn't shared any videos yet",
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 32), // Increased spacing
-                      // Changed from centered button to an icon button in the top corner
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 16),
-                          child: IconButton(
-                            onPressed: () async {
-                              Log.debug(
-                                  'Manual refresh videos requested for ${_targetPubkey?.substring(0, 8)}',
-                                  name: 'ProfileScreen',
-                                  category: LogCategory.ui);
-                              if (_targetPubkey != null) {
-                                try {
-                                  await ref.read(profileVideosNotifierProvider.notifier).refreshVideos();
-                                  Log.info('Manual refresh completed',
-                                      name: 'ProfileScreen',
-                                      category: LogCategory.ui);
-                                } catch (e) {
-                                  Log.error('Manual refresh failed: $e',
-                                      name: 'ProfileScreen',
-                                      category: LogCategory.ui);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text('Refresh failed: $e')),
-                                    );
-                                  }
-                                }
-                              }
-                            },
-                            icon: const Icon(Icons.refresh,
-                                color: VineTheme.vineGreen, size: 28),
-                            tooltip: 'Refresh',
+            // Show empty state
+            if (!profileVideosState.hasVideos) {
+              return Padding(
+                padding: const EdgeInsets.only(
+                    bottom: 80), // Add padding to avoid FAB overlap
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.videocam_outlined,
+                            color: Colors.grey, size: 64),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No Videos Yet',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          _isOwnProfile
+                              ? 'Share your first video to see it here'
+                              : "This user hasn't shared any videos yet",
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 32), // Increased spacing
+                        // Changed from centered button to an icon button in the top corner
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: IconButton(
+                              onPressed: () async {
+                                Log.debug(
+                                    'Manual refresh videos requested for ${_targetPubkey?.substring(0, 8)}',
+                                    name: 'ProfileScreen',
+                                    category: LogCategory.ui);
+                                if (_targetPubkey != null) {
+                                  try {
+                                    await ref
+                                        .read(profileVideosNotifierProvider
+                                            .notifier)
+                                        .refreshVideos();
+                                    Log.info('Manual refresh completed',
+                                        name: 'ProfileScreen',
+                                        category: LogCategory.ui);
+                                  } catch (e) {
+                                    Log.error('Manual refresh failed: $e',
+                                        name: 'ProfileScreen',
+                                        category: LogCategory.ui);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content:
+                                                Text('Refresh failed: $e')),
+                                      );
+                                    }
+                                  }
+                                }
+                              },
+                              icon: const Icon(Icons.refresh,
+                                  color: VineTheme.vineGreen, size: 28),
+                              tooltip: 'Refresh',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          }
+              );
+            }
 
-          // Show video grid
-          return NotificationListener<ScrollNotification>(
-            onNotification: (scrollInfo) {
-              // Load more videos when scrolling near the bottom
-              if (!profileVideosState.isLoadingMore &&
-                  profileVideosState.hasMore &&
-                  scrollInfo.metrics.pixels >=
-                      scrollInfo.metrics.maxScrollExtent - 200) {
-                ref.read(profileVideosNotifierProvider.notifier).loadMoreVideos();
-              }
-              return false;
-            },
-            child: GridView.builder(
-              padding: const EdgeInsets.all(0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 0,
-                mainAxisSpacing: 0,
-                childAspectRatio:
-                    1, // Square aspect ratio for vine-style videos
-              ),
-              itemCount: profileVideosState.hasMore
-                  ? profileVideosState.videoCount +
-                      1 // +1 for loading indicator
-                  : profileVideosState.videoCount,
-              itemBuilder: (context, index) {
-                // Show loading indicator at the end if loading more
-                if (index >= profileVideosState.videoCount) {
-                  return DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: VineTheme.cardBackground,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: VineTheme.vineGreen,
-                        strokeWidth: 2,
+            // Show video grid
+            return NotificationListener<ScrollNotification>(
+              onNotification: (scrollInfo) {
+                // Load more videos when scrolling near the bottom
+                if (!profileVideosState.isLoadingMore &&
+                    profileVideosState.hasMore &&
+                    scrollInfo.metrics.pixels >=
+                        scrollInfo.metrics.maxScrollExtent - 200) {
+                  ref
+                      .read(profileVideosNotifierProvider.notifier)
+                      .loadMoreVideos();
+                }
+                return false;
+              },
+              child: GridView.builder(
+                padding: const EdgeInsets.all(0),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 0,
+                  mainAxisSpacing: 0,
+                  childAspectRatio:
+                      1, // Square aspect ratio for vine-style videos
+                ),
+                itemCount: profileVideosState.hasMore
+                    ? profileVideosState.videoCount +
+                        1 // +1 for loading indicator
+                    : profileVideosState.videoCount,
+                itemBuilder: (context, index) {
+                  // Show loading indicator at the end if loading more
+                  if (index >= profileVideosState.videoCount) {
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: VineTheme.cardBackground,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                    ),
-                  );
-                }
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: VineTheme.vineGreen,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    );
+                  }
 
-                final videoEvent = profileVideosState.videos[index];
+                  final videoEvent = profileVideosState.videos[index];
 
-                // Debug log video data
-                if (index < 3) {
-                  // Only log first 3 to avoid spam
-                  Log.debug(
-                    'Video $index: id=${videoEvent.id.substring(0, 8)}, thumbnail=${videoEvent.thumbnailUrl?.substring(0, 50) ?? "null"}, videoUrl=${videoEvent.videoUrl?.substring(0, 50) ?? "null"}',
-                    name: 'ProfileScreen',
-                    category: LogCategory.ui,
-                  );
-                }
-                
-                // Log thumbnail URL issues
-                if (videoEvent.thumbnailUrl == null || videoEvent.thumbnailUrl!.isEmpty) {
-                  Log.warning(
-                    'Video ${videoEvent.id.substring(0, 8)} has no thumbnail URL',
-                    name: 'ProfileScreen',
-                    category: LogCategory.ui,
-                  );
-                }
+                  // Debug log video data
+                  if (index < 3) {
+                    // Only log first 3 to avoid spam
+                    Log.debug(
+                      'Video $index: id=${videoEvent.id.substring(0, 8)}, thumbnail=${videoEvent.thumbnailUrl?.substring(0, 50) ?? "null"}, videoUrl=${videoEvent.videoUrl?.substring(0, 50) ?? "null"}',
+                      name: 'ProfileScreen',
+                      category: LogCategory.ui,
+                    );
+                  }
 
-                return AspectRatio(
-                  aspectRatio: 1.0, // Ensure square thumbnails matching video display
-                  child: GestureDetector(
-                    onTap: () => _openVine(videoEvent),
-                    child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: VineTheme.cardBackground,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Video thumbnail
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: videoEvent.thumbnailUrl != null &&
-                                    videoEvent.thumbnailUrl!.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: videoEvent.thumbnailUrl!,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(4),
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            VineTheme.vineGreen
-                                                .withValues(alpha: 0.3),
-                                            Colors.blue.withValues(alpha: 0.3),
-                                          ],
+                  // Log thumbnail URL issues
+                  if (videoEvent.thumbnailUrl == null ||
+                      videoEvent.thumbnailUrl!.isEmpty) {
+                    Log.warning(
+                      'Video ${videoEvent.id.substring(0, 8)} has no thumbnail URL',
+                      name: 'ProfileScreen',
+                      category: LogCategory.ui,
+                    );
+                  }
+
+                  return AspectRatio(
+                    aspectRatio:
+                        1.0, // Ensure square thumbnails matching video display
+                    child: GestureDetector(
+                      onTap: () => _openVine(videoEvent),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: VineTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Stack(
+                          children: [
+                            // Video thumbnail
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: videoEvent.thumbnailUrl != null &&
+                                        videoEvent.thumbnailUrl!.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: videoEvent.thumbnailUrl!,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                VineTheme.vineGreen
+                                                    .withValues(alpha: 0.3),
+                                                Colors.blue
+                                                    .withValues(alpha: 0.3),
+                                              ],
+                                            ),
+                                          ),
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              color: VineTheme.whiteText,
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          color: VineTheme.whiteText,
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    errorWidget: (context, url, error) {
-                                      Log.warning(
-                                        'Thumbnail load failed for ${videoEvent.id.substring(0, 8)}: $error',
-                                        name: 'ProfileScreen',
-                                        category: LogCategory.ui,
-                                      );
-                                      return DecoratedBox(
+                                        errorWidget: (context, url, error) {
+                                          Log.warning(
+                                            'Thumbnail load failed for ${videoEvent.id.substring(0, 8)}: $error',
+                                            name: 'ProfileScreen',
+                                            category: LogCategory.ui,
+                                          );
+                                          return DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  VineTheme.vineGreen
+                                                      .withValues(alpha: 0.3),
+                                                  Colors.blue
+                                                      .withValues(alpha: 0.3),
+                                                ],
+                                              ),
+                                            ),
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons.play_circle_outline,
+                                                color: VineTheme.whiteText,
+                                                size: 24,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : DecoratedBox(
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
                                           gradient: LinearGradient(
                                             colors: [
                                               VineTheme.vineGreen
                                                   .withValues(alpha: 0.3),
-                                              Colors.blue.withValues(alpha: 0.3),
+                                              Colors.blue
+                                                  .withValues(alpha: 0.3),
                                             ],
                                           ),
                                         ),
@@ -1342,122 +1386,124 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                             size: 24,
                                           ),
                                         ),
-                                      );
-                                    },
-                                  )
-                                : DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(4),
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          VineTheme.vineGreen
-                                              .withValues(alpha: 0.3),
-                                          Colors.blue.withValues(alpha: 0.3),
-                                        ],
                                       ),
-                                    ),
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.play_circle_outline,
-                                        color: VineTheme.whiteText,
-                                        size: 24,
-                                      ),
+                              ),
+                            ),
+
+                            // Play icon overlay
+                            const Center(
+                              child: Icon(
+                                Icons.play_circle_filled,
+                                color: Colors.white70,
+                                size: 32,
+                              ),
+                            ),
+
+                            // Duration indicator
+                            if (videoEvent.duration != null)
+                              Positioned(
+                                bottom: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    videoEvent.formattedDuration,
+                                    style: const TextStyle(
+                                      color: VineTheme.whiteText,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                          ),
-                        ),
-
-                        // Play icon overlay
-                        const Center(
-                          child: Icon(
-                            Icons.play_circle_filled,
-                            color: Colors.white70,
-                            size: 32,
-                          ),
-                        ),
-
-                        // Duration indicator
-                        if (videoEvent.duration != null)
-                          Positioned(
-                            bottom: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                videoEvent.formattedDuration,
-                                style: const TextStyle(
-                                  color: VineTheme.whiteText,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                          ),
 
-                        // Metrics badges (loops/likes) bottom-left if available
-                        if ((videoEvent.originalLoops != null && videoEvent.originalLoops! > 0) ||
-                            (videoEvent.originalLikes != null && videoEvent.originalLikes! > 0))
-                          Positioned(
-                            bottom: 4,
-                            left: 4,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (videoEvent.originalLoops != null && videoEvent.originalLoops! > 0)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.7),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.loop, size: 12, color: Colors.white70),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          _formatCount(videoEvent.originalLoops!),
-                                          style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                            // Metrics badges (loops/likes) bottom-left if available
+                            if ((videoEvent.originalLoops != null &&
+                                    videoEvent.originalLoops! > 0) ||
+                                (videoEvent.originalLikes != null &&
+                                    videoEvent.originalLikes! > 0))
+                              Positioned(
+                                bottom: 4,
+                                left: 4,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (videoEvent.originalLoops != null &&
+                                        videoEvent.originalLoops! > 0)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.7),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                if (videoEvent.originalLikes != null && videoEvent.originalLikes! > 0) ...[
-                                  if (videoEvent.originalLoops != null && videoEvent.originalLoops! > 0)
-                                    const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.7),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.favorite, size: 12, color: Colors.redAccent),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          _formatCount(videoEvent.originalLikes!),
-                                          style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.loop,
+                                                size: 12,
+                                                color: Colors.white70),
+                                            const SizedBox(width: 2),
+                                            Text(
+                                              _formatCount(
+                                                  videoEvent.originalLoops!),
+                                              style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                      ],
+                                      ),
+                                    if (videoEvent.originalLikes != null &&
+                                        videoEvent.originalLikes! > 0) ...[
+                                      if (videoEvent.originalLoops != null &&
+                                          videoEvent.originalLoops! > 0)
+                                        const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.7),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.favorite,
+                                                size: 12,
+                                                color: Colors.redAccent),
+                                            const SizedBox(width: 2),
+                                            Text(
+                                              _formatCount(
+                                                  videoEvent.originalLikes!),
+                                              style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-              },
-            ),
-          );
+                  );
+                },
+              ),
+            );
           },
         ),
       );
@@ -1470,195 +1516,266 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             // Watch Riverpod providers directly
             final socialService = ref.watch(socialServiceProvider);
 
-    if (_targetPubkey == null) {
-      return const Center(
-        child: Text(
-          'Sign in to view liked videos',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
-
-    return FutureBuilder<List<Event>>(
-      future: socialService.fetchLikedEvents(_targetPubkey!),
-      builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(color: Colors.white),
-                      SizedBox(height: 16),
-                      Text(
-                        'Loading liked videos...',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline,
-                          color: Colors.red, size: 48),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Error loading liked videos',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${snapshot.error}',
-                        style:
-                            const TextStyle(color: Colors.grey, fontSize: 12),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final likedEvents = snapshot.data ?? [];
-
-              if (likedEvents.isEmpty) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.favorite_border, color: Colors.grey, size: 64),
-                      SizedBox(height: 16),
-                      Text(
-                        'No Liked Videos Yet',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Videos you like will appear here',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // Convert Events to VideoEvents for display
-              final videoEvents = likedEvents
-                  .where((event) =>
-                      event.kind == 32222) // Filter for NIP-32222 video events
-                  .map((event) {
-                    try {
-                      return VideoEvent.fromNostrEvent(event);
-                    } catch (e) {
-                      Log.error('Error converting event to VideoEvent: $e',
-                          name: 'ProfileScreen', category: LogCategory.ui);
-                      return null;
-                    }
-                  })
-                  .where((videoEvent) => videoEvent != null)
-                  .cast<VideoEvent>()
-                  .toList();
-
-              return GridView.builder(
-                padding: const EdgeInsets.all(0),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 0,
-                  mainAxisSpacing: 0,
-                  childAspectRatio: 1.0, // Square aspect ratio matching video display
+            if (_targetPubkey == null) {
+              return const Center(
+                child: Text(
+                  'Sign in to view liked videos',
+                  style: TextStyle(color: Colors.grey),
                 ),
-                itemCount: videoEvents.length,
-                itemBuilder: (context, index) {
-                  final videoEvent = videoEvents[index];
-
-                  return AspectRatio(
-                    aspectRatio: 1.0, // Ensure square thumbnails matching video display
-                    child: GestureDetector(
-                      onTap: () => _openLikedVideo(videoEvent),
-                      child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Stack(
-                        children: [
-                          // Video thumbnail
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(4),
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.purple.withValues(alpha: 0.3),
-                                    Colors.blue.withValues(alpha: 0.3),
-                                  ],
-                                ),
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.play_circle_outline,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Like indicator
-                          const Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Icon(
-                              Icons.favorite,
-                              color: Colors.red,
-                              size: 16,
-                            ),
-                          ),
-
-                          // Video title if available
-                          if (videoEvent.title?.isNotEmpty == true)
-                            Positioned(
-                              bottom: 4,
-                              left: 4,
-                              right: 4,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.7),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  videoEvent.title!,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-                },
               );
-            },
-          );
+            }
+
+            return FutureBuilder<List<Event>>(
+              future: socialService.fetchLikedEvents(_targetPubkey!),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: Colors.white),
+                        SizedBox(height: 16),
+                        Text(
+                          'Loading liked videos...',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline,
+                            color: Colors.red, size: 48),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Error loading liked videos',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${snapshot.error}',
+                          style:
+                              const TextStyle(color: Colors.grey, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final likedEvents = snapshot.data ?? [];
+
+                if (likedEvents.isEmpty) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.favorite_border,
+                            color: Colors.grey, size: 64),
+                        SizedBox(height: 16),
+                        Text(
+                          'No Liked Videos Yet',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Videos you like will appear here',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // Convert Events to VideoEvents for display
+                final videoEvents = likedEvents
+                    .where((event) =>
+                        event.kind ==
+                        32222) // Filter for NIP-32222 video events
+                    .map((event) {
+                      try {
+                        return VideoEvent.fromNostrEvent(event);
+                      } catch (e) {
+                        Log.error('Error converting event to VideoEvent: $e',
+                            name: 'ProfileScreen', category: LogCategory.ui);
+                        return null;
+                      }
+                    })
+                    .where((videoEvent) => videoEvent != null)
+                    .cast<VideoEvent>()
+                    .toList();
+
+                return GridView.builder(
+                  padding: const EdgeInsets.all(0),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 0,
+                    mainAxisSpacing: 0,
+                    childAspectRatio:
+                        1.0, // Square aspect ratio matching video display
+                  ),
+                  itemCount: videoEvents.length,
+                  itemBuilder: (context, index) {
+                    final videoEvent = videoEvents[index];
+
+                    return AspectRatio(
+                      aspectRatio:
+                          1.0, // Ensure square thumbnails matching video display
+                      child: GestureDetector(
+                        onTap: () => _openLikedVideo(videoEvent),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Stack(
+                            children: [
+                              // Video thumbnail
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: videoEvent.thumbnailUrl != null &&
+                                          videoEvent.thumbnailUrl!.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: videoEvent.thumbnailUrl!,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Colors.purple
+                                                      .withValues(alpha: 0.3),
+                                                  Colors.blue
+                                                      .withValues(alpha: 0.3),
+                                                ],
+                                              ),
+                                            ),
+                                            child: const Center(
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Colors.purple
+                                                      .withValues(alpha: 0.3),
+                                                  Colors.blue
+                                                      .withValues(alpha: 0.3),
+                                                ],
+                                              ),
+                                            ),
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons.play_circle_outline,
+                                                color: Colors.white,
+                                                size: 24,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.purple
+                                                    .withValues(alpha: 0.3),
+                                                Colors.blue
+                                                    .withValues(alpha: 0.3),
+                                              ],
+                                            ),
+                                          ),
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons.play_circle_outline,
+                                              color: Colors.white,
+                                              size: 24,
+                                            ),
+                                          ),
+                                        ),
+                                ),
+                              ),
+
+                              // Play icon overlay (only if we have thumbnail)
+                              if (videoEvent.thumbnailUrl != null &&
+                                  videoEvent.thumbnailUrl!.isNotEmpty)
+                                const Center(
+                                  child: Icon(
+                                    Icons.play_circle_filled,
+                                    color: Colors.white70,
+                                    size: 32,
+                                  ),
+                                ),
+
+                              // Like indicator
+                              const Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Icon(
+                                  Icons.favorite,
+                                  color: Colors.red,
+                                  size: 16,
+                                ),
+                              ),
+
+                              // Video title if available
+                              if (videoEvent.title?.isNotEmpty == true)
+                                Positioned(
+                                  bottom: 4,
+                                  left: 4,
+                                  right: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.7),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      videoEvent.title!,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
           },
         ),
       );
@@ -1671,201 +1788,208 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             // Watch Riverpod providers directly
             final videoEventService = ref.watch(videoEventServiceProvider);
 
-    if (_targetPubkey == null) {
-      return const Center(
-        child: Text(
-          'Sign in to view reposts',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
+            if (_targetPubkey == null) {
+              return const Center(
+                child: Text(
+                  'Sign in to view reposts',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              );
+            }
 
-    // Get all video events and filter for reposts by this user
-    final allVideos = videoEventService.discoveryVideos;
-    final userReposts = allVideos
-              .where(
-                (video) =>
-                    video.isRepost && video.reposterPubkey == _targetPubkey,
-              )
-              .toList();
+            // Get all video events and filter for reposts by this user
+            final allVideos = videoEventService.discoveryVideos;
+            final userReposts = allVideos
+                .where(
+                  (video) =>
+                      video.isRepost && video.reposterPubkey == _targetPubkey,
+                )
+                .toList();
 
-          if (userReposts.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.repeat, color: Colors.grey, size: 64),
-                  SizedBox(height: 16),
-                  Text(
-                    'No Reposts Yet',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+            if (userReposts.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.repeat, color: Colors.grey, size: 64),
+                    SizedBox(height: 16),
+                    Text(
+                      'No Reposts Yet',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Videos you repost will appear here',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
+                    SizedBox(height: 8),
+                    Text(
+                      'Videos you repost will appear here',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              );
+            }
+
+            return GridView.builder(
+              padding: const EdgeInsets.all(0),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 0,
+                mainAxisSpacing: 0,
+                childAspectRatio:
+                    1.0, // Square aspect ratio matching video display
               ),
-            );
-          }
+              itemCount: userReposts.length,
+              itemBuilder: (context, index) {
+                final videoEvent = userReposts[index];
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(0),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 0,
-              mainAxisSpacing: 0,
-              childAspectRatio: 1.0, // Square aspect ratio matching video display
-            ),
-            itemCount: userReposts.length,
-            itemBuilder: (context, index) {
-              final videoEvent = userReposts[index];
-
-              return AspectRatio(
-                aspectRatio: 1.0, // Ensure square thumbnails matching video display
-                child: GestureDetector(
-                  onTap: () => _openVine(videoEvent),
-                  child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: VineTheme.cardBackground,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Video thumbnail
-                      Positioned.fill(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: videoEvent.thumbnailUrl != null &&
-                                  videoEvent.thumbnailUrl!.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: videoEvent.thumbnailUrl!,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(4),
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          VineTheme.vineGreen
-                                              .withValues(alpha: 0.3),
-                                          Colors.blue.withValues(alpha: 0.3),
-                                        ],
-                                      ),
-                                    ),
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        color: VineTheme.whiteText,
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(4),
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          VineTheme.vineGreen
-                                              .withValues(alpha: 0.3),
-                                          Colors.blue.withValues(alpha: 0.3),
-                                        ],
-                                      ),
-                                    ),
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.play_circle_outline,
-                                        color: VineTheme.whiteText,
-                                        size: 24,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4),
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        VineTheme.vineGreen
-                                            .withValues(alpha: 0.3),
-                                        Colors.blue.withValues(alpha: 0.3),
-                                      ],
-                                    ),
-                                  ),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.play_circle_outline,
-                                      color: VineTheme.whiteText,
-                                      size: 24,
-                                    ),
-                                  ),
-                                ),
-                        ),
+                return AspectRatio(
+                  aspectRatio:
+                      1.0, // Ensure square thumbnails matching video display
+                  child: GestureDetector(
+                    onTap: () => _openVine(videoEvent),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: VineTheme.cardBackground,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-
-                      // Play icon overlay
-                      const Center(
-                        child: Icon(
-                          Icons.play_circle_filled,
-                          color: Colors.white70,
-                          size: 32,
-                        ),
-                      ),
-
-                      // Repost indicator
-                      Positioned(
-                        top: 4,
-                        left: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Icon(
-                            Icons.repeat,
-                            color: VineTheme.vineGreen,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-
-                      // Duration indicator
-                      if (videoEvent.duration != null)
-                        Positioned(
-                          bottom: 4,
-                          right: 4,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.7),
+                      child: Stack(
+                        children: [
+                          // Video thumbnail
+                          Positioned.fill(
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(4),
+                              child: videoEvent.thumbnailUrl != null &&
+                                      videoEvent.thumbnailUrl!.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: videoEvent.thumbnailUrl!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) =>
+                                          DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              VineTheme.vineGreen
+                                                  .withValues(alpha: 0.3),
+                                              Colors.blue
+                                                  .withValues(alpha: 0.3),
+                                            ],
+                                          ),
+                                        ),
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: VineTheme.whiteText,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              VineTheme.vineGreen
+                                                  .withValues(alpha: 0.3),
+                                              Colors.blue
+                                                  .withValues(alpha: 0.3),
+                                            ],
+                                          ),
+                                        ),
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.play_circle_outline,
+                                            color: VineTheme.whiteText,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(4),
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            VineTheme.vineGreen
+                                                .withValues(alpha: 0.3),
+                                            Colors.blue.withValues(alpha: 0.3),
+                                          ],
+                                        ),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.play_circle_outline,
+                                          color: VineTheme.whiteText,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    ),
                             ),
-                            child: Text(
-                              videoEvent.formattedDuration,
-                              style: const TextStyle(
-                                color: VineTheme.whiteText,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                          ),
+
+                          // Play icon overlay
+                          const Center(
+                            child: Icon(
+                              Icons.play_circle_filled,
+                              color: Colors.white70,
+                              size: 32,
+                            ),
+                          ),
+
+                          // Repost indicator
+                          Positioned(
+                            top: 4,
+                            left: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.7),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Icon(
+                                Icons.repeat,
+                                color: VineTheme.vineGreen,
+                                size: 16,
                               ),
                             ),
                           ),
-                        ),
-                    ],
+
+                          // Duration indicator
+                          if (videoEvent.duration != null)
+                            Positioned(
+                              bottom: 4,
+                              right: 4,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  videoEvent.formattedDuration,
+                                  style: const TextStyle(
+                                    color: VineTheme.whiteText,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
-            },
-          );
           },
         ),
       );
@@ -2005,17 +2129,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           name: 'ProfileScreen', category: LogCategory.ui);
 
       // Force refresh AuthService profile from latest cached data
-      final userProfileNotifier = ref.read(userProfileNotifierProvider.notifier);
-      
+      final userProfileNotifier =
+          ref.read(userProfileNotifierProvider.notifier);
+
       // For now, just refresh the profile data - we may need to update AuthService later
       if (_targetPubkey != null) {
-        await userProfileNotifier.fetchProfile(_targetPubkey!, forceRefresh: true);
+        await userProfileNotifier.fetchProfile(_targetPubkey!,
+            forceRefresh: true);
       }
-      
+
       // Also refresh profile stats and videos
       _loadProfileStats();
       _loadProfileVideos();
-      
+
       setState(() {
         // Trigger rebuild to show updated profile
       });
@@ -2059,13 +2185,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
       // Force refresh profile from Nostr relay first
       if (_targetPubkey != null) {
-        await ref.read(userProfileNotifierProvider.notifier).fetchProfile(_targetPubkey!, forceRefresh: true);
+        await ref
+            .read(userProfileNotifierProvider.notifier)
+            .fetchProfile(_targetPubkey!, forceRefresh: true);
       }
 
       // Force refresh the AuthService profile from unified cache
-      await authService.refreshCurrentProfile(ref.read(userProfileServiceProvider));
+      await authService
+          .refreshCurrentProfile(ref.read(userProfileServiceProvider));
 
-      // Invalidate Riverpod providers to force refresh from updated cache  
+      // Invalidate Riverpod providers to force refresh from updated cache
       if (_targetPubkey != null) {
         ref.invalidate(profileStatsProvider(_targetPubkey!));
         ref.invalidate(profileVideosProvider(_targetPubkey!));
@@ -2089,13 +2218,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _showFollowersList() {
     if (_targetPubkey == null) return;
-    
-    Log.info('👥 Followers list tapped', name: 'ProfileScreen', category: LogCategory.ui);
-    
+
+    Log.info('👥 Followers list tapped',
+        name: 'ProfileScreen', category: LogCategory.ui);
+
     final profileState = ref.read(userProfileNotifierProvider);
     final profile = profileState.getCachedProfile(_targetPubkey!);
-    final displayName = profile?.bestDisplayName ?? _targetPubkey!.substring(0, 8);
-    
+    final displayName =
+        profile?.bestDisplayName ?? _targetPubkey!.substring(0, 8);
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => FollowersScreen(
@@ -2108,13 +2239,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _showFollowingList() {
     if (_targetPubkey == null) return;
-    
-    Log.info('👥 Following list tapped', name: 'ProfileScreen', category: LogCategory.ui);
-    
+
+    Log.info('👥 Following list tapped',
+        name: 'ProfileScreen', category: LogCategory.ui);
+
     final profileState = ref.read(userProfileNotifierProvider);
     final profile = profileState.getCachedProfile(_targetPubkey!);
-    final displayName = profile?.bestDisplayName ?? _targetPubkey!.substring(0, 8);
-    
+    final displayName =
+        profile?.bestDisplayName ?? _targetPubkey!.substring(0, 8);
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => FollowingScreen(
@@ -2223,21 +2356,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   void _openVine(VideoEvent videoEvent) {
     // PAUSE ALL OTHER VIDEOS FIRST - fixes invisible video playback
     ref.read(videoManagerProvider.notifier).pauseAllVideos();
-    
+
     // Also pause all videos globally to ensure nothing from other tabs keeps playing
     GlobalVideoRegistry().pauseAllControllers();
     Log.info('⏸️ Paused all videos globally when entering profile video mode',
         name: 'ProfileScreen', category: LogCategory.system);
-    
+
     // CRITICAL FIX: Add profile videos to VideoManager before playing
     // This ensures the video is available for playback by VideoFeedItem
     final profileVideosState = ref.read(profileVideosNotifierProvider);
     if (profileVideosState.hasVideos) {
-      ref.read(videoManagerProvider.notifier).addProfileVideos(profileVideosState.videos);
-      Log.info('✅ Added ${profileVideosState.videoCount} profile videos to VideoManager for playback',
-          name: 'ProfileScreen', category: LogCategory.system);
+      ref
+          .read(videoManagerProvider.notifier)
+          .addProfileVideos(profileVideosState.videos);
+      Log.info(
+          '✅ Added ${profileVideosState.videoCount} profile videos to VideoManager for playback',
+          name: 'ProfileScreen',
+          category: LogCategory.system);
     }
-    
+
     setState(() {
       _isInVideoMode = true;
       _selectedVideo = videoEvent;
@@ -2250,7 +2387,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     GlobalVideoRegistry().pauseAllControllers();
     Log.info('⏸️ Paused all videos when exiting profile video mode',
         name: 'ProfileScreen', category: LogCategory.system);
-    
+
     setState(() {
       _isInVideoMode = false;
       _selectedVideo = null;
@@ -2268,10 +2405,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
 
     final profileState = ref.read(userProfileNotifierProvider);
-    final cachedProfile = _targetPubkey != null 
+    final cachedProfile = _targetPubkey != null
         ? profileState.getCachedProfile(_targetPubkey!)
         : null;
-    final displayName = cachedProfile?.bestDisplayName ?? 'Loading user information';
+    final displayName =
+        cachedProfile?.bestDisplayName ?? 'Loading user information';
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
@@ -2316,7 +2454,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  Widget _buildProfileView(SocialService socialService, ProfileStatsState profileStatsState) {
+  Widget _buildProfileView(
+      SocialService socialService, ProfileStatsState profileStatsState) {
     return NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverToBoxAdapter(
@@ -2335,8 +2474,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     return _buildStatsRow(profileStatsState);
                   } catch (e) {
                     Log.error('Error building stats row: $e',
-                        name: 'ProfileScreen',
-                        category: LogCategory.ui);
+                        name: 'ProfileScreen', category: LogCategory.ui);
                     return Container(
                       height: 50,
                       color: Colors.grey[800],
@@ -2356,8 +2494,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     return _buildActionButtons();
                   } catch (e) {
                     Log.error('Error building action buttons: $e',
-                        name: 'ProfileScreen',
-                        category: LogCategory.ui);
+                        name: 'ProfileScreen', category: LogCategory.ui);
                     return Container(height: 50);
                   }
                 },
@@ -2406,24 +2543,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-
-
-
   void _openLikedVideo(VideoEvent videoEvent) {
     // PAUSE ALL OTHER VIDEOS FIRST - fixes invisible video playback
     ref.read(videoManagerProvider.notifier).pauseAllVideos();
-    
+
     // Also pause all videos globally to ensure nothing from other tabs keeps playing
     GlobalVideoRegistry().pauseAllControllers();
     Log.info('⏸️ Paused all videos globally when entering liked video mode',
         name: 'ProfileScreen', category: LogCategory.system);
-    
+
     // CRITICAL FIX: Add the liked video to VideoManager before playing
     // Since liked videos might not be in any feed, ensure it's available for playback
     ref.read(videoManagerProvider.notifier).addProfileVideos([videoEvent]);
     Log.info('✅ Added liked video to VideoManager for playback',
         name: 'ProfileScreen', category: LogCategory.system);
-    
+
     // Use embedded video feed for liked videos too
     setState(() {
       _isInVideoMode = true;
@@ -2468,11 +2602,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget _buildCuratedListSection() => Consumer(
         builder: (context, ref, child) {
           final listServiceAsync = ref.watch(curatedListServiceProvider);
-          
+
           return listServiceAsync.when(
             data: (listService) {
-              final userLists = _isOwnProfile 
-                  ? listService.lists 
+              final userLists = _isOwnProfile
+                  ? listService.lists
                   : listService.lists.where((list) => list.isPublic).toList();
 
               if (userLists.isEmpty) {
@@ -2496,7 +2630,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _isOwnProfile 
+                        _isOwnProfile
                             ? 'Create lists to organize your favorite videos'
                             : 'This user hasn\'t shared any public lists',
                         style: const TextStyle(
@@ -2531,18 +2665,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   return _buildListTile(
                     icon: Icons.playlist_play,
                     title: list.name,
-                    subtitle: '${list.videoEventIds.length} videos${list.description != null ? ' • ${list.description}' : ''}',
-                    trailing: list.tags.isNotEmpty 
+                    subtitle:
+                        '${list.videoEventIds.length} videos${list.description != null ? ' • ${list.description}' : ''}',
+                    trailing: list.tags.isNotEmpty
                         ? Wrap(
                             spacing: 4,
-                            children: list.tags.take(2).map((tag) => 
-                              Chip(
-                                label: Text(tag, style: const TextStyle(fontSize: 10)),
-                                backgroundColor: VineTheme.vineGreen.withValues(alpha: 0.2),
-                                labelStyle: const TextStyle(color: VineTheme.whiteText),
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              )
-                            ).toList(),
+                            children: list.tags
+                                .take(2)
+                                .map((tag) => Chip(
+                                      label: Text(tag,
+                                          style: const TextStyle(fontSize: 10)),
+                                      backgroundColor: VineTheme.vineGreen
+                                          .withValues(alpha: 0.2),
+                                      labelStyle: const TextStyle(
+                                          color: VineTheme.whiteText),
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ))
+                                .toList(),
                           )
                         : null,
                     onTap: () {
@@ -2563,7 +2703,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         },
       );
 
-  /// Build bookmarks section  
+  /// Build bookmarks section
   Widget _buildBookmarksSection() => Consumer(
         builder: (context, ref, child) {
           // TODO: Add bookmarkServiceProvider to app_providers.dart
@@ -2627,7 +2767,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _isOwnProfile 
+                    _isOwnProfile
                         ? 'Create follow sets to organize your favorite creators'
                         : 'This user hasn\'t created any follow sets',
                     style: const TextStyle(
@@ -2662,7 +2802,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               return _buildListTile(
                 icon: Icons.people,
                 title: set.name,
-                subtitle: '${set.pubkeys.length} users${set.description != null ? ' • ${set.description}' : ''}',
+                subtitle:
+                    '${set.pubkeys.length} users${set.description != null ? ' • ${set.description}' : ''}',
                 onTap: () {
                   // TODO: Navigate to follow set detail screen
                 },
@@ -2679,7 +2820,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     required String subtitle,
     Widget? trailing,
     VoidCallback? onTap,
-  }) => ListTile(
+  }) =>
+      ListTile(
         leading: Container(
           width: 48,
           height: 48,
@@ -2713,7 +2855,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       );
-
 
   void _openSettings() {
     // Show settings menu with debug options
@@ -2759,6 +2900,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   context,
                   MaterialPageRoute(
                     builder: (context) => const RelaySettingsScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloud_upload, color: Colors.white),
+              title: const Text('Blossom Upload Settings',
+                  style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Configure media upload server',
+                  style: TextStyle(color: Colors.grey)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BlossomSettingsScreen(),
                   ),
                 );
               },
@@ -2935,7 +3092,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     // Analytics Opt-Out Section
                     Builder(
                       builder: (context) {
-                        final analyticsService = ref.watch(analyticsServiceProvider);
+                        final analyticsService =
+                            ref.watch(analyticsServiceProvider);
                         return ListTile(
                           leading: const Icon(Icons.analytics_outlined,
                               color: Colors.orange),
@@ -3491,9 +3649,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     // Mobile builds will automatically use EmbeddedRelayService with P2P capabilities
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(kIsWeb 
-          ? 'P2P Video Sync requires mobile app - not available on web'
-          : 'P2P Video Sync available! Connect to nearby divine users.'),
+        content: Text(kIsWeb
+            ? 'P2P Video Sync requires mobile app - not available on web'
+            : 'P2P Video Sync available! Connect to nearby divine users.'),
         backgroundColor: kIsWeb ? Colors.orange : Colors.blue,
         duration: const Duration(seconds: 3),
       ),

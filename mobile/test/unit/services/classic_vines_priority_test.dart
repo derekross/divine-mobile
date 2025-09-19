@@ -170,7 +170,8 @@ void main() {
       editorPick.id = 'editor-1';
 
       // Subscribe and add events
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
       await Future.delayed(const Duration(milliseconds: 10));
 
       // Add events in random order
@@ -220,7 +221,8 @@ void main() {
       );
       classicVine.id = 'classic-old';
 
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
       await Future.delayed(const Duration(milliseconds: 10));
 
       eventStreamController.add(classicVine);
@@ -271,7 +273,8 @@ void main() {
         return event;
       });
 
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
       await Future.delayed(const Duration(milliseconds: 10));
 
       // Add in random order
@@ -287,13 +290,13 @@ void main() {
       expect(videoEventService.discoveryVideos.length, equals(5));
 
       // Should be ordered by timestamp (newest first) within classic vines
-      expect(
-          videoEventService.discoveryVideos[0].id, equals('classic-0')); // Newest
+      expect(videoEventService.discoveryVideos[0].id,
+          equals('classic-0')); // Newest
       expect(videoEventService.discoveryVideos[1].id, equals('classic-1'));
       expect(videoEventService.discoveryVideos[2].id, equals('classic-2'));
       expect(videoEventService.discoveryVideos[3].id, equals('classic-3'));
-      expect(
-          videoEventService.discoveryVideos[4].id, equals('classic-4')); // Oldest
+      expect(videoEventService.discoveryVideos[4].id,
+          equals('classic-4')); // Oldest
     });
 
     test('should correctly order all priority levels', () async {
@@ -336,7 +339,8 @@ void main() {
       );
       regularVideo.id = 'regular';
 
-      await videoEventService.subscribeToVideoFeed(subscriptionType: SubscriptionType.discovery);
+      await videoEventService.subscribeToVideoFeed(
+          subscriptionType: SubscriptionType.discovery);
       await Future.delayed(const Duration(milliseconds: 10));
 
       // Add in reverse priority order

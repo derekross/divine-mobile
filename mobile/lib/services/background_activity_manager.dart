@@ -7,15 +7,16 @@ import 'package:openvine/utils/unified_logger.dart';
 
 /// Background activity manager to control network and battery usage
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class BackgroundActivityManager  {
-  static final BackgroundActivityManager _instance = BackgroundActivityManager._internal();
+class BackgroundActivityManager {
+  static final BackgroundActivityManager _instance =
+      BackgroundActivityManager._internal();
   factory BackgroundActivityManager() => _instance;
   BackgroundActivityManager._internal();
 
   bool _isAppInForeground = true;
   bool _isInitialized = false;
   final List<BackgroundAwareService> _registeredServices = [];
-  
+
   // Timers for delayed actions
   Timer? _backgroundSuspensionTimer;
   Timer? _periodicCleanupTimer;
@@ -29,7 +30,7 @@ class BackgroundActivityManager  {
     if (_isInitialized) return;
 
     _isInitialized = true;
-    
+
     // Start periodic cleanup timer (runs every 5 minutes)
     _periodicCleanupTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       if (_isAppInForeground) {
@@ -37,7 +38,7 @@ class BackgroundActivityManager  {
       }
     });
 
-    Log.info('Background activity manager initialized', 
+    Log.info('Background activity manager initialized',
         name: 'BackgroundActivityManager', category: LogCategory.system);
   }
 
@@ -60,7 +61,7 @@ class BackgroundActivityManager  {
   /// Handle app lifecycle state changes
   void onAppLifecycleStateChanged(AppLifecycleState state) {
     final wasInForeground = _isAppInForeground;
-    
+
     switch (state) {
       case AppLifecycleState.resumed:
         _isAppInForeground = true;
@@ -68,7 +69,7 @@ class BackgroundActivityManager  {
           _onAppResumed();
         }
         break;
-        
+
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
@@ -77,16 +78,14 @@ class BackgroundActivityManager  {
           _onAppBackgrounded();
         }
         break;
-        
+
       case AppLifecycleState.detached:
         _isAppInForeground = false;
         _onAppTerminating();
         break;
     }
 
-    if (wasInForeground != _isAppInForeground) {
-
-    }
+    if (wasInForeground != _isAppInForeground) {}
   }
 
   /// Handle app entering background
@@ -137,13 +136,20 @@ class BackgroundActivityManager  {
     Log.info('🔄 Performing immediate background actions',
         name: 'BackgroundActivityManager', category: LogCategory.system);
 
+    // Process services async with timeout to prevent watchdog kills
     for (final service in _registeredServices) {
-      try {
-        service.onAppBackgrounded();
-      } catch (e) {
-        Log.error('Error suspending service ${service.serviceName}: $e',
-            name: 'BackgroundActivityManager', category: LogCategory.system);
-      }
+      Future.microtask(() async {
+        try {
+          // Give each service max 1 second to suspend
+          await Future.any([
+            Future(() => service.onAppBackgrounded()),
+            Future.delayed(const Duration(seconds: 1)),
+          ]);
+        } catch (e) {
+          Log.error('Error suspending service ${service.serviceName}: $e',
+              name: 'BackgroundActivityManager', category: LogCategory.system);
+        }
+      });
     }
   }
 
@@ -156,8 +162,10 @@ class BackgroundActivityManager  {
       try {
         service.onExtendedBackground();
       } catch (e) {
-        Log.error('Error in extended background handling for ${service.serviceName}: $e',
-            name: 'BackgroundActivityManager', category: LogCategory.system);
+        Log.error(
+            'Error in extended background handling for ${service.serviceName}: $e',
+            name: 'BackgroundActivityManager',
+            category: LogCategory.system);
       }
     }
   }
@@ -217,7 +225,6 @@ class BackgroundActivityManager  {
     _backgroundSuspensionTimer?.cancel();
     _periodicCleanupTimer?.cancel();
     _registeredServices.clear();
-    
   }
 }
 

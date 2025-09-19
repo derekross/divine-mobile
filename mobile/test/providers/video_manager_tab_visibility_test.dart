@@ -7,6 +7,7 @@ import 'package:openvine/models/video_event.dart';
 import 'package:openvine/providers/tab_visibility_provider.dart';
 import 'package:openvine/providers/video_manager_providers.dart';
 import 'package:openvine/state/video_manager_state.dart';
+
 void main() {
   group('VideoManager Tab Visibility Tests', () {
     late ProviderContainer container;
@@ -54,7 +55,8 @@ void main() {
       expect(state, isA<VideoManagerState>());
     });
 
-    test('VideoManager should pause videos when tab becomes inactive', () async {
+    test('VideoManager should pause videos when tab becomes inactive',
+        () async {
       // Arrange
       final tabNotifier = container.read(tabVisibilityProvider.notifier);
 
@@ -64,7 +66,8 @@ void main() {
       // Verify that pauseVideosForTab would be called (we test the public interface)
       // The actual implementation will handle this internally
       final state = container.read(videoManagerProvider);
-      expect(state.currentTab, equals(1)); // This should be tracked in VideoManagerState
+      expect(state.currentTab,
+          equals(1)); // This should be tracked in VideoManagerState
     });
 
     test('VideoManager should expose pauseVideosForTab method', () {
@@ -81,7 +84,7 @@ void main() {
     test('VideoManager should track current tab state', () {
       // Arrange
       final tabNotifier = container.read(tabVisibilityProvider.notifier);
-      
+
       // Initial state should track tab 0
       var state = container.read(videoManagerProvider);
       expect(state.currentTab, equals(0));
@@ -97,7 +100,7 @@ void main() {
     test('VideoManager should handle tab visibility logic', () {
       // Arrange
       final tabNotifier = container.read(tabVisibilityProvider.notifier);
-      
+
       // Act - switch from feed tab (0) to explore tab (2)
       tabNotifier.setActiveTab(2);
 

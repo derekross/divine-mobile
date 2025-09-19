@@ -63,7 +63,8 @@ void main() {
           socialServiceProvider.overrideWithValue(mockSocialService),
           authServiceProvider.overrideWithValue(mockAuthService),
           nostrServiceProvider.overrideWithValue(mockNostrService),
-          subscriptionManagerProvider.overrideWithValue(mockSubscriptionManager),
+          subscriptionManagerProvider
+              .overrideWithValue(mockSubscriptionManager),
         ],
       );
     });
@@ -77,7 +78,8 @@ void main() {
 
     CommentsNotifier createNotifier() {
       final notifier = container.read(
-        commentsNotifierProvider(testVideoEventId, testVideoAuthorPubkey).notifier,
+        commentsNotifierProvider(testVideoEventId, testVideoAuthorPubkey)
+            .notifier,
       );
       return notifier;
     }
@@ -104,7 +106,7 @@ void main() {
       test('should start loading comments on initialization', () async {
         // Act
         commentsNotifier = createNotifier();
-        
+
         // Wait for the microtask to execute
         await Future.delayed(Duration.zero);
 
@@ -133,14 +135,14 @@ void main() {
 
         // Act
         commentsNotifier = createNotifier();
-        
+
         // Manually trigger refresh to force loading
         await commentsNotifier.refresh();
-        
+
         final state = getState();
 
         // Assert
-        
+
         // Then check the state
         expect(state.topLevelComments.length, equals(1));
         expect(state.topLevelComments.first.comment.content,
@@ -170,9 +172,11 @@ void main() {
 
         // Assert - Should parse the event even with invalid tags (but create valid comment with defaults)
         // The comment parser is lenient and creates comments with default values for missing tags
-        expect(state.topLevelComments.length, equals(1)); // Comment is created with defaults
+        expect(state.topLevelComments.length,
+            equals(1)); // Comment is created with defaults
         expect(state.totalCommentCount, equals(1));
-        expect(state.topLevelComments.first.comment.content, equals(testCommentContent));
+        expect(state.topLevelComments.first.comment.content,
+            equals(testCommentContent));
       });
 
       test('should build hierarchical comment tree', () async {
@@ -212,8 +216,7 @@ void main() {
 
         // Assert
         expect(state.topLevelComments.length, equals(1));
-        expect(state.topLevelComments.first.replies.length,
-            equals(1));
+        expect(state.topLevelComments.first.replies.length, equals(1));
         expect(state.totalCommentCount, equals(2));
       });
     });
@@ -243,12 +246,9 @@ void main() {
         expect(state.topLevelComments.length, equals(1));
         expect(state.topLevelComments.first.comment.content,
             equals(testCommentContent));
-        expect(
-            state.topLevelComments.first.comment.authorPubkey,
+        expect(state.topLevelComments.first.comment.authorPubkey,
             equals(testCurrentUserPubkey));
-        expect(
-            state.topLevelComments.first.comment.id
-                .startsWith('temp_'),
+        expect(state.topLevelComments.first.comment.id.startsWith('temp_'),
             isTrue);
 
         // Wait for posting to complete
@@ -276,7 +276,7 @@ void main() {
         // Assert
         // Verify that the auth service was actually called and the social service was not
         verify(mockAuthService.isAuthenticated).called(greaterThan(0));
-        
+
         // Note: There appears to be a test timing/state access issue here, but the provider logic is correct
         // as confirmed by debug output. Skipping assertion for now.
         // expect(state.error, isNotNull, reason: 'Error should be set for unauthenticated user');
@@ -371,7 +371,7 @@ void main() {
       test('should update state on comment posting', () async {
         // Arrange
         commentsNotifier = createNotifier();
-        
+
         when(
           mockSocialService.postComment(
             content: anyNamed('content'),
@@ -381,12 +381,13 @@ void main() {
         ).thenAnswer((_) async {});
 
         // Act
-        final postFuture = commentsNotifier.postComment(content: testCommentContent);
-        
+        final postFuture =
+            commentsNotifier.postComment(content: testCommentContent);
+
         // Check optimistic update immediately (before await)
         final stateAfterOptimistic = getState();
         expect(stateAfterOptimistic.topLevelComments.isNotEmpty, isTrue);
-        
+
         // Complete the posting
         await postFuture;
       });
@@ -417,14 +418,15 @@ void main() {
 
         // Mock the stream to return both events
         when(mockSocialService.fetchCommentsForEvent(testVideoEventId))
-            .thenAnswer((_) => Stream.fromIterable([comment1Event, comment2Event]));
+            .thenAnswer(
+                (_) => Stream.fromIterable([comment1Event, comment2Event]));
 
         // Act - Create notifier which will trigger initial loading
         commentsNotifier = createNotifier();
-        
+
         // Force a refresh to ensure the mock stream is processed
         await commentsNotifier.refresh();
-        
+
         final state = getState();
 
         // Assert - The mock should have provided 2 comments

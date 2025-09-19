@@ -3,132 +3,155 @@
 
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_embedded_nostr_relay/flutter_embedded_nostr_relay.dart' as embedded;
+import 'package:flutter_embedded_nostr_relay/flutter_embedded_nostr_relay.dart'
+    as embedded;
 import 'package:openvine/utils/unified_logger.dart';
 
 void main() {
+  // Initialize Flutter binding for tests
+  TestWidgetsFlutterBinding.ensureInitialized();
+  
   group('Real Relay Kind 32222 Events Test', () {
-    test('should get real kind 32222 video events from relay3.openvine.co', () async {
-      UnifiedLogger.info('🚀 Starting real relay test...', name: 'Test');
-      
+    test('should get real kind 32222 video events from relay3.openvine.co',
+        () async {
+      Log.info('🚀 Starting real relay test...', name: 'Test');
+
       // Create embedded relay
       final embeddedRelay = embedded.EmbeddedNostrRelay();
-      
+
       // Initialize the embedded relay
-      UnifiedLogger.info('📡 Initializing embedded relay...', name: 'Test');
+      Log.info('📡 Initializing embedded relay...', name: 'Test');
       await embeddedRelay.initialize();
-      
+
       // Add external relay
-      UnifiedLogger.info('🔗 Connecting to wss://relay3.openvine.co...', name: 'Test');
+      Log.info('🔗 Connecting to wss://relay3.openvine.co...',
+          name: 'Test');
       await embeddedRelay.addExternalRelay('wss://relay3.openvine.co');
-      
+
       // Wait for connection to establish
       for (int i = 0; i < 20; i++) {
         final connected = embeddedRelay.connectedRelays;
         if (connected.isNotEmpty) {
-          UnifiedLogger.info('Connected to ${connected.length} relay(s)', name: 'Test');
+          Log.info('Connected to ${connected.length} relay(s)',
+              name: 'Test');
           break;
         }
         await Future.delayed(Duration(milliseconds: 100));
       }
-      
+
       // Subscribe to kind 32222 events (NIP-32222 addressable video events)
-      UnifiedLogger.info('📹 Subscribing to kind 32222 events...', name: 'Test');
-      
+      Log.info('📹 Subscribing to kind 32222 events...',
+          name: 'Test');
+
       // First batch - get most recent videos
       final filter1 = embedded.Filter(
         kinds: [32222],
         limit: 10,
       );
-      
+
       final events1 = <embedded.NostrEvent>[];
       final completer1 = Completer<void>();
-      
+
       // Subscribe and collect events
       final subscription1 = embeddedRelay.subscribe(
         filters: [filter1],
         onEvent: (event) {
           events1.add(event);
-          UnifiedLogger.info('  Got video event: ${event.id.substring(0, 8)}... created at ${DateTime.fromMillisecondsSinceEpoch(event.createdAt * 1000)}', name: 'Test');
-          
+          Log.info(
+              '  Got video event: ${event.id.substring(0, 8)}... created at ${DateTime.fromMillisecondsSinceEpoch(event.createdAt * 1000)}',
+              name: 'Test');
+
           // Complete after getting some events
           if (events1.length >= 5 && !completer1.isCompleted) {
             completer1.complete();
           }
         },
       );
-      
+
       // Wait for events with timeout
       await completer1.future.timeout(
         Duration(seconds: 10),
         onTimeout: () {
-          UnifiedLogger.info('Timeout waiting for first batch (got ${events1.length} events)', name: 'Test');
+          Log.info(
+              'Timeout waiting for first batch (got ${events1.length} events)',
+              name: 'Test');
         },
       );
-      
+
       await subscription1.close();
-      
-      UnifiedLogger.info('✅ First batch results:', name: 'Test');
-      UnifiedLogger.info('  Total events: ${events1.length}', name: 'Test');
+
+      Log.info('✅ First batch results:', name: 'Test');
+      Log.info('  Total events: ${events1.length}', name: 'Test');
       expect(events1, isNotEmpty, reason: 'Should get some kind 32222 events');
-      
+
       // Get the oldest timestamp from first batch
       if (events1.isNotEmpty) {
-        final oldestTimestamp = events1.map((e) => e.createdAt).reduce((a, b) => a < b ? a : b);
-        UnifiedLogger.info('  Oldest event: ${DateTime.fromMillisecondsSinceEpoch(oldestTimestamp * 1000)}', name: 'Test');
-        
+        final oldestTimestamp =
+            events1.map((e) => e.createdAt).reduce((a, b) => a < b ? a : b);
+        Log.info(
+            '  Oldest event: ${DateTime.fromMillisecondsSinceEpoch(oldestTimestamp * 1000)}',
+            name: 'Test');
+
         // Second batch - test pagination with 'until' parameter
-        UnifiedLogger.info('🔄 Testing pagination with until parameter...', name: 'Test');
-        
+        Log.info('🔄 Testing pagination with until parameter...',
+            name: 'Test');
+
         final filter2 = embedded.Filter(
           kinds: [32222],
-          until: oldestTimestamp - 1, // Get events older than the oldest from first batch
+          until: oldestTimestamp -
+              1, // Get events older than the oldest from first batch
           limit: 10,
         );
-        
+
         final events2 = <embedded.NostrEvent>[];
         final completer2 = Completer<void>();
-        
+
         final subscription2 = embeddedRelay.subscribe(
           filters: [filter2],
           onEvent: (event) {
             events2.add(event);
-            UnifiedLogger.info('  Got older video: ${event.id.substring(0, 8)}... created at ${DateTime.fromMillisecondsSinceEpoch(event.createdAt * 1000)}', name: 'Test');
-            
+            Log.info(
+                '  Got older video: ${event.id.substring(0, 8)}... created at ${DateTime.fromMillisecondsSinceEpoch(event.createdAt * 1000)}',
+                name: 'Test');
+
             if (events2.length >= 3 && !completer2.isCompleted) {
               completer2.complete();
             }
           },
         );
-        
+
         await completer2.future.timeout(
           Duration(seconds: 10),
           onTimeout: () {
-            UnifiedLogger.info('Timeout waiting for second batch (got ${events2.length} events)', name: 'Test');
+            Log.info(
+                'Timeout waiting for second batch (got ${events2.length} events)',
+                name: 'Test');
           },
         );
-        
+
         await subscription2.close();
-        
-        UnifiedLogger.info('✅ Pagination results:', name: 'Test');
-        UnifiedLogger.info('  Additional older events: ${events2.length}', name: 'Test');
-        
+
+        Log.info('✅ Pagination results:', name: 'Test');
+        Log.info('  Additional older events: ${events2.length}',
+            name: 'Test');
+
         // Verify pagination worked - new events should be older
         if (events2.isNotEmpty) {
-          final newestInBatch2 = events2.map((e) => e.createdAt).reduce((a, b) => a > b ? a : b);
+          final newestInBatch2 =
+              events2.map((e) => e.createdAt).reduce((a, b) => a > b ? a : b);
           expect(
             newestInBatch2,
             lessThan(oldestTimestamp),
             reason: 'Paginated events should be older than first batch',
           );
-          UnifiedLogger.info('  ✓ Pagination working correctly!', name: 'Test');
+          Log.info('  ✓ Pagination working correctly!', name: 'Test');
         }
       }
-      
+
       // Cleanup
       await embeddedRelay.shutdown();
-      
-      UnifiedLogger.info('🎉 Test completed successfully!', name: 'Test');
+
+      Log.info('🎉 Test completed successfully!', name: 'Test');
     }, timeout: Timeout(Duration(seconds: 30)));
   });
 }

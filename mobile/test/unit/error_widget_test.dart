@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Error Widget Builder Tests', () {
-    testWidgets('ErrorWidget.builder shows user-friendly error in release mode', (tester) async {
+    testWidgets('ErrorWidget.builder shows user-friendly error in release mode',
+        (tester) async {
       // Create a FlutterErrorDetails for testing
       final errorDetails = FlutterErrorDetails(
         exception: Exception('Test error for UI'),
@@ -16,10 +17,10 @@ void main() {
 
       // Build the error widget using the global builder
       final errorWidget = ErrorWidget.builder(errorDetails);
-      
+
       // Wrap in MaterialApp for proper context
       await tester.pumpWidget(MaterialApp(home: errorWidget));
-      
+
       // Should show user-friendly error message
       expect(find.text('Something went wrong'), findsOneWidget);
       expect(find.text('Try again'), findsOneWidget);
@@ -34,12 +35,12 @@ void main() {
 
       final errorWidget = ErrorWidget.builder(errorDetails);
       await tester.pumpWidget(MaterialApp(home: errorWidget));
-      
+
       // Check for proper styling elements
       expect(find.byType(Container), findsAtLeastNWidgets(1));
       expect(find.byType(SafeArea), findsOneWidget);
       expect(find.byType(ElevatedButton), findsOneWidget);
-      
+
       // Verify button can be tapped
       final button = find.byType(ElevatedButton);
       expect(button, findsOneWidget);
@@ -47,7 +48,8 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('Error widget displays exception message in debug mode', (tester) async {
+    testWidgets('Error widget displays exception message in debug mode',
+        (tester) async {
       final errorDetails = FlutterErrorDetails(
         exception: ArgumentError('Debug mode test error'),
         library: 'test',
@@ -55,7 +57,7 @@ void main() {
 
       final errorWidget = ErrorWidget.builder(errorDetails);
       await tester.pumpWidget(MaterialApp(home: errorWidget));
-      
+
       // In debug mode, should show detailed error
       expect(find.textContaining('Debug mode test error'), findsOneWidget);
     });

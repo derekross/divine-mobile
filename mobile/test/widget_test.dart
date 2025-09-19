@@ -24,10 +24,10 @@ void main() {
 
     // During initialization, we should see a loading indicator
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    
+
     // Verify initialization status text is displayed
     expect(find.text('Checking authentication...'), findsOneWidget);
-    
+
     // Verify the app shows at least one text widget (initialization status)
     expect(find.byType(Text), findsAtLeastNWidgets(1));
   });

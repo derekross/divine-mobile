@@ -15,7 +15,7 @@ class TestNostrService implements INostrService {
   final Map<String, StreamController<Event>> _subscriptions = {};
   final Map<String, bool> _relayAuthStates = {};
   final _authStateController = StreamController<Map<String, bool>>.broadcast();
-  
+
   bool _isConnected = true;
   String? _currentUserPubkey;
 
@@ -32,32 +32,34 @@ class TestNostrService implements INostrService {
 
   @override
   String? get publicKey => _currentUserPubkey;
-  
+
   @override
   bool get hasKeys => _currentUserPubkey != null;
-  
+
   @override
-  NostrKeyManager get keyManager => throw UnimplementedError('Test service does not implement key manager');
-  
+  NostrKeyManager get keyManager =>
+      throw UnimplementedError('Test service does not implement key manager');
+
   @override
   int get relayCount => _isConnected ? 1 : 0;
-  
+
   @override
   int get connectedRelayCount => _isConnected ? 1 : 0;
-  
+
   @override
   List<String> get relays => ['wss://test.relay'];
-  
+
   @override
   Map<String, dynamic> get relayStatuses => {
-    'wss://test.relay': _isConnected,
-  };
-  
+        'wss://test.relay': _isConnected,
+      };
+
   @override
   String get primaryRelay => 'wss://test.relay';
-  
+
   @override
-  Stream<Event> searchVideos(String query, {
+  Stream<Event> searchVideos(
+    String query, {
     List<String>? authors,
     DateTime? since,
     DateTime? until,
@@ -66,7 +68,7 @@ class TestNostrService implements INostrService {
     // Return empty stream for tests
     return const Stream.empty();
   }
-  
+
   void setCurrentUserPubkey(String pubkey) {
     _currentUserPubkey = pubkey;
   }
@@ -75,7 +77,7 @@ class TestNostrService implements INostrService {
   Future<NostrBroadcastResult> broadcastEvent(Event event) async {
     if (!_isConnected) throw StateError('Not connected');
     _storedEvents.add(event);
-    
+
     // Notify any matching subscriptions
     for (final entry in _subscriptions.entries) {
       final controller = entry.value;
@@ -83,7 +85,7 @@ class TestNostrService implements INostrService {
         controller.add(event);
       }
     }
-    
+
     return NostrBroadcastResult(
       event: event,
       successCount: 1,
@@ -107,7 +109,7 @@ class TestNostrService implements INostrService {
     tags.add(['x', metadata.sha256Hash]);
     tags.add(['size', metadata.sizeBytes.toString()]);
     tags.addAll(hashtags.map((h) => ['t', h]));
-    
+
     final event = Event(
       _currentUserPubkey ?? 'test-pubkey',
       1063,
@@ -115,11 +117,10 @@ class TestNostrService implements INostrService {
       content,
       createdAt: NostrTimestamp.now(),
     );
-    
+
     return broadcastEvent(event);
   }
-  
-  @override
+
   Future<NostrBroadcastResult> publishVideoEvent({
     required String videoUrl,
     required String content,
@@ -139,7 +140,7 @@ class TestNostrService implements INostrService {
       if (duration != null) ['duration', duration.toString()],
       ...hashtags.map((h) => ['t', h]),
     ];
-    
+
     final event = Event(
       _currentUserPubkey ?? 'test-pubkey',
       22,
@@ -147,7 +148,7 @@ class TestNostrService implements INostrService {
       content,
       createdAt: NostrTimestamp.now(),
     );
-    
+
     return broadcastEvent(event);
   }
 
@@ -158,14 +159,14 @@ class TestNostrService implements INostrService {
     void Function()? onEose,
   }) {
     final subscriptionId = 'test_sub_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     if (_subscriptions.containsKey(subscriptionId)) {
       throw StateError('Subscription $subscriptionId already exists');
     }
-    
+
     final controller = StreamController<Event>.broadcast();
     _subscriptions[subscriptionId] = controller;
-    
+
     // Send existing matching events
     for (final event in _storedEvents) {
       bool matches = false;
@@ -183,7 +184,7 @@ class TestNostrService implements INostrService {
         controller.add(event);
       }
     }
-    
+
     return controller.stream;
   }
 
@@ -193,7 +194,7 @@ class TestNostrService implements INostrService {
     int? limit,
   }) async {
     final matchingEvents = <Event>[];
-    
+
     for (final event in _storedEvents) {
       bool matches = false;
       for (final filter in filters) {
@@ -213,7 +214,7 @@ class TestNostrService implements INostrService {
         }
       }
     }
-    
+
     return matchingEvents;
   }
 
@@ -229,23 +230,23 @@ class TestNostrService implements INostrService {
 
   @override
   List<String> get connectedRelays => _isConnected ? ['wss://test.relay'] : [];
-  
+
   @override
   Future<bool> addRelay(String relayUrl) async {
     // No-op for tests
     return true;
   }
-  
+
   @override
   Future<void> removeRelay(String relayUrl) async {
     // No-op for tests
   }
-  
+
   @override
   Map<String, bool> getRelayStatus() {
     return {'wss://test.relay': _isConnected};
   }
-  
+
   @override
   Future<void> reconnectAll() async {
     _isConnected = true;
@@ -263,13 +264,14 @@ class TestNostrService implements INostrService {
   }
 
   @override
-  bool get isVineRelayAuthenticated => isRelayAuthenticated('wss://relay3.openvine.co');
+  bool get isVineRelayAuthenticated =>
+      isRelayAuthenticated('wss://relay3.openvine.co');
 
   @override
   void setAuthTimeout(Duration timeout) {
     // No-op for tests
   }
-  
+
   void clearPersistedAuthStates() {
     // Clear test auth states
     _relayAuthStates.clear();
@@ -281,6 +283,7 @@ class TestNostrService implements INostrService {
     _isConnected = true;
   }
 
+  @override
   Future<void> dispose() async {
     _isConnected = false;
     for (final controller in _subscriptions.values) {
@@ -289,16 +292,16 @@ class TestNostrService implements INostrService {
     _subscriptions.clear();
     await _authStateController.close();
   }
-  
+
   // Test helpers
   void addTestEvent(Event event) {
     _storedEvents.add(event);
   }
-  
+
   void clearTestEvents() {
     _storedEvents.clear();
   }
-  
+
   void setRelayAuthState(String relayUrl, bool isAuthenticated) {
     _relayAuthStates[relayUrl] = isAuthenticated;
     _authStateController.add(Map.from(_relayAuthStates));

@@ -215,5 +215,4 @@ class _AnimatedNotificationBadgeState extends State<AnimatedNotificationBadge>
       ],
     );
   }
-  
 }

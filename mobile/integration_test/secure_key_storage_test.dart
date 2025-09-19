@@ -18,7 +18,7 @@ void main() {
       // Clear SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      
+
       keyManager = NostrKeyManager();
     });
 
@@ -26,7 +26,8 @@ void main() {
       await keyManager.clearKeys();
     });
 
-    testWidgets('should initialize and generate keys on device', (tester) async {
+    testWidgets('should initialize and generate keys on device',
+        (tester) async {
       // Initialize
       await keyManager.initialize();
       expect(keyManager.isInitialized, isTrue);
@@ -47,11 +48,14 @@ void main() {
       expect(newKeyManager.publicKey, equals(keyPair.public));
     });
 
-    testWidgets('should migrate legacy keys from SharedPreferences', (tester) async {
+    testWidgets('should migrate legacy keys from SharedPreferences',
+        (tester) async {
       // Set up legacy keys
-      const privateKey = '5dab4a6cf3b8c9b8d3c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7';
-      const publicKey = '8c3d5cd6e977f6ad8e5e85029f3d3e00c7ae263849f2e44e9dd1dd66e4a45c13';
-      
+      const privateKey =
+          '5dab4a6cf3b8c9b8d3c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7';
+      const publicKey =
+          '8c3d5cd6e977f6ad8e5e85029f3d3e00c7ae263849f2e44e9dd1dd66e4a45c13';
+
       final legacyKeyData = {
         'private': privateKey,
         'public': publicKey,
@@ -74,9 +78,10 @@ void main() {
 
     testWidgets('should import and export keys', (tester) async {
       await keyManager.initialize();
-      
+
       // Import key
-      const testPrivateKey = '5dab4a6cf3b8c9b8d3c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7';
+      const testPrivateKey =
+          '5dab4a6cf3b8c9b8d3c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7';
       final imported = await keyManager.importPrivateKey(testPrivateKey);
       expect(imported.private, equals(testPrivateKey));
       expect(keyManager.hasKeys, isTrue);
@@ -109,7 +114,8 @@ void main() {
       storageService.dispose();
     });
 
-    testWidgets('should generate and store keys with platform security', (tester) async {
+    testWidgets('should generate and store keys with platform security',
+        (tester) async {
       // Generate keys
       final keyContainer = await storageService.generateAndStoreKeys();
       expect(keyContainer, isNotNull);
@@ -119,7 +125,7 @@ void main() {
 
       // Verify persistence
       expect(await storageService.hasKeys(), isTrue);
-      
+
       // Retrieve keys
       final retrieved = await storageService.getKeyContainer();
       expect(retrieved, isNotNull);

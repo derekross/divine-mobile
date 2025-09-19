@@ -32,7 +32,8 @@ class _CameraControlsOverlayState extends State<CameraControlsOverlay> {
       return const SizedBox.shrink();
     }
 
-    final enhancedCamera = widget.cameraInterface as EnhancedMobileCameraInterface;
+    final enhancedCamera =
+        widget.cameraInterface as EnhancedMobileCameraInterface;
     final isRecording = widget.recordingState == VineRecordingState.recording;
 
     return Stack(
@@ -47,8 +48,8 @@ class _CameraControlsOverlayState extends State<CameraControlsOverlay> {
             },
             onScaleUpdate: (details) {
               if (!isRecording && details.scale != 1.0) {
-                final newZoom = (_currentZoom + (details.scale - 1) * 0.1)
-                    .clamp(0.0, 1.0);
+                final newZoom =
+                    (_currentZoom + (details.scale - 1) * 0.1).clamp(0.0, 1.0);
                 setState(() => _currentZoom = newZoom);
                 enhancedCamera.setZoom(newZoom);
               }
@@ -107,7 +108,8 @@ class _CameraControlsOverlayState extends State<CameraControlsOverlay> {
                         activeTrackColor: VineTheme.vineGreen,
                         inactiveTrackColor: Colors.white24,
                         thumbColor: VineTheme.vineGreen,
-                        overlayColor: VineTheme.vineGreen.withValues(alpha: 0.3),
+                        overlayColor:
+                            VineTheme.vineGreen.withValues(alpha: 0.3),
                         thumbShape: const RoundSliderThumbShape(
                           enabledThumbRadius: 8,
                         ),
@@ -140,7 +142,8 @@ class _CameraControlsOverlayState extends State<CameraControlsOverlay> {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(20),

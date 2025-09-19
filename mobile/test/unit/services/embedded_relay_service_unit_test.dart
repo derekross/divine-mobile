@@ -24,7 +24,8 @@ void main() {
     test('service has correct initial state', () {
       expect(embeddedRelayService.isInitialized, isFalse);
       expect(embeddedRelayService.isDisposed, isFalse);
-      expect(embeddedRelayService.relayCount, equals(1)); // Should include embedded relay
+      expect(embeddedRelayService.relayCount,
+          equals(1)); // Should include embedded relay
       expect(embeddedRelayService.connectedRelayCount, equals(1));
       expect(embeddedRelayService.relays, contains('ws://localhost:7447'));
       expect(embeddedRelayService.primaryRelay, equals('ws://localhost:7447'));
@@ -40,7 +41,7 @@ void main() {
       final statuses = embeddedRelayService.relayStatuses;
       expect(statuses, isNotEmpty);
       expect(statuses.containsKey('ws://localhost:7447'), isTrue);
-      
+
       final embeddedStatus = statuses['ws://localhost:7447'];
       expect(embeddedStatus['connected'], isTrue);
     });
@@ -48,24 +49,26 @@ void main() {
     test('service provides relay auth states', () {
       final authStates = embeddedRelayService.relayAuthStates;
       expect(authStates, isA<Map<String, bool>>());
-      
+
       // Auth states stream should be available
       expect(embeddedRelayService.authStateStream, isNotNull);
-      
+
       // Should report vine relay authentication
       expect(embeddedRelayService.isVineRelayAuthenticated, isA<bool>());
     });
 
     test('service can add external relays', () async {
       final initialCount = embeddedRelayService.relayCount;
-      
+
       // Adding embedded relay URL should return false (already present)
-      final addedSame = await embeddedRelayService.addRelay('ws://localhost:7447');
+      final addedSame =
+          await embeddedRelayService.addRelay('ws://localhost:7447');
       expect(addedSame, isFalse);
       expect(embeddedRelayService.relayCount, equals(initialCount));
-      
+
       // Adding external relay should work (though may not fully connect in unit test)
-      final addedExternal = await embeddedRelayService.addRelay('wss://localhost:8081');
+      final addedExternal =
+          await embeddedRelayService.addRelay('wss://localhost:8081');
       expect(addedExternal, isA<bool>());
     });
 
@@ -73,7 +76,7 @@ void main() {
       // Cannot remove embedded relay
       await embeddedRelayService.removeRelay('ws://localhost:7447');
       expect(embeddedRelayService.relays, contains('ws://localhost:7447'));
-      
+
       // Can remove external relays (if any were added)
       // This just tests the method doesn't throw
       await embeddedRelayService.removeRelay('wss://nonexistent.com');
@@ -83,33 +86,37 @@ void main() {
       final status = embeddedRelayService.getRelayStatus();
       expect(status, isA<Map<String, bool>>());
       expect(status['ws://localhost:7447'], isTrue);
-      
-      expect(embeddedRelayService.isRelayAuthenticated('ws://localhost:7447'), isA<bool>());
+
+      expect(embeddedRelayService.isRelayAuthenticated('ws://localhost:7447'),
+          isA<bool>());
     });
 
     test('service can handle auth timeout setting', () {
       // Should not throw - method is no-op for embedded relay
-      expect(() => embeddedRelayService.setAuthTimeout(Duration(seconds: 30)), returnsNormally);
+      expect(() => embeddedRelayService.setAuthTimeout(Duration(seconds: 30)),
+          returnsNormally);
     });
 
     test('service can be disposed', () {
       expect(embeddedRelayService.isDisposed, isFalse);
-      
+
       embeddedRelayService.dispose();
       expect(embeddedRelayService.isDisposed, isTrue);
-      
+
       // Second dispose should be safe
       expect(() => embeddedRelayService.dispose(), returnsNormally);
     });
 
     test('disposed service throws on operations', () async {
       embeddedRelayService.dispose();
-      
+
       // Operations on disposed service should throw
-      expect(() => embeddedRelayService.subscribeToEvents(filters: []), throwsStateError);
-      
+      expect(() => embeddedRelayService.subscribeToEvents(filters: []),
+          throwsStateError);
+
       // broadcastEvent with null should throw (either StateError or TypeError)
-      expect(() => embeddedRelayService.broadcastEvent(null as dynamic), throwsA(isA<Error>()));
+      expect(() => embeddedRelayService.broadcastEvent(null as dynamic),
+          throwsA(isA<Error>()));
     });
 
     test('service provides P2P functionality interface', () async {

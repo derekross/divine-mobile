@@ -199,7 +199,7 @@ class ProfileStatsNotifier extends _$ProfileStatsNotifier {
     await Future.microtask(() {
       state = state.copyWith(isLoading: true, error: null);
     });
-    
+
     try {
       final stats = await ref.read(profileStatsProvider(pubkey).future);
       state = state.copyWith(

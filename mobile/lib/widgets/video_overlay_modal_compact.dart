@@ -30,7 +30,8 @@ class VideoOverlayModalCompact extends ConsumerStatefulWidget {
       _VideoOverlayModalCompactState();
 }
 
-class _VideoOverlayModalCompactState extends ConsumerState<VideoOverlayModalCompact>
+class _VideoOverlayModalCompactState
+    extends ConsumerState<VideoOverlayModalCompact>
     with TickerProviderStateMixin {
   late PageController _pageController;
   late int _currentIndex;

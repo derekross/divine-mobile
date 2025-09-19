@@ -15,7 +15,7 @@ import 'package:openvine/utils/unified_logger.dart';
 
 /// Service for managing user profiles from Nostr kind 0 events
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class UserProfileService  {
+class UserProfileService {
   UserProfileService(this._nostrService,
       {required SubscriptionManager subscriptionManager})
       : _subscriptionManager = subscriptionManager;
@@ -131,7 +131,6 @@ class UserProfileService  {
         'Updated cached profile for ${profile.pubkey.substring(0, 8)}: ${profile.bestDisplayName}',
         name: 'UserProfileService',
         category: LogCategory.system);
-
   }
 
   /// Initialize the profile service
@@ -233,12 +232,21 @@ class UserProfileService  {
 
     try {
       _pendingRequests.add(pubkey);
-      Log.verbose(
-          '🔍 DEBUG: Starting profile fetch for user: ${pubkey.substring(0, 8)}...',
+      Log.info(
+          '🔍 Starting profile fetch for user: ${pubkey.substring(0, 8)}...',
           name: 'UserProfileService',
           category: LogCategory.system);
-      Log.info('🔍 DEBUG: forceRefresh=$forceRefresh',
+      Log.info('  - Force refresh: $forceRefresh',
           name: 'UserProfileService', category: LogCategory.system);
+      Log.info('  - Has cached profile: ${_profileCache.containsKey(pubkey)}',
+          name: 'UserProfileService', category: LogCategory.system);
+      if (_profileCache.containsKey(pubkey)) {
+        final cached = _profileCache[pubkey]!;
+        Log.info('  - Cached eventId: ${cached.eventId}',
+            name: 'UserProfileService', category: LogCategory.system);
+        Log.info('  - Cached name: ${cached.name}',
+            name: 'UserProfileService', category: LogCategory.system);
+      }
 
       // Create filter for kind 0 events from this user
       final filter = Filter(
@@ -254,7 +262,8 @@ class UserProfileService  {
         onEvent: _handleProfileEvent,
         onError: (error) => _handleProfileError(pubkey, error),
         onComplete: () => _handleProfileComplete(pubkey),
-        priority: 1, // Highest priority for individual profile fetches (user-facing)
+        priority:
+            1, // Highest priority for individual profile fetches (user-facing)
       );
 
       _activeSubscriptionIds[pubkey] = subscriptionId;
@@ -305,14 +314,32 @@ class UserProfileService  {
             name: 'UserProfileService', category: LogCategory.system);
         Log.info('  - Existing createdAt: ${existingProfile.createdAt}',
             name: 'UserProfileService', category: LogCategory.system);
+        Log.info('  - New eventId: ${profile.eventId}',
+            name: 'UserProfileService', category: LogCategory.system);
         Log.info('  - New createdAt: ${profile.createdAt}',
             name: 'UserProfileService', category: LogCategory.system);
 
-        if (existingProfile.createdAt.isAfter(profile.createdAt)) {
+        // Accept the new profile if:
+        // 1. It has a different event ID (definitely a new event)
+        // 2. OR it has a newer or equal timestamp (allow same-second updates)
+        final isDifferentEvent = existingProfile.eventId != profile.eventId;
+        final isNewerOrSame = !existingProfile.createdAt.isAfter(profile.createdAt);
+        
+        if (!isDifferentEvent && !isNewerOrSame) {
           Log.warning('⚠️ Received older profile event, ignoring',
+              name: 'UserProfileService', category: LogCategory.system);
+          Log.warning('  - Keeping existing event: ${existingProfile.eventId}',
               name: 'UserProfileService', category: LogCategory.system);
           _cleanupProfileRequest(event.pubkey);
           return;
+        }
+        
+        if (isDifferentEvent) {
+          Log.info('✅ Different event ID - accepting new profile',
+              name: 'UserProfileService', category: LogCategory.system);
+        } else if (isNewerOrSame) {
+          Log.info('✅ Same or newer timestamp - accepting profile update',
+              name: 'UserProfileService', category: LogCategory.system);
         }
       }
 
@@ -330,7 +357,6 @@ class UserProfileService  {
           '✅ Cached profile for ${event.pubkey.substring(0, 8)}: ${profile.bestDisplayName}',
           name: 'UserProfileService',
           category: LogCategory.system);
-
     } catch (e) {
       Log.error('Error parsing profile event: $e',
           name: 'UserProfileService', category: LogCategory.system);
@@ -386,7 +412,8 @@ class UserProfileService  {
 
     // Simple rate-limit: ignore if last prefetch finished very recently (< 1s)
     if (_lastPrefetchAt != null &&
-        DateTime.now().difference(_lastPrefetchAt!) < const Duration(seconds: 1)) {
+        DateTime.now().difference(_lastPrefetchAt!) <
+            const Duration(seconds: 1)) {
       Log.debug('Prefetch suppressed: rate limit within 1s',
           name: 'UserProfileService', category: LogCategory.system);
       return;
@@ -400,7 +427,8 @@ class UserProfileService  {
       final filter = Filter(
         kinds: [0],
         authors: pubkeysToFetch,
-        limit: math.min(pubkeysToFetch.length, 100), // Smaller batches for immediate fetch
+        limit: math.min(
+            pubkeysToFetch.length, 100), // Smaller batches for immediate fetch
       );
 
       // Track which profiles we're fetching in this batch
@@ -418,8 +446,10 @@ class UserProfileService  {
         priority: 0, // Highest priority for immediate prefetch
       );
 
-      Log.debug('⚡ Sent immediate prefetch request for ${pubkeysToFetch.length} profiles',
-          name: 'UserProfileService', category: LogCategory.system);
+      Log.debug(
+          '⚡ Sent immediate prefetch request for ${pubkeysToFetch.length} profiles',
+          name: 'UserProfileService',
+          category: LogCategory.system);
     } catch (e) {
       Log.error('Failed to prefetch profiles: $e',
           name: 'UserProfileService', category: LogCategory.system);
@@ -449,8 +479,10 @@ class UserProfileService  {
         markProfileAsMissing(pubkey);
       }
     } else {
-      Log.debug('⚡ Prefetch completed - all ${batchPubkeys.length} profiles fetched',
-          name: 'UserProfileService', category: LogCategory.system);
+      Log.debug(
+          '⚡ Prefetch completed - all ${batchPubkeys.length} profiles fetched',
+          name: 'UserProfileService',
+          category: LogCategory.system);
     }
 
     // Clean up pending requests for this batch
@@ -511,7 +543,7 @@ class UserProfileService  {
       return;
     }
 
-    // Debounce: reduced delay for faster profile loading 
+    // Debounce: reduced delay for faster profile loading
     _batchDebounceTimer =
         Timer(const Duration(milliseconds: 50), _executeBatchFetch);
   }
@@ -643,7 +675,6 @@ class UserProfileService  {
   /// Remove specific profile from cache
   void removeProfile(String pubkey) {
     if (_profileCache.remove(pubkey) != null) {
-
       Log.debug('📱️ Removed profile from cache: ${pubkey.substring(0, 8)}...',
           name: 'UserProfileService', category: LogCategory.system);
     }
@@ -678,6 +709,12 @@ class UserProfileService  {
         'isInitialized': _isInitialized,
       };
 
+  /// Test helper method to process profile events directly
+  /// Only for testing purposes
+  void handleProfileEventForTesting(Event event) {
+    _handleProfileEvent(event);
+  }
+
   void dispose() {
     // Cancel batch operations
     _batchDebounceTimer?.cancel();
@@ -701,7 +738,7 @@ class UserProfileService  {
     _pendingBatchPubkeys.clear();
     _knownMissingProfiles.clear();
     _missingProfileRetryAfter.clear();
-    
+
     Log.debug('🗑️ UserProfileService disposed',
         name: 'UserProfileService', category: LogCategory.system);
   }

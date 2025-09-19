@@ -63,7 +63,7 @@ class _ExploreVideoScreenState extends ConsumerState<ExploreVideoScreen> {
   void dispose() {
     _pageController.dispose();
     _pauseAllVideos();
-    
+
     super.dispose();
   }
 
@@ -240,13 +240,13 @@ class _ExploreVideoScreenState extends ConsumerState<ExploreVideoScreen> {
                     width: double.infinity,
                     height: double.infinity,
                     color: Colors.black,
-                  child: VideoFeedItem(
-                    video: video,
-                    isActive: isActive,
-                    forceInfoBelow: true,
-                  ),
-                );
-              },
-            ),
+                    child: VideoFeedItem(
+                      video: video,
+                      isActive: isActive,
+                      forceInfoBelow: true,
+                    ),
+                  );
+                },
+              ),
       );
 }

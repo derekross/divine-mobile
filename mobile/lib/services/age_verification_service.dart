@@ -6,7 +6,7 @@ import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/widgets/age_verification_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class AgeVerificationService  {
+class AgeVerificationService {
   static const String _ageVerifiedKey = 'age_verified';
   static const String _verificationDateKey = 'age_verification_date';
   static const String _adultContentVerifiedKey = 'adult_content_verified';
@@ -43,8 +43,6 @@ class AgeVerificationService  {
         _adultContentVerificationDate =
             DateTime.fromMillisecondsSinceEpoch(adultDateMillis);
       }
-
-
     } catch (e) {
       Log.error('Error loading age verification status: $e',
           name: 'AgeVerificationService', category: LogCategory.system);
@@ -67,7 +65,6 @@ class AgeVerificationService  {
       }
 
       _isAgeVerified = verified;
-
 
       Log.debug('Age verification status updated: $verified',
           name: 'AgeVerificationService', category: LogCategory.system);
@@ -102,7 +99,6 @@ class AgeVerificationService  {
       }
 
       _isAdultContentVerified = verified;
-
 
       Log.debug('Adult content verification status updated: $verified',
           name: 'AgeVerificationService', category: LogCategory.system);
@@ -155,7 +151,6 @@ class AgeVerificationService  {
       _verificationDate = null;
       _isAdultContentVerified = null;
       _adultContentVerificationDate = null;
-
 
       Log.debug('Age verification status cleared',
           name: 'AgeVerificationService', category: LogCategory.system);
