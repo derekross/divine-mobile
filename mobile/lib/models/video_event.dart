@@ -469,11 +469,11 @@ class VideoEvent {
     final aLoops = a.originalLoops;
     final bLoops = b.originalLoops;
 
-    final aHasLoops = aLoops != null;
-    final bHasLoops = bLoops != null;
+    final aHasLoops = aLoops != null && aLoops > 0;
+    final bHasLoops = bLoops != null && bLoops > 0;
 
     if (aHasLoops != bHasLoops) {
-      // Items without loop count should come first
+      // Items without loop count (or zero loops) should come first
       return aHasLoops ? 1 : -1;
     }
 

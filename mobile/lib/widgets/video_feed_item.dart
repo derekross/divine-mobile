@@ -15,6 +15,8 @@ import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/widgets/share_video_menu.dart';
 import 'package:openvine/widgets/video_metrics_tracker.dart';
 import 'package:openvine/main.dart';
+import 'package:openvine/utils/string_utils.dart';
+import 'package:openvine/widgets/clickable_hashtag_text.dart';
 
 /// Video feed item using individual controller architecture
 class VideoFeedItem extends ConsumerStatefulWidget {
@@ -25,6 +27,7 @@ class VideoFeedItem extends ConsumerStatefulWidget {
     this.onTap,
     this.forceShowOverlay = false,
     this.hasBottomNavigation = true,
+    this.contextTitle,
   });
 
   final VideoEvent video;
@@ -32,6 +35,7 @@ class VideoFeedItem extends ConsumerStatefulWidget {
   final VoidCallback? onTap;
   final bool forceShowOverlay;
   final bool hasBottomNavigation;
+  final String? contextTitle;
 
   @override
   ConsumerState<VideoFeedItem> createState() => _VideoFeedItemState();
@@ -40,6 +44,7 @@ class VideoFeedItem extends ConsumerStatefulWidget {
 class _VideoFeedItemState extends ConsumerState<VideoFeedItem> {
   Offset? _tapStartPosition;
   DateTime? _tapStartTime;
+  int _playbackGeneration = 0; // Prevents race conditions with rapid state changes
 
   /// Translate error messages to user-friendly text
   static String _getErrorMessage(String? errorDescription) {
@@ -64,6 +69,101 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem> {
     }
 
     return 'Video playback error';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen for active state changes to control playback
+    // Widget is responsible for play/pause, NOT the provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Check initial state and start playback if already active
+      final isActive = ref.read(isVideoActiveProvider(widget.video.id));
+      if (isActive) {
+        _handlePlaybackChange(true);
+      }
+
+      // Listen for future changes
+      ref.listenManual(
+        isVideoActiveProvider(widget.video.id),
+        (prev, next) => _handlePlaybackChange(next),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    // CRITICAL: Always pause video when widget is disposed
+    // This ensures videos don't play in background tabs
+    try {
+      final controllerParams = VideoControllerParams(
+        videoId: widget.video.id,
+        videoUrl: widget.video.videoUrl!,
+        videoEvent: widget.video,
+      );
+      final controller = ref.read(individualVideoControllerProvider(controllerParams));
+
+      if (controller.value.isPlaying) {
+        final videoIdDisplay = widget.video.id.length > 8 ? widget.video.id.substring(0, 8) : widget.video.id;
+        Log.info('⏸️ Pausing video $videoIdDisplay... on widget dispose',
+            name: 'VideoFeedItem', category: LogCategory.ui);
+        controller.pause(); // Fire and forget - widget is disposing
+      }
+    } catch (e) {
+      Log.error('❌ Error pausing video on dispose: $e',
+          name: 'VideoFeedItem', category: LogCategory.ui);
+    }
+
+    super.dispose();
+  }
+
+  /// Handle playback state changes with generation counter to prevent race conditions
+  void _handlePlaybackChange(bool shouldPlay) {
+    final gen = ++_playbackGeneration;
+    final videoIdDisplay = widget.video.id.length > 8 ? widget.video.id.substring(0, 8) : widget.video.id;
+
+    try {
+      final controllerParams = VideoControllerParams(
+        videoId: widget.video.id,
+        videoUrl: widget.video.videoUrl!,
+        videoEvent: widget.video,
+      );
+      final controller = ref.read(individualVideoControllerProvider(controllerParams));
+
+      if (shouldPlay && controller.value.isInitialized && !controller.value.isPlaying) {
+        Log.info('▶️ Widget starting video $videoIdDisplay...',
+            name: 'VideoFeedItem', category: LogCategory.ui);
+        controller.play().then((_) {
+          if (gen != _playbackGeneration) {
+            Log.debug('⏭️ Ignoring stale play() completion for $videoIdDisplay...',
+                name: 'VideoFeedItem', category: LogCategory.ui);
+          }
+        }).catchError((error) {
+          if (gen == _playbackGeneration) {
+            Log.error('❌ Widget failed to play video $videoIdDisplay...: $error',
+                name: 'VideoFeedItem', category: LogCategory.ui);
+          }
+        });
+      } else if (!shouldPlay && controller.value.isPlaying) {
+        Log.info('⏸️ Widget pausing video $videoIdDisplay...',
+            name: 'VideoFeedItem', category: LogCategory.ui);
+        controller.pause().then((_) {
+          if (gen != _playbackGeneration) {
+            Log.debug('⏭️ Ignoring stale pause() completion for $videoIdDisplay...',
+                name: 'VideoFeedItem', category: LogCategory.ui);
+          }
+        }).catchError((error) {
+          if (gen == _playbackGeneration) {
+            Log.error('❌ Widget failed to pause video $videoIdDisplay...: $error',
+                name: 'VideoFeedItem', category: LogCategory.ui);
+          }
+        });
+      }
+    } catch (e) {
+      Log.error('❌ Error in playback change handler: $e',
+          name: 'VideoFeedItem', category: LogCategory.ui);
+    }
   }
 
   @override
@@ -287,6 +387,7 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem> {
                 video: video,
                 isVisible: widget.forceShowOverlay || isActive,
                 hasBottomNavigation: widget.hasBottomNavigation,
+                contextTitle: widget.contextTitle,
               ),
             ],
           ),
@@ -304,11 +405,13 @@ class VideoOverlayActions extends ConsumerWidget {
     required this.video,
     required this.isVisible,
     this.hasBottomNavigation = true,
+    this.contextTitle,
   });
 
   final VideoEvent video;
   final bool isVisible;
   final bool hasBottomNavigation;
+  final String? contextTitle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -332,31 +435,68 @@ class VideoOverlayActions extends ConsumerWidget {
                   orElse: () => null,
                 ) ?? 'npub:${video.pubkey.length > 8 ? video.pubkey.substring(0, 8) : video.pubkey}';
 
-            return GestureDetector(
-              onTap: () {
-                try {
-                  mainNavigationKey.currentState?.navigateToProfile(video.pubkey);
-                } catch (_) {}
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.person, size: 14, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Text(
-                      display,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    try {
+                      mainNavigationKey.currentState?.navigateToProfile(video.pubkey);
+                    } catch (_) {}
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person, size: 14, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          display,
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                // Context title chip (e.g., hashtag)
+                if (contextTitle != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.tag, size: 14, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          contextTitle!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             );
           }),
         ),
@@ -381,14 +521,27 @@ class VideoOverlayActions extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Video title
-                Text(
-                  video.content.isNotEmpty ? video.content : video.title ?? 'Untitled',
+                // Video title with clickable hashtags
+                ClickableHashtagText(
+                  text: video.content.isNotEmpty ? video.content : video.title ?? 'Untitled',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     shadows: [
+                      Shadow(
+                        offset: Offset(1, 1),
+                        blurRadius: 2,
+                        color: Colors.black54,
+                      ),
+                    ],
+                  ),
+                  hashtagStyle: TextStyle(
+                    color: Colors.blue[300],
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                    shadows: const [
                       Shadow(
                         offset: Offset(1, 1),
                         blurRadius: 2,
@@ -403,7 +556,7 @@ class VideoOverlayActions extends ConsumerWidget {
                 // Show original loop count if available
                 if (video.originalLoops != null && video.originalLoops! > 0) ...[
                   Text(
-                    '🔁 ${video.originalLoops} loops',
+                    '🔁 ${StringUtils.formatCompactNumber(video.originalLoops!)} loops',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -461,7 +614,7 @@ class VideoOverlayActions extends ConsumerWidget {
               if (likeCount > 0 || (video.originalLikes != null && video.originalLikes! > 0)) ...[
                 const SizedBox(height: 4),
                 Text(
-                  '${likeCount + (video.originalLikes ?? 0)}',
+                  StringUtils.formatCompactNumber(likeCount + (video.originalLikes ?? 0)),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -500,7 +653,7 @@ class VideoOverlayActions extends ConsumerWidget {
               if (video.originalComments != null && video.originalComments! > 0) ...[
                 const SizedBox(height: 4),
                 Text(
-                  '${video.originalComments}',
+                  StringUtils.formatCompactNumber(video.originalComments!),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,

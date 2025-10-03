@@ -2401,6 +2401,8 @@ class VideoEventService extends ChangeNotifier {
         (event) {
           Log.debug('🔍 Received search event: ${event.id} kind=${event.kind}',
               name: 'VideoEventService', category: LogCategory.video);
+
+          // Parse video event (filter guarantees video kinds + reposts only)
           final videoEvent = VideoEvent.fromNostrEvent(event);
           if (_hasValidVideoUrl(videoEvent)) {
             _eventLists[SubscriptionType.search]?.add(videoEvent);

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openvine/utils/unified_logger.dart';
 import 'package:video_player/video_player.dart';
+import 'package:openvine/providers/app_providers.dart';
 
 /// Pure video metadata screen using revolutionary single-controller Riverpod architecture
 class VideoMetadataScreenPure extends ConsumerStatefulWidget {
@@ -339,7 +340,7 @@ class _VideoMetadataScreenPureState extends ConsumerState<VideoMetadataScreenPur
                         style: TextStyle(color: Colors.white),
                       ),
                       subtitle: Text(
-                        'Automatically delete after $_expirationHours hours',
+                        _isExpiringPost ? 'Delete after ${_formatExpirationDuration()}' : 'Post will not expire',
                         style: TextStyle(color: Colors.grey[400]),
                       ),
                       value: _isExpiringPost,
@@ -352,34 +353,36 @@ class _VideoMetadataScreenPureState extends ConsumerState<VideoMetadataScreenPur
                     ),
 
                     if (_isExpiringPost) ...[
-                      const SizedBox(height: 8),
-                      Container(
+                      const SizedBox(height: 16),
+                      Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Expires in:',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Slider(
-                                value: _expirationHours.toDouble(),
-                                min: 1,
-                                max: 168, // 1 week
-                                divisions: 167,
-                                label: '$_expirationHours hours',
-                                onChanged: (value) {
-                                  setState(() {
-                                    _expirationHours = value.round();
-                                  });
-                                },
-                                activeColor: Colors.green,
+                              'Delete after:',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _buildDurationButton('1 Day', 24),
+                                _buildDurationButton('1 Week', 168),
+                                _buildDurationButton('1 Month', 720),
+                                _buildDurationButton('1 Year', 8760),
+                                _buildDurationButton('1 Decade', 87600),
+                              ],
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(height: 8),
                     ],
                   ],
                 ),
@@ -414,6 +417,45 @@ class _VideoMetadataScreenPureState extends ConsumerState<VideoMetadataScreenPur
     return '${duration.inHours > 0 ? '${twoDigits(duration.inHours)}:' : ''}$twoDigitMinutes:$twoDigitSeconds';
   }
 
+  String _formatExpirationDuration() {
+    if (_expirationHours >= 87600) return '${(_expirationHours / 87600).round()} decade${_expirationHours >= 175200 ? 's' : ''}';
+    if (_expirationHours >= 8760) return '${(_expirationHours / 8760).round()} year${_expirationHours >= 17520 ? 's' : ''}';
+    if (_expirationHours >= 720) return '${(_expirationHours / 720).round()} month${_expirationHours >= 1440 ? 's' : ''}';
+    if (_expirationHours >= 168) return '${(_expirationHours / 168).round()} week${_expirationHours >= 336 ? 's' : ''}';
+    if (_expirationHours >= 24) return '${(_expirationHours / 24).round()} day${_expirationHours >= 48 ? 's' : ''}';
+    return '$_expirationHours hour${_expirationHours != 1 ? 's' : ''}';
+  }
+
+  Widget _buildDurationButton(String label, int hours) {
+    final isSelected = _expirationHours == hours;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _expirationHours = hours;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.green : Colors.grey[900],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.green : Colors.grey[700]!,
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[400],
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _publishVideo() async {
     setState(() {
       _isPublishing = true;
@@ -423,15 +465,65 @@ class _VideoMetadataScreenPureState extends ConsumerState<VideoMetadataScreenPur
       Log.info('📝 VideoMetadataScreenPure: Publishing video: ${widget.videoFile.path}',
           category: LogCategory.video);
 
-      // TODO: Implement video publishing with upload service
-      // For now, simulate upload
-      await Future.delayed(const Duration(seconds: 2));
+      // Get current user's pubkey
+      final authService = ref.read(authServiceProvider);
+      final pubkey = authService.currentPublicKeyHex;
+
+      if (pubkey == null) {
+        throw Exception('Not authenticated - cannot publish video');
+      }
+
+      // Get upload manager and video event publisher
+      final uploadManager = ref.read(uploadManagerProvider);
+      final videoEventPublisher = ref.read(videoEventPublisherProvider);
+
+      // Ensure upload manager is initialized
+      if (!uploadManager.isInitialized) {
+        Log.info('📝 Initializing upload manager...',
+            category: LogCategory.video);
+        await uploadManager.initialize();
+      }
+
+      // Start upload to Blossom
+      Log.info('📝 Starting upload to Blossom server...',
+          category: LogCategory.video);
+
+      final pendingUpload = await uploadManager.startUpload(
+        videoFile: widget.videoFile,
+        nostrPubkey: pubkey,
+        title: _titleController.text.trim().isEmpty
+            ? null
+            : _titleController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        hashtags: _hashtags.isEmpty ? null : _hashtags,
+        videoDuration: widget.duration,
+      );
+
+      Log.info('📝 Upload started, ID: ${pendingUpload.id}',
+          category: LogCategory.video);
+
+      // Publish Nostr event
+      Log.info('📝 Publishing Nostr event...',
+          category: LogCategory.video);
+
+      final published = await videoEventPublisher.publishDirectUpload(
+        pendingUpload,
+        expirationTimestamp: _isExpiringPost
+            ? DateTime.now().millisecondsSinceEpoch ~/ 1000 + (_expirationHours * 3600)
+            : null,
+      );
+
+      if (!published) {
+        throw Exception('Failed to publish Nostr event');
+      }
 
       Log.info('📝 Video publishing complete, returning to camera screen',
           category: LogCategory.video);
 
       if (mounted) {
-        // Just pop back to camera screen - let camera handle navigation to profile
+        // Success - pop back to camera screen
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -447,6 +539,7 @@ class _VideoMetadataScreenPureState extends ConsumerState<VideoMetadataScreenPur
           SnackBar(
             content: Text('Failed to publish video: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }

@@ -16,6 +16,7 @@ import 'package:openvine/services/content_deletion_service.dart';
 import 'package:openvine/services/content_reporting_service.dart';
 import 'package:openvine/services/curated_list_service.dart';
 import 'package:openvine/services/curation_service.dart';
+import 'package:openvine/services/draft_storage_service.dart';
 // Removed legacy explore_video_manager.dart import
 import 'package:openvine/providers/analytics_providers.dart';
 import 'package:openvine/services/hashtag_service.dart';
@@ -165,6 +166,13 @@ Nip05Service nip05Service(Ref ref) {
   return Nip05Service();
 }
 
+/// Draft storage service for persisting vine drafts
+@riverpod
+Future<DraftStorageService> draftStorageService(Ref ref) async {
+  final prefs = await ref.watch(sharedPreferencesProvider.future);
+  return DraftStorageService(prefs);
+}
+
 // (Removed duplicate legacy provider for StreamUploadService)
 
 // =============================================================================
@@ -249,6 +257,12 @@ UserProfileService userProfileService(Ref ref) {
     subscriptionManager: subscriptionManager,
   );
   service.setPersistentCache(profileCache);
+
+  // Inject profile cache lookup into SubscriptionManager to avoid redundant relay requests
+  subscriptionManager.setCacheLookup(
+    hasProfileCached: service.hasProfile,
+  );
+
   return service;
 }
 

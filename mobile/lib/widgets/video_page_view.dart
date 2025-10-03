@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/providers/individual_video_providers.dart';
+import 'package:openvine/providers/tab_visibility_provider.dart';
 import 'package:openvine/widgets/video_feed_item.dart';
 import 'package:openvine/utils/unified_logger.dart';
 
@@ -28,6 +29,8 @@ class VideoPageView extends ConsumerStatefulWidget {
     this.enablePrewarming = true,
     this.enablePreloading = false,
     this.enableLifecycleManagement = true,
+    this.tabIndex,
+    this.contextTitle,
     this.onPageChanged,
     this.onLoadMore,
     this.onRefresh,
@@ -40,6 +43,8 @@ class VideoPageView extends ConsumerStatefulWidget {
   final bool enablePrewarming;
   final bool enablePreloading;
   final bool enableLifecycleManagement;
+  final int? tabIndex; // Tab index this VideoPageView belongs to (for tab visibility checking)
+  final String? contextTitle; // Optional context title to display (e.g., "#funny")
   final void Function(int index, VideoEvent video)? onPageChanged;
   final VoidCallback? onLoadMore;
   final Future<void> Function()? onRefresh;
@@ -52,20 +57,60 @@ class _VideoPageViewState extends ConsumerState<VideoPageView> {
   late PageController _pageController;
   int _currentIndex = 0;
 
+  /// Check if this VideoPageView's tab is currently visible
+  bool get _isTabVisible {
+    // If no tab index specified, assume always visible (e.g., standalone screens like ExploreVideoScreenPure)
+    if (widget.tabIndex == null) return true;
+
+    // Check if our tab is the active tab
+    final activeTab = ref.read(tabVisibilityProvider);
+    return activeTab == widget.tabIndex;
+  }
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = widget.controller ?? PageController(initialPage: widget.initialIndex);
 
-    // Set initial active video
+    // Set initial active video ONLY if this tab is visible
     if (widget.enableLifecycleManagement) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_currentIndex >= 0 && _currentIndex < widget.videos.length) {
+        if (_isTabVisible && _currentIndex >= 0 && _currentIndex < widget.videos.length) {
           ref.read(activeVideoProvider.notifier)
               .setActiveVideo(widget.videos[_currentIndex].id);
           if (widget.enablePrewarming) {
             _prewarmNeighbors(_currentIndex);
+          }
+        }
+      });
+    }
+
+    // Listen for tab visibility changes to rebuild VideoFeedItems when tab becomes visible
+    if (widget.tabIndex != null) {
+      ref.listenManual(tabVisibilityProvider, (prev, next) {
+        final wasVisible = prev == widget.tabIndex;
+        final isVisibleNow = next == widget.tabIndex;
+
+        // Rebuild when visibility changes
+        if (wasVisible != isVisibleNow) {
+          Log.debug('🔄 Tab visibility changed for tab ${widget.tabIndex}: $wasVisible -> $isVisibleNow',
+              name: 'VideoPageView', category: LogCategory.video);
+
+          if (mounted) {
+            setState(() {
+              // Trigger rebuild to switch between placeholders and VideoFeedItems
+            });
+
+            // If tab became visible, set active video
+            if (isVisibleNow && widget.enableLifecycleManagement) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_currentIndex >= 0 && _currentIndex < widget.videos.length) {
+                  ref.read(activeVideoProvider.notifier)
+                      .setActiveVideo(widget.videos[_currentIndex].id);
+                }
+              });
+            }
           }
         }
       });
@@ -114,21 +159,24 @@ class _VideoPageViewState extends ConsumerState<VideoPageView> {
   }
 
   void _handlePageChanged(int index) {
-    Log.debug('📄 VideoPageView: Page changed to index $index',
+    Log.debug('📄 VideoPageView: Page changed to index $index (tabVisible: $_isTabVisible)',
         name: 'VideoPageView', category: LogCategory.video);
     setState(() => _currentIndex = index);
 
     if (index >= 0 && index < widget.videos.length) {
       final video = widget.videos[index];
 
-      // Update active video
-      if (widget.enableLifecycleManagement) {
+      // Update active video ONLY if this tab is visible
+      if (widget.enableLifecycleManagement && _isTabVisible) {
         try {
           ref.read(activeVideoProvider.notifier).setActiveVideo(video.id);
         } catch (e) {
           Log.error('Error setting active video: $e',
               name: 'VideoPageView', category: LogCategory.video);
         }
+      } else if (!_isTabVisible) {
+        Log.debug('⏭️ Skipping setActiveVideo - tab not visible (tab ${widget.tabIndex} vs active ${ref.read(tabVisibilityProvider)})',
+            name: 'VideoPageView', category: LogCategory.video);
       }
 
       // Prewarm neighbors
@@ -151,7 +199,8 @@ class _VideoPageViewState extends ConsumerState<VideoPageView> {
         'hasClients=${_pageController.hasClients}, '
         'position=${_pageController.hasClients ? _pageController.position.pixels : "no position"}, '
         'videoCount=${widget.videos.length}, '
-        'hasBottomNav=${widget.hasBottomNavigation}',
+        'hasBottomNav=${widget.hasBottomNavigation}, '
+        'tabVisible=$_isTabVisible',
         name: 'VideoPageView', category: LogCategory.video);
 
     return PageView.builder(
@@ -163,11 +212,24 @@ class _VideoPageViewState extends ConsumerState<VideoPageView> {
           itemBuilder: (context, index) {
             if (index >= widget.videos.length) return const SizedBox.shrink();
 
+            // CRITICAL: Only build VideoFeedItem (which creates controllers) when tab is visible
+            // When tab is not visible, build lightweight placeholder to prevent controller creation
+            if (!_isTabVisible) {
+              return Container(
+                key: ValueKey('placeholder-${widget.videos[index].id}'),
+                color: Colors.black,
+                child: const Center(
+                  child: SizedBox.shrink(), // Empty placeholder when tab not visible
+                ),
+              );
+            }
+
             return VideoFeedItem(
               key: ValueKey('video-${widget.videos[index].id}'),
               video: widget.videos[index],
               index: index,
               hasBottomNavigation: widget.hasBottomNavigation,
+              contextTitle: widget.contextTitle,
             );
           },
         );

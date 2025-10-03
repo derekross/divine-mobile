@@ -159,11 +159,11 @@ void main() {
       test('should format counts correctly', () {
         expect(formatProfileStatsCount(0), '0');
         expect(formatProfileStatsCount(999), '999');
-        expect(formatProfileStatsCount(1000), '1.0K');
-        expect(formatProfileStatsCount(1500), '1.5K');
-        expect(formatProfileStatsCount(1000000), '1.0M');
+        expect(formatProfileStatsCount(1000), '1k');
+        expect(formatProfileStatsCount(1500), '1.5k');
+        expect(formatProfileStatsCount(1000000), '1M');
         expect(formatProfileStatsCount(2500000), '2.5M');
-        expect(formatProfileStatsCount(1000000000), '1.0B');
+        expect(formatProfileStatsCount(1000000000), '1B');
         expect(formatProfileStatsCount(3200000000), '3.2B');
       });
     });

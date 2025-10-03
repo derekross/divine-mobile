@@ -597,6 +597,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
         enablePrewarming: true,
         enablePreloading: true,
         enableLifecycleManagement: false,  // Match explore feed to avoid IndexedStack conflicts
+        tabIndex: 0, // Home feed is tab 0
         onPageChanged: (index, video) {
           setState(() => _currentIndex = index);
           _onPageChanged(index);

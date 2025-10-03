@@ -77,6 +77,7 @@ class _ExploreVideoScreenPureState extends ConsumerState<ExploreVideoScreenPure>
       enablePrewarming: true,
       enablePreloading: false, // Explore screen doesn't need preloading
       enableLifecycleManagement: false, // Parent screen handles lifecycle
+      contextTitle: widget.contextTitle,
       onPageChanged: (index, video) {
         Log.debug('📄 Page changed to index $index (${video.id.substring(0, 8)}...)',
             name: 'ExploreVideoScreen', category: LogCategory.video);

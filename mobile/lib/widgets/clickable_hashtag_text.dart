@@ -62,7 +62,6 @@ class ClickableHashtagText extends StatelessWidget {
           color: Colors.blue,
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          decoration: TextDecoration.underline,
         );
 
     // Regular expression to find hashtags

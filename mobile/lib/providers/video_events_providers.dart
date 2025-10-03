@@ -64,6 +64,12 @@ class VideoEvents extends _$VideoEvents {
     final currentEvents =
         List<VideoEvent>.from(videoEventService.discoveryVideos);
 
+    Log.info(
+      'VideoEvents: Initial emission - ${currentEvents.length} events from service',
+      name: 'VideoEventsProvider',
+      category: LogCategory.video,
+    );
+
     // Reorder to show unseen videos first
     final seenVideosState = ref.watch(seenVideosProvider);
 
@@ -80,9 +86,31 @@ class VideoEvents extends _$VideoEvents {
 
     final reorderedEvents = [...unseen, ...seen];
 
-    if (_canEmit) {
-      _controller!.add(reorderedEvents);
-    }
+    Log.info(
+      'VideoEvents: Reordered for emission - ${reorderedEvents.length} total (${unseen.length} unseen, ${seen.length} seen)',
+      name: 'VideoEventsProvider',
+      category: LogCategory.video,
+    );
+
+    // Emit after a microtask to ensure the stream has subscribers
+    // This is critical for broadcast streams - synchronous emission before subscription
+    // results in data loss when the provider rebuilds
+    Future.microtask(() {
+      if (_canEmit) {
+        _controller!.add(reorderedEvents);
+        Log.info(
+          'VideoEvents: ✅ Emitted ${reorderedEvents.length} events to stream',
+          name: 'VideoEventsProvider',
+          category: LogCategory.video,
+        );
+      } else {
+        Log.error(
+          'VideoEvents: ❌ Cannot emit - controller unavailable',
+          name: 'VideoEventsProvider',
+          category: LogCategory.video,
+        );
+      }
+    });
 
     // Listen to VideoEventService changes reactively (proper Riverpod way)
     void onVideoEventServiceChange() {

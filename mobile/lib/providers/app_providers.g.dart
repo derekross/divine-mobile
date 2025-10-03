@@ -674,6 +674,53 @@ final class Nip05ServiceProvider
 
 String _$nip05ServiceHash() => r'b7f7e1471a3783305bf1070cb64f1b95c4bdb516';
 
+/// Draft storage service for persisting vine drafts
+
+@ProviderFor(draftStorageService)
+const draftStorageServiceProvider = DraftStorageServiceProvider._();
+
+/// Draft storage service for persisting vine drafts
+
+final class DraftStorageServiceProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<DraftStorageService>,
+          DraftStorageService,
+          FutureOr<DraftStorageService>
+        >
+    with
+        $FutureModifier<DraftStorageService>,
+        $FutureProvider<DraftStorageService> {
+  /// Draft storage service for persisting vine drafts
+  const DraftStorageServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'draftStorageServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$draftStorageServiceHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<DraftStorageService> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<DraftStorageService> create(Ref ref) {
+    return draftStorageService(ref);
+  }
+}
+
+String _$draftStorageServiceHash() =>
+    r'e4db2a5863ba06a6c634366edda6e724ea6c67f2';
+
 /// Authentication service depends on secure key storage
 
 @ProviderFor(authService)
@@ -968,7 +1015,7 @@ final class UserProfileServiceProvider
 }
 
 String _$userProfileServiceHash() =>
-    r'46838c4e72d40ce863044398b9ffe75501b3a2ff';
+    r'646ddf84acd01426edca789d545dbad06cf7e403';
 
 /// Social service depends on Nostr service, Auth service, and SubscriptionManager
 

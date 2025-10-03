@@ -264,64 +264,28 @@ class UserProfileService {
     try {
       if (event.kind != 0) return;
 
-      Log.info(
+      Log.debug(
           '📨 Received profile event for ${event.pubkey.substring(0, 8)}...',
           name: 'UserProfileService',
           category: LogCategory.system);
-      Log.info('  - Event ID: ${event.id}',
-          name: 'UserProfileService', category: LogCategory.system);
-      Log.info('  - Created at: ${event.createdAt}',
-          name: 'UserProfileService', category: LogCategory.system);
-      Log.info('  - Content: ${event.content}',
-          name: 'UserProfileService', category: LogCategory.system);
-      Log.info('🔍 DEBUG: Event received in _handleProfileEvent',
-          name: 'UserProfileService', category: LogCategory.system);
 
       // Parse profile data from event content
       final profile = UserProfile.fromNostrEvent(event);
 
-      Log.info('  - Parsed name: ${profile.name}',
-          name: 'UserProfileService', category: LogCategory.system);
-      Log.info('  - Parsed displayName: ${profile.displayName}',
-          name: 'UserProfileService', category: LogCategory.system);
-      Log.info('  - Parsed about: ${profile.about}',
-          name: 'UserProfileService', category: LogCategory.system);
-
       // Check if this is newer than existing cached profile
       final existingProfile = _profileCache[event.pubkey];
       if (existingProfile != null) {
-        Log.info('🔄 Existing profile found, comparing timestamps:',
-            name: 'UserProfileService', category: LogCategory.system);
-        Log.info('  - Existing eventId: ${existingProfile.eventId}',
-            name: 'UserProfileService', category: LogCategory.system);
-        Log.info('  - Existing createdAt: ${existingProfile.createdAt}',
-            name: 'UserProfileService', category: LogCategory.system);
-        Log.info('  - New eventId: ${profile.eventId}',
-            name: 'UserProfileService', category: LogCategory.system);
-        Log.info('  - New createdAt: ${profile.createdAt}',
-            name: 'UserProfileService', category: LogCategory.system);
-
         // Accept the new profile if:
         // 1. It has a different event ID (definitely a new event)
         // 2. OR it has a newer or equal timestamp (allow same-second updates)
         final isDifferentEvent = existingProfile.eventId != profile.eventId;
         final isNewerOrSame = !existingProfile.createdAt.isAfter(profile.createdAt);
-        
+
         if (!isDifferentEvent && !isNewerOrSame) {
-          Log.warning('⚠️ Received older profile event, ignoring',
-              name: 'UserProfileService', category: LogCategory.system);
-          Log.warning('  - Keeping existing event: ${existingProfile.eventId}',
+          Log.debug('⚠️ Received older profile event, ignoring',
               name: 'UserProfileService', category: LogCategory.system);
           _cleanupProfileRequest(event.pubkey);
           return;
-        }
-        
-        if (isDifferentEvent) {
-          Log.info('✅ Different event ID - accepting new profile',
-              name: 'UserProfileService', category: LogCategory.system);
-        } else if (isNewerOrSame) {
-          Log.info('✅ Same or newer timestamp - accepting profile update',
-              name: 'UserProfileService', category: LogCategory.system);
         }
       }
 
@@ -335,7 +299,7 @@ class UserProfileService {
 
       _cleanupProfileRequest(event.pubkey);
 
-      Log.info(
+      Log.debug(
           '✅ Cached profile for ${event.pubkey.substring(0, 8)}: ${profile.bestDisplayName}',
           name: 'UserProfileService',
           category: LogCategory.system);

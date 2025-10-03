@@ -12,7 +12,6 @@ import 'package:openvine/providers/tab_visibility_provider.dart';
 import 'package:openvine/screens/activity_screen.dart';
 import 'package:openvine/screens/explore_screen.dart';
 import 'package:openvine/screens/profile_screen_scrollable.dart' as profile;
-import 'package:openvine/screens/pure/search_screen_pure.dart';
 import 'package:openvine/screens/video_feed_screen.dart';
 import 'package:openvine/screens/web_auth_screen.dart';
 import 'package:openvine/screens/settings_screen.dart';
@@ -1069,10 +1068,13 @@ class MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   /// Navigate to search functionality within explore
   /// Called from other screens to open search functionality
   void navigateToSearch() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SearchScreenPure()),
-    );
+    // Switch to explore tab (index 2)
+    _onTabTapped(2);
+
+    // Enter search mode in explore screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      (_exploreScreenKey.currentState as dynamic)?.enterSearchMode();
+    });
   }
 
   /// Play a specific video in the explore tab with context videos
@@ -1150,7 +1152,12 @@ class MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         );
         break;
       case 2:
-        title = 'Explore';
+        // Check if ExploreScreen has a custom title
+        final exploreState = _exploreScreenKey.currentState as dynamic;
+        final customTitle = exploreState?.customTitle as String?;
+
+        title = customTitle ?? 'Explore';
+
         titleWidget = Text(
           title,
           style: const TextStyle(
@@ -1188,17 +1195,21 @@ class MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         backgroundColor: VineTheme.vineGreen,
         title: titleWidget,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.settings, color: VineTheme.whiteText),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SettingsScreen(),
+              ),
+            );
+          },
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: VineTheme.whiteText),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
-              );
-            },
+            icon: const Icon(Icons.search, color: VineTheme.whiteText),
+            onPressed: navigateToSearch,
           ),
         ],
       ),

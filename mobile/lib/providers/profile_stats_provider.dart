@@ -3,6 +3,7 @@
 
 import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/utils/unified_logger.dart';
+import 'package:openvine/utils/string_utils.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'profile_stats_provider.g.dart';
@@ -227,15 +228,8 @@ class ProfileStatsNotifier extends _$ProfileStatsNotifier {
   }
 }
 
-/// Get a formatted string for large numbers (e.g., 1234 -> "1.2K")
+/// Get a formatted string for large numbers (e.g., 1234 -> "1.2k")
+/// Delegates to StringUtils.formatCompactNumber for consistent formatting
 String formatProfileStatsCount(int count) {
-  if (count >= 1000000000) {
-    return '${(count / 1000000000).toStringAsFixed(1)}B';
-  } else if (count >= 1000000) {
-    return '${(count / 1000000).toStringAsFixed(1)}M';
-  } else if (count >= 1000) {
-    return '${(count / 1000).toStringAsFixed(1)}K';
-  } else {
-    return count.toString();
-  }
+  return StringUtils.formatCompactNumber(count);
 }

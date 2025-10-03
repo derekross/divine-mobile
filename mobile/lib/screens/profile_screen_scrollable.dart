@@ -14,14 +14,18 @@ import 'package:openvine/providers/profile_stats_provider.dart';
 import 'package:openvine/providers/profile_videos_provider.dart';
 import 'package:openvine/screens/pure/universal_camera_screen_pure.dart';
 import 'package:openvine/screens/settings_screen.dart';
+import 'package:openvine/screens/vine_drafts_screen.dart';
+import 'package:openvine/screens/profile_setup_screen.dart';
 import 'package:openvine/services/auth_service.dart';
 import 'package:openvine/services/social_service.dart';
 import 'package:openvine/services/user_profile_service.dart';
 import 'package:openvine/theme/vine_theme.dart';
 import 'package:openvine/utils/nostr_encoding.dart';
 import 'package:openvine/utils/unified_logger.dart';
+import 'package:openvine/utils/string_utils.dart';
 import 'package:openvine/screens/pure/explore_video_screen_pure.dart';
 import 'package:openvine/helpers/follow_actions_helper.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ProfileScreenScrollable extends ConsumerStatefulWidget {
   const ProfileScreenScrollable({super.key, this.profilePubkey});
@@ -879,63 +883,71 @@ class _ProfileScreenScrollableState
 
   Widget _buildSliverLikedGrid(SocialService socialService) {
     // Placeholder for liked grid - implement similar to vines grid
-    return const SliverFillRemaining(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.favorite_border, color: Colors.grey, size: 64),
-            SizedBox(height: 16),
-            Text(
-              'No Liked Videos Yet',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+    return CustomScrollView(
+      slivers: [
+        SliverFillRemaining(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.favorite_border, color: Colors.grey, size: 64),
+                SizedBox(height: 16),
+                Text(
+                  'No Liked Videos Yet',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Videos you like will appear here',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 8),
-            Text(
-              'Videos you like will appear here',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildSliverRepostsGrid() {
     // Placeholder for reposts grid - implement similar to vines grid
-    return const SliverFillRemaining(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.repeat, color: Colors.grey, size: 64),
-            SizedBox(height: 16),
-            Text(
-              'No Reposts Yet',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+    return CustomScrollView(
+      slivers: [
+        SliverFillRemaining(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.repeat, color: Colors.grey, size: 64),
+                SizedBox(height: 16),
+                Text(
+                  'No Reposts Yet',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Videos you repost will appear here',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 8),
-            Text(
-              'Videos you repost will appear here',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -975,13 +987,7 @@ class _ProfileScreenScrollableState
       );
 
   String _formatCount(int count) {
-    if (count >= 1000000) {
-      return '${(count / 1000000).toStringAsFixed(1)}M';
-    } else if (count >= 1000) {
-      return '${(count / 1000).toStringAsFixed(1)}K';
-    } else {
-      return count.toString();
-    }
+    return StringUtils.formatCompactNumber(count);
   }
 
   Widget _buildStatsRow(AsyncValue<ProfileStats> profileStatsAsync) =>
@@ -1089,7 +1095,23 @@ class _ProfileScreenScrollableState
                   child: const Text('Edit Profile'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  key: const Key('drafts-button'),
+                  onPressed: _openDrafts,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[800],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Drafts'),
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _shareProfile,
@@ -1219,16 +1241,85 @@ class _ProfileScreenScrollableState
   }
 
   Future<void> _setupProfile() async {
-    // Implementation from original file
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfileSetupScreen(isNewUser: true),
+      ),
+    );
+
+    // Refresh profile after setup
+    if (mounted) {
+      _initializeProfile();
+    }
   }
 
   Future<void> _editProfile() async {
-    // Implementation from original file
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfileSetupScreen(isNewUser: false),
+      ),
+    );
+
+    // Refresh profile after editing
+    if (mounted) {
+      _initializeProfile();
+    }
   }
 
-  void _shareProfile() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sharing profile...')),
+  Future<void> _shareProfile() async {
+    try {
+      final pubkey = _targetPubkey;
+      if (pubkey == null) {
+        Log.warning('Cannot share profile: pubkey is null',
+            name: 'ProfileScreen', category: LogCategory.ui);
+        return;
+      }
+
+      // Get profile info for better share text
+      final profile = await ref.read(userProfileServiceProvider).fetchProfile(pubkey);
+      final displayName = profile?.displayName ?? 'User';
+
+      // Convert hex pubkey to npub format for sharing
+      final npub = NostrEncoding.encodePublicKey(pubkey);
+
+      // Create share text with divine.video URL format
+      final shareText = 'Check out $displayName on divine!\n\n'
+          'https://divine.video/profile/$npub';
+
+      // Use share_plus to show native share sheet
+      final result = await SharePlus.instance.share(
+        ShareParams(
+          text: shareText,
+          subject: '$displayName on divine',
+        ),
+      );
+
+      if (result.status == ShareResultStatus.success) {
+        Log.info('Profile shared successfully',
+            name: 'ProfileScreen',
+            category: LogCategory.ui);
+      }
+    } catch (e) {
+      Log.error('Error sharing profile: $e',
+          name: 'ProfileScreen',
+          category: LogCategory.ui);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share profile: $e')),
+        );
+      }
+    }
+  }
+
+  void _openDrafts() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const VineDraftsScreen(),
+      ),
     );
   }
 

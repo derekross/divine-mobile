@@ -11,7 +11,7 @@ import 'package:share_plus/share_plus.dart';
 
 /// Service for handling video sharing functionality
 class ShareService {
-  static const String _appUrl = 'https://openvine.org';
+  static const String _appUrl = 'https://divine.video';
 
   /// Generate a Nostr event link (nevent format) for a video
   String generateNostrEventLink(VideoEvent video) {
@@ -32,8 +32,7 @@ class ShareService {
 
   /// Generate a web app link for a video
   String generateWebLink(VideoEvent video) {
-    final eventId = video.id;
-    return '$_appUrl/video/$eventId';
+    return '$_appUrl/video/${video.id}';
   }
 
   /// Generate shareable text content

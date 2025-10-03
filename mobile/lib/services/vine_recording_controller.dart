@@ -415,15 +415,8 @@ class MacOSCameraInterface extends CameraPlatformInterface
         throw Exception('Failed to start native macOS recording');
       }
 
-      // Set a timer to auto-stop after 6.3 seconds
-      _maxDurationTimer?.cancel();
-      _maxDurationTimer = Timer(const Duration(milliseconds: 6300), () async {
-        if (isRecording) {
-          Log.info('📱 Auto-stopping recording after 6.3 seconds',
-              name: 'VineRecordingController', category: LogCategory.system);
-          await completeRecording();
-        }
-      });
+      // Note: Auto-stop timer is handled by VineRecordingController._startMaxDurationTimer()
+      // No need for a separate timer here to avoid race conditions
 
       Log.info('Started native macOS single recording mode',
           name: 'VineRecordingController', category: LogCategory.system);
@@ -1070,8 +1063,42 @@ class VineRecordingController {
     }
 
     if (segments.length == 1 && segments.first.filePath != null) {
-      // Single segment - just return it
-      return File(segments.first.filePath!);
+      // Single segment - apply square cropping via FFmpeg
+      Log.info('📹 Applying square cropping to single segment',
+          name: 'VineRecordingController', category: LogCategory.system);
+
+      final inputPath = segments.first.filePath!;
+      final tempDir = await getTemporaryDirectory();
+      final outputPath =
+          '${tempDir.path}/vine_final_${DateTime.now().millisecondsSinceEpoch}.mp4';
+
+      // Apply square crop: crop=min(iw,ih):min(iw,ih)
+      final command = '-i "$inputPath" -vf "crop=min(iw\\,ih):min(iw\\,ih)" -c:a copy "$outputPath"';
+
+      Log.info('📹 Executing FFmpeg square crop command: $command',
+          name: 'VineRecordingController', category: LogCategory.system);
+
+      final session = await FFmpegKit.execute(command);
+      final returnCode = await session.getReturnCode();
+
+      if (ReturnCode.isSuccess(returnCode)) {
+        Log.info('📹 FFmpeg square cropping successful: $outputPath',
+            name: 'VineRecordingController', category: LogCategory.system);
+
+        final outputFile = File(outputPath);
+        if (await outputFile.exists()) {
+          return outputFile;
+        } else {
+          throw Exception('Output file does not exist after cropping');
+        }
+      } else {
+        final output = await session.getOutput();
+        Log.error('📹 FFmpeg square cropping failed with code $returnCode',
+            name: 'VineRecordingController', category: LogCategory.system);
+        Log.error('📹 FFmpeg output: $output',
+            name: 'VineRecordingController', category: LogCategory.system);
+        throw Exception('FFmpeg square cropping failed with code $returnCode');
+      }
     }
 
     try {
@@ -1101,9 +1128,9 @@ class VineRecordingController {
       Log.info('📹 FFmpeg concat list:\n${buffer.toString()}',
           name: 'VineRecordingController', category: LogCategory.system);
 
-      // Execute FFmpeg concatenation
-      // Using concat demuxer with -c copy for fast, lossless concatenation
-      final command = '-f concat -safe 0 -i "$concatFilePath" -c copy "$outputPath"';
+      // Execute FFmpeg concatenation with square (1:1) aspect ratio cropping
+      // Vine-style videos must be square format
+      final command = '-f concat -safe 0 -i "$concatFilePath" -vf "crop=min(iw\\,ih):min(iw\\,ih)" -c:a copy "$outputPath"';
 
       Log.info('📹 Executing FFmpeg command: $command',
           name: 'VineRecordingController', category: LogCategory.system);

@@ -315,19 +315,29 @@ class UploadManager {
     Log.info('✅ Upload saved to storage',
         name: 'UploadManager', category: LogCategory.video);
 
-    // Start the upload process
-    Log.info('🔄 Starting background upload process...',
+    // Start the upload process and WAIT for it to complete
+    Log.info('🔄 Starting upload process...',
         name: 'UploadManager', category: LogCategory.video);
 
-    // Start upload in background but catch any immediate errors
-    _performUpload(upload).catchError((error) {
-      Log.error('❌ Background upload failed to start: $error',
+    // CRITICAL FIX: Await upload completion before returning
+    // This ensures videoId and cdnUrl are populated before publishing
+    try {
+      await _performUpload(upload);
+
+      // Fetch the updated upload with videoId and cdnUrl populated
+      final completedUpload = getUpload(upload.id);
+      if (completedUpload == null) {
+        throw Exception('Upload not found after completion: ${upload.id}');
+      }
+
+      Log.info('✅ Upload completed with ID: ${upload.id}',
           name: 'UploadManager', category: LogCategory.video);
-    });
-
-    Log.info('✅ Upload initiated with ID: ${upload.id}',
-        name: 'UploadManager', category: LogCategory.video);
-    return upload;
+      return completedUpload;
+    } catch (error) {
+      Log.error('❌ Upload failed: $error',
+          name: 'UploadManager', category: LogCategory.video);
+      rethrow;
+    }
   }
 
   /// Perform upload with circuit breaker and retry logic

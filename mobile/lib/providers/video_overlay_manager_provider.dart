@@ -66,6 +66,25 @@ class VideoOverlayManager {
     }
   }
 
+  /// Force dispose all video controllers (for camera screen, full-screen modals, etc.)
+  /// This invalidates ALL video controller providers, forcing them to recreate when needed
+  void disposeAllControllers() {
+    try {
+      // First clear active video to stop playback
+      _ref.read(activeVideoProvider.notifier).clearActiveVideo();
+
+      // Invalidate the video controller family to dispose all instances
+      // This forces ALL controllers to dispose, even those kept alive by IndexedStack
+      _ref.invalidate(individualVideoControllerProvider);
+
+      Log.info('VideoOverlayManager: Disposed all video controllers',
+          name: 'VideoOverlayManager', category: LogCategory.system);
+    } catch (e) {
+      Log.error('VideoOverlayManager: Failed to dispose controllers: $e',
+          name: 'VideoOverlayManager', category: LogCategory.system);
+    }
+  }
+
   /// Toggle play/pause for specific video (VideoOverlayModal expects this method)
   void togglePlayPause(VideoEvent video) {
     try {

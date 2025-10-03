@@ -6,18 +6,38 @@ import 'dart:async';
 import 'package:nostr_sdk/event.dart';
 import 'package:nostr_sdk/filter.dart';
 import 'package:openvine/services/nostr_service_interface.dart';
+import 'package:openvine/utils/unified_logger.dart';
 
 /// Manages Nostr subscriptions for video events and other content
+/// Smart subscription manager that checks event cache before requesting from relay
+/// Supports both event ID filtering and author filtering for profiles
 class SubscriptionManager {
-  SubscriptionManager(this._nostrService);
+  SubscriptionManager(
+    this._nostrService, {
+    Event? Function(String)? getCachedEvent,
+    bool Function(String)? hasProfileCached,
+  })  : _getCachedEvent = getCachedEvent,
+        _hasProfileCached = hasProfileCached;
 
   final INostrService _nostrService;
+  Event? Function(String)? _getCachedEvent; // Returns cached Event for event ID
+  bool Function(String)? _hasProfileCached; // Checks if profile cached for pubkey
   final Map<String, StreamSubscription<Event>> _activeSubscriptions = {};
   final Map<String, StreamController<Event>> _controllers = {};
 
   bool _isDisposed = false;
 
+  /// Inject cache lookup functions after construction (for circular dependency resolution)
+  void setCacheLookup({
+    Event? Function(String)? getCachedEvent,
+    bool Function(String)? hasProfileCached,
+  }) {
+    if (getCachedEvent != null) _getCachedEvent = getCachedEvent;
+    if (hasProfileCached != null) _hasProfileCached = hasProfileCached;
+  }
+
   /// Creates a new subscription with the given parameters
+  /// Smart subscription that checks cache before requesting from relay
   Future<String> createSubscription({
     required String name,
     required List<Filter> filters,
@@ -31,8 +51,22 @@ class SubscriptionManager {
 
     final id = '${name}_${DateTime.now().millisecondsSinceEpoch}';
 
-    // Create event stream from NostrService
-    final eventStream = _nostrService.subscribeToEvents(filters: filters);
+    // Smart filtering: Check cache for event IDs and profile authors
+    final filteredFilters = _filterCachedData(filters, onEvent);
+
+    // If all requested data was in cache, complete immediately
+    if (filteredFilters.isEmpty) {
+      Log.debug(
+        '✨ All requested data found in cache - skipping relay subscription',
+        name: 'SubscriptionManager',
+        category: LogCategory.system,
+      );
+      onComplete?.call();
+      return id;
+    }
+
+    // Create event stream from NostrService with filtered filters
+    final eventStream = _nostrService.subscribeToEvents(filters: filteredFilters);
 
     // Set up subscription
     final subscription = eventStream.listen(
@@ -54,6 +88,101 @@ class SubscriptionManager {
     }
 
     return id;
+  }
+
+  /// Filter out cached data from subscription filters
+  /// Returns filtered filters list (may be empty if all data is cached)
+  /// Handles both event ID filtering and profile author filtering
+  List<Filter> _filterCachedData(
+      List<Filter> filters, Function(Event) onEvent) {
+    final filteredFilters = <Filter>[];
+
+    for (final filter in filters) {
+      Filter? modifiedFilter;
+
+      // 1. Filter event IDs if we have event cache
+      if (_getCachedEvent != null && filter.ids != null && filter.ids!.isNotEmpty) {
+        final cachedIds = <String>[];
+        final missingIds = <String>[];
+
+        for (final eventId in filter.ids!) {
+          final cached = _getCachedEvent!(eventId);
+          if (cached != null) {
+            cachedIds.add(eventId);
+            Future.microtask(() => onEvent(cached));
+          } else {
+            missingIds.add(eventId);
+          }
+        }
+
+        if (cachedIds.isNotEmpty) {
+          Log.debug(
+            '✨ Found ${cachedIds.length}/${filter.ids!.length} events in cache',
+            name: 'SubscriptionManager',
+            category: LogCategory.system,
+          );
+        }
+
+        // Update filter with only missing IDs
+        if (missingIds.isEmpty) {
+          continue; // Skip this filter entirely - all events cached
+        }
+        modifiedFilter = Filter(
+          ids: missingIds,
+          kinds: filter.kinds,
+          authors: filter.authors,
+          limit: filter.limit,
+          since: filter.since,
+          until: filter.until,
+          search: filter.search,
+        );
+      }
+
+      // 2. Filter profile authors if this is a kind 0 request
+      if (_hasProfileCached != null &&
+          filter.kinds?.contains(0) == true &&
+          filter.authors != null &&
+          filter.authors!.isNotEmpty) {
+        final authors = modifiedFilter?.authors ?? filter.authors!;
+        final cachedAuthors = <String>[];
+        final missingAuthors = <String>[];
+
+        for (final author in authors) {
+          if (_hasProfileCached!(author)) {
+            cachedAuthors.add(author);
+          } else {
+            missingAuthors.add(author);
+          }
+        }
+
+        if (cachedAuthors.isNotEmpty) {
+          Log.debug(
+            '✨ Found ${cachedAuthors.length}/${authors.length} profiles cached - skipping relay request',
+            name: 'SubscriptionManager',
+            category: LogCategory.system,
+          );
+        }
+
+        // Update filter with only missing authors
+        if (missingAuthors.isEmpty) {
+          continue; // Skip this filter entirely - all profiles cached
+        }
+        modifiedFilter = Filter(
+          ids: modifiedFilter?.ids,
+          kinds: filter.kinds,
+          authors: missingAuthors,
+          limit: filter.limit,
+          since: filter.since,
+          until: filter.until,
+          search: filter.search,
+        );
+      }
+
+      // Add the filter (modified or original)
+      filteredFilters.add(modifiedFilter ?? filter);
+    }
+
+    return filteredFilters;
   }
 
   /// Cancels an active subscription

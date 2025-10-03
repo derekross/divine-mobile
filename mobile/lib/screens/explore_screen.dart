@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openvine/main.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/providers/individual_video_providers.dart';
@@ -29,6 +30,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   List<VideoEvent>? _feedVideos;
   int _feedStartIndex = 0;
   String? _hashtagMode;  // When non-null, showing hashtag feed
+  String? _customTitle;  // Custom title to override default "Explore"
 
   @override
   void initState() {
@@ -76,15 +78,28 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
         category: LogCategory.video);
 
     // Exit feed or hashtag mode when user switches tabs
+    _resetToDefaultState();
+  }
+
+  void _resetToDefaultState() {
+    if (!mounted) return;
+
+    // Exit feed or hashtag mode and return to default tab view
     if (_isInFeedMode || _hashtagMode != null) {
       setState(() {
         _isInFeedMode = false;
         _feedVideos = null;
         _hashtagMode = null;
       });
-      Log.info('🎯 ExploreScreenPure: Exited feed/hashtag mode via tab change',
+      setCustomTitle(null);  // Clear custom title
+      Log.info('🎯 ExploreScreenPure: Reset to default state',
           category: LogCategory.video);
     }
+  }
+
+  // Public method that can be called when same tab is tapped
+  void onTabTapped() {
+    _resetToDefaultState();
   }
 
 
@@ -128,6 +143,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
       _hashtagMode = hashtag;
     });
 
+    setCustomTitle('#$hashtag');
+
     Log.info('🎯 ExploreScreenPure: Entered hashtag mode for #$hashtag',
         category: LogCategory.video);
   }
@@ -151,6 +168,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
+            onTap: (index) {
+              // If tapping the currently active tab, reset to default state
+              if (index == _tabController.index) {
+                _resetToDefaultState();
+              }
+            },
             tabs: const [
               Tab(text: 'Popular Now'),
               Tab(text: 'Trending'),
@@ -198,8 +221,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   Widget _buildHashtagModeContent(String hashtag) {
-    // Just return the hashtag feed content - tabs are shown above
-    return HashtagFeedScreen(hashtag: hashtag, embedded: true);
+    // Return hashtag feed with callback to enter feed mode inline
+    return HashtagFeedScreen(
+      hashtag: hashtag,
+      embedded: true,
+      onVideoTap: (videos, index) => _enterFeedMode(videos, index),
+    );
   }
 
   Widget _buildEditorsPickTab() {
@@ -658,12 +685,26 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   bool get isInFeedMode => _isInFeedMode;
+  String? get currentHashtag => _hashtagMode;
+  String? get customTitle => _customTitle;
+
+  void setCustomTitle(String? title) {
+    if (_customTitle != title) {
+      setState(() {
+        _customTitle = title;
+      });
+      // Trigger parent rebuild to update title
+      if (context.findAncestorStateOfType<MainNavigationScreenState>() != null) {
+        context.findAncestorStateOfType<MainNavigationScreenState>()!.setState(() {});
+      }
+    }
+  }
 
   void exitFeedMode() => _exitFeedMode();
 
   void showHashtagVideos(String hashtag) {
     Log.debug('🎯 ExploreScreen showing hashtag videos: $hashtag', category: LogCategory.video);
-    // Implementation for hashtag filtering would go here
+    _enterHashtagMode(hashtag);
   }
 
   void playSpecificVideo(VideoEvent video, List<VideoEvent> videos, int index) {

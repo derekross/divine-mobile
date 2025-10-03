@@ -135,7 +135,7 @@ VideoPlayerController individualVideoController(
   final preloadService = VideoPreloadService();
   final preloadedController = preloadService.getPreloadedController(params.videoId);
 
-  // For now, create network controller and cache asynchronously in background
+  // Create controller - networkUrl automatically uses HTTP cache for fast reloads
   final controller = preloadedController ?? VideoPlayerController.networkUrl(
     Uri.parse(params.videoUrl),
   );
@@ -172,19 +172,9 @@ VideoPlayerController individualVideoController(
     // Set looping for Vine-like behavior
     controller.setLooping(true);
 
-    // Check current active state and start playback if this video is active
-    final isActiveNow = ref.read(activeVideoProvider) == params.videoId;
-    if (isActiveNow) {
-      Log.info('🎬 Starting video ${params.videoId.length > 8 ? params.videoId.substring(0, 8) : params.videoId}... (active on initialization)',
-          name: 'IndividualVideoController', category: LogCategory.system);
-      controller.play().catchError((playError) {
-        Log.error('❌ Failed to start video playback: $playError',
-            name: 'IndividualVideoController', category: LogCategory.system);
-      });
-    } else {
-      Log.debug('⏸️ Video ${params.videoId.length > 8 ? params.videoId.substring(0, 8) : params.videoId}... initialized but not active, staying paused',
-          name: 'IndividualVideoController', category: LogCategory.system);
-    }
+    // Controller is initialized and paused - widget will control playback
+    Log.debug('⏸️ Video ${params.videoId.length > 8 ? params.videoId.substring(0, 8) : params.videoId}... initialized and paused (widget controls playback)',
+        name: 'IndividualVideoController', category: LogCategory.system);
   }).catchError((error) {
     final videoIdDisplay = params.videoId.length > 8 ? params.videoId.substring(0, 8) : params.videoId;
 
@@ -238,75 +228,9 @@ VideoPlayerController individualVideoController(
   // Initial drop scheduling based on current state
   rescheduleDrop();
 
-  // Listen for active state changes to control playback reliably
-  // Listen to both the specific video active state AND the global activeVideoProvider
-  // This ensures we catch state changes even when widgets are disposed
-  ref.listen<bool>(isVideoActiveProvider(params.videoId), (prev, next) {
-    final videoIdDisplay = params.videoId.length > 8 ? params.videoId.substring(0, 8) : params.videoId;
-
-    try {
-      if (next) {
-        // Video became active
-        if (controller.value.isInitialized) {
-          if (!controller.value.isPlaying) {
-            Log.info('▶️ Starting video $videoIdDisplay... (became active)',
-                name: 'IndividualVideoController', category: LogCategory.system);
-            controller.play().catchError((error) {
-              Log.error('❌ Failed to play video $videoIdDisplay...: $error',
-                  name: 'IndividualVideoController', category: LogCategory.system);
-            });
-          }
-        } else {
-          Log.debug('⏳ Video $videoIdDisplay... became active but not yet initialized',
-              name: 'IndividualVideoController', category: LogCategory.system);
-        }
-      } else {
-        // Video became inactive
-        if (controller.value.isPlaying) {
-          Log.info('⏸️ Pausing video $videoIdDisplay... (became inactive)',
-              name: 'IndividualVideoController', category: LogCategory.system);
-          controller.pause().catchError((error) {
-            Log.error('❌ Failed to pause video $videoIdDisplay...: $error',
-                name: 'IndividualVideoController', category: LogCategory.system);
-          });
-        }
-      }
-    } catch (error) {
-      Log.error('❌ Error in active state listener for $videoIdDisplay...: $error',
-          name: 'IndividualVideoController', category: LogCategory.system);
-    }
-  });
-
-  // CRITICAL FIX: Listen to activeVideoProvider changes to pause when this video becomes inactive
-  // This handles both: (1) switching to another video, (2) clearing active video entirely
-  ref.listen<String?>(activeVideoProvider, (prev, next) {
-    final videoIdDisplay = params.videoId.length > 8 ? params.videoId.substring(0, 8) : params.videoId;
-
-    // DEBUG: Log every state change to diagnose if listener fires
-    Log.debug('📡 ActiveVideo listener fired for $videoIdDisplay: prev=${prev?.substring(0, 8) ?? "null"}, next=${next?.substring(0, 8) ?? "null"}',
-        name: 'IndividualVideoController', category: LogCategory.system);
-
-    try {
-      // This video was active (either in prev or we're currently active) and now it's not
-      final wasActive = prev == params.videoId;
-      final isActiveNow = next == params.videoId;
-
-      if (wasActive && !isActiveNow && controller.value.isPlaying) {
-        Log.info('⏸️ Pausing video $videoIdDisplay... (no longer active: ${next == null ? "cleared" : "switched"})',
-            name: 'IndividualVideoController', category: LogCategory.system);
-        controller.pause().catchError((error) {
-          Log.error('❌ Failed to pause video $videoIdDisplay...: $error',
-              name: 'IndividualVideoController', category: LogCategory.system);
-        });
-      } else {
-        Log.debug('⏭️ Skipping pause for $videoIdDisplay: wasActive=$wasActive, isActiveNow=$isActiveNow, isPlaying=${controller.value.isPlaying}',
-            name: 'IndividualVideoController', category: LogCategory.system);
-      }
-    } catch (error) {
-      Log.error('❌ Error in activeVideoProvider listener for $videoIdDisplay...: $error',
-          name: 'IndividualVideoController', category: LogCategory.system);
-    }
-  });
+  // NOTE: Play/pause logic has been moved to VideoFeedItem widget
+  // The provider only manages controller lifecycle, NOT playback state
+  // This ensures videos can only play when widget is mounted and visible
 
   return controller;
 }

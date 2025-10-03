@@ -4,7 +4,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openvine/models/vine_draft.dart';
+import 'package:openvine/services/draft_storage_service.dart';
 import 'package:openvine/utils/unified_logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:video_player/video_player.dart';
 
 /// Pure vine preview screen using revolutionary single-controller Riverpod architecture
 class VinePreviewScreenPure extends ConsumerStatefulWidget {
@@ -28,6 +32,8 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
   final _descriptionController = TextEditingController();
   final _hashtagsController = TextEditingController();
   bool _isUploading = false;
+  VideoPlayerController? _videoController;
+  bool _isVideoInitialized = false;
   // bool _isExpiringPost = false; // Unused - commenting out
   // int _expirationHours = 24; // Unused - commenting out
 
@@ -39,6 +45,53 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
 
     Log.info('🎬 VinePreviewScreenPure: Initialized for file: ${widget.videoFile.path}',
         category: LogCategory.video);
+
+    // Initialize video preview
+    _initializeVideoPreview();
+  }
+
+  Future<void> _initializeVideoPreview() async {
+    try {
+      // Verify file exists before attempting to play
+      if (!await widget.videoFile.exists()) {
+        throw Exception('Video file does not exist: ${widget.videoFile.path}');
+      }
+
+      final fileSize = await widget.videoFile.length();
+      Log.info('🎬 Initializing video preview for file: ${widget.videoFile.path} (${fileSize} bytes)',
+          category: LogCategory.video);
+
+      _videoController = VideoPlayerController.file(widget.videoFile);
+
+      await _videoController!.initialize().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {
+          throw Exception('Video player initialization timed out after 2 seconds');
+        },
+      );
+
+      await _videoController!.setLooping(true);
+      await _videoController!.play();
+
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = true;
+        });
+      }
+
+      Log.info('🎬 Video preview initialized successfully',
+          category: LogCategory.video);
+    } catch (e) {
+      Log.error('🎬 Failed to initialize video preview: $e',
+          category: LogCategory.video);
+
+      // Still allow the screen to be usable even if preview fails
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = false;
+        });
+      }
+    }
   }
 
   @override
@@ -46,6 +99,7 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
     _titleController.dispose();
     _descriptionController.dispose();
     _hashtagsController.dispose();
+    _videoController?.dispose();
     super.dispose();
 
     Log.info('🎬 VinePreviewScreenPure: Disposed',
@@ -68,6 +122,15 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
           style: TextStyle(color: Colors.white),
         ),
         actions: [
+          TextButton(
+            onPressed: _saveDraft,
+            child: const Text(
+              'Save Draft',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
+          ),
           TextButton(
             onPressed: _isUploading ? null : _publishVideo,
             child: _isUploading
@@ -98,35 +161,45 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
               key: const Key('video-preview'),
               color: Colors.black,
               child: Center(
-                child: AspectRatio(
-                  aspectRatio: 9 / 16, // Vertical video aspect ratio
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.play_circle_filled,
-                            size: 64,
-                            color: Colors.white54,
+                child: _isVideoInitialized && _videoController != null
+                  ? AspectRatio(
+                      aspectRatio: _videoController!.value.aspectRatio,
+                      child: VideoPlayer(_videoController!),
+                    )
+                  : AspectRatio(
+                      aspectRatio: 9 / 16, // Vertical video aspect ratio
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!_isVideoInitialized && _videoController != null)
+                                const CircularProgressIndicator(
+                                  color: Colors.white54,
+                                )
+                              else
+                                const Icon(
+                                  Icons.play_circle_filled,
+                                  size: 64,
+                                  color: Colors.white54,
+                                ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _videoController != null ? 'Loading...' : 'Video Preview',
+                                style: const TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Video Preview',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
               ),
             ),
           ),
@@ -225,6 +298,56 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
         ],
       ),
     );
+  }
+
+  Future<void> _saveDraft() async {
+    try {
+      Log.info('🎬 VinePreviewScreenPure: Saving draft for: ${widget.videoFile.path}',
+          category: LogCategory.video);
+
+      final prefs = await SharedPreferences.getInstance();
+      final draftService = DraftStorageService(prefs);
+
+      // Parse hashtags from space-separated string
+      final hashtagText = _hashtagsController.text.trim();
+      final hashtags = hashtagText.isEmpty
+          ? <String>[]
+          : hashtagText.split(' ').where((tag) => tag.isNotEmpty).toList();
+
+      final draft = VineDraft.create(
+        videoFile: widget.videoFile,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        hashtags: hashtags,
+        frameCount: widget.frameCount,
+        selectedApproach: widget.selectedApproach,
+      );
+
+      await draftService.saveDraft(draft);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Draft saved'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      Log.error('🎬 VinePreviewScreenPure: Failed to save draft: $e',
+          category: LogCategory.video);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save draft: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _publishVideo() async {

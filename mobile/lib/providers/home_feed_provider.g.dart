@@ -10,16 +10,31 @@ part of 'home_feed_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Home feed provider - shows videos only from people you follow
 /// keepAlive: true prevents disposal and unnecessary rebuilds during navigation
+///
+/// Rebuilds occur when:
+/// - Contact list changes (follow/unfollow)
+/// - 10 minutes have passed since last refresh
+/// - User pulls to refresh
 
 @ProviderFor(HomeFeed)
 const homeFeedProvider = HomeFeedProvider._();
 
 /// Home feed provider - shows videos only from people you follow
 /// keepAlive: true prevents disposal and unnecessary rebuilds during navigation
+///
+/// Rebuilds occur when:
+/// - Contact list changes (follow/unfollow)
+/// - 10 minutes have passed since last refresh
+/// - User pulls to refresh
 final class HomeFeedProvider
     extends $AsyncNotifierProvider<HomeFeed, VideoFeedState> {
   /// Home feed provider - shows videos only from people you follow
   /// keepAlive: true prevents disposal and unnecessary rebuilds during navigation
+  ///
+  /// Rebuilds occur when:
+  /// - Contact list changes (follow/unfollow)
+  /// - 10 minutes have passed since last refresh
+  /// - User pulls to refresh
   const HomeFeedProvider._()
     : super(
         from: null,
@@ -39,10 +54,15 @@ final class HomeFeedProvider
   HomeFeed create() => HomeFeed();
 }
 
-String _$homeFeedHash() => r'28453b963ce1f735dfc9ad590d05460a023a132c';
+String _$homeFeedHash() => r'0321bbbe7d72d313234ed6575118155f14ee96dc';
 
 /// Home feed provider - shows videos only from people you follow
 /// keepAlive: true prevents disposal and unnecessary rebuilds during navigation
+///
+/// Rebuilds occur when:
+/// - Contact list changes (follow/unfollow)
+/// - 10 minutes have passed since last refresh
+/// - User pulls to refresh
 
 abstract class _$HomeFeed extends $AsyncNotifier<VideoFeedState> {
   FutureOr<VideoFeedState> build();

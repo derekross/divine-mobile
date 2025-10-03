@@ -1,6 +1,7 @@
 // ABOUTME: Smart video thumbnail widget that displays thumbnails or blurhash placeholders
 // ABOUTME: Uses existing thumbnail URLs from video events and falls back to blurhash when missing
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/services/thumbnail_api_service.dart'
@@ -245,7 +246,8 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   }
 }
 
-/// Error-safe network image widget that prevents 'Invalid image data' exceptions
+/// Error-safe network image widget that prevents HTTP 404 and other network exceptions
+/// Uses CachedNetworkImage which handles network errors more gracefully than Image.network
 class _SafeNetworkImage extends StatelessWidget {
   const _SafeNetworkImage({
     required this.url,
@@ -269,30 +271,26 @@ class _SafeNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
-      url,
+    return CachedNetworkImage(
+      imageUrl: url,
       width: width,
       height: height,
       fit: fit,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child; // Image loaded successfully
-        }
-        // While loading, show blurhash or placeholder
-        return _buildFallback();
-      },
-      errorBuilder: (context, error, stackTrace) {
+      placeholder: (context, url) => _buildFallback(),
+      errorWidget: (context, url, error) {
         // Log the specific error for debugging
         Log.error('Network image failed: $url',
             name: 'VideoThumbnailWidget', category: LogCategory.video);
         Log.error('Error type: ${error.runtimeType}, Details: $error',
             name: 'VideoThumbnailWidget', category: LogCategory.video);
 
-        // Check if this is specifically the 'Invalid image data' error
-        if (error.toString().contains('Invalid image data') ||
-            error.toString().contains('Image codec failed')) {
-          Log.warning('🖼️ Invalid image data detected for video ${videoId.substring(0, 8)}, URL: $url',
-              name: 'VideoThumbnailWidget', category: LogCategory.video);
+        // Check if this is specifically a 404 or HTTP error
+        if (error.toString().contains('404') ||
+            error.toString().contains('statusCode')) {
+          Log.warning(
+              '🖼️ HTTP error loading thumbnail for video ${videoId.substring(0, 8)}, URL: $url',
+              name: 'VideoThumbnailWidget',
+              category: LogCategory.video);
         }
 
         return _buildFallback();

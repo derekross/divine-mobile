@@ -201,9 +201,8 @@ class VideoSharingService {
 
   /// Generate external share URL for the video
   String generateShareUrl(VideoEvent video) {
-    // Create a shareable URL that opens the video in a web viewer
-    const baseUrl = 'https://openvine.co';
-    return '$baseUrl/watch/${video.id}';
+    const baseUrl = 'https://divine.video';
+    return '$baseUrl/video/${video.id}';
   }
 
   /// Generate share text for external sharing (social media, etc.)

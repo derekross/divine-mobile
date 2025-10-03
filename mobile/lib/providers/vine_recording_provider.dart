@@ -5,7 +5,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:riverpod/riverpod.dart' show Ref;
 import 'package:openvine/services/vine_recording_controller.dart';
+import 'package:openvine/models/vine_draft.dart';
+import 'package:openvine/providers/app_providers.dart';
+import 'package:openvine/utils/unified_logger.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 /// State class for VineRecording that captures all necessary UI state
 class VineRecordingUIState {
@@ -55,7 +61,7 @@ class VineRecordingUIState {
 
 /// StateNotifier that wraps VineRecordingController and provides reactive updates
 class VineRecordingNotifier extends StateNotifier<VineRecordingUIState> {
-  VineRecordingNotifier(this._controller)
+  VineRecordingNotifier(this._controller, this._ref)
       : super(
           VineRecordingUIState(
             recordingState: _controller.state,
@@ -71,6 +77,7 @@ class VineRecordingNotifier extends StateNotifier<VineRecordingUIState> {
   }
 
   final VineRecordingController _controller;
+  final Ref _ref;
 
   /// Get the camera preview widget from the controller
   Widget get previewWidget => _controller.previewWidget;
@@ -123,10 +130,104 @@ class VineRecordingNotifier extends StateNotifier<VineRecordingUIState> {
 
   @override
   void dispose() {
-    // Clear callback to prevent memory leaks
-    _controller.setStateChangeCallback(null);
-    _controller.dispose();
+    // Auto-save as draft if recording completed but not published
+    // Note: We can't await in dispose(), so we use unawaited future
+    // The controller cleanup will be delayed until save completes via the future chain
+    _autoSaveDraftBeforeDispose().then((_) {
+      // Clear callback to prevent memory leaks
+      _controller.setStateChangeCallback(null);
+      _controller.dispose();
+    }).catchError((e) {
+      Log.error('Error during auto-save, proceeding with cleanup: $e',
+          name: 'VineRecordingProvider', category: LogCategory.system);
+      // Ensure cleanup happens even if save fails
+      _controller.setStateChangeCallback(null);
+      _controller.dispose();
+    });
+
     super.dispose();
+  }
+
+  /// Auto-save recording as draft if completed but not published
+  Future<void> _autoSaveDraftBeforeDispose() async {
+    try {
+      // Only auto-save if recording is completed
+      if (_controller.state != VineRecordingState.completed) {
+        return;
+      }
+
+      // Check if we have segments to save
+      if (_controller.segments.isEmpty) {
+        Log.debug('No segments to auto-save as draft',
+            name: 'VineRecordingProvider', category: LogCategory.system);
+        return;
+      }
+
+      // Get the video file path from macOS single recording mode
+      if (Platform.isMacOS && _controller.cameraInterface is MacOSCameraInterface) {
+        final macOSInterface = _controller.cameraInterface as MacOSCameraInterface;
+        final videoPath = macOSInterface.currentRecordingPath;
+
+        if (videoPath != null && File(videoPath).existsSync()) {
+          await _saveDraftFromPath(videoPath);
+          return;
+        }
+      }
+
+      // For other platforms or if macOS path not available, check segments
+      final segment = _controller.segments.firstOrNull;
+      if (segment?.filePath != null && File(segment!.filePath!).existsSync()) {
+        await _saveDraftFromPath(segment.filePath!);
+      }
+    } catch (e) {
+      Log.error('Failed to auto-save draft on dispose: $e',
+          name: 'VineRecordingProvider', category: LogCategory.system);
+      // Don't rethrow - ensure cleanup continues
+    }
+  }
+
+  /// Save draft from video file path
+  Future<void> _saveDraftFromPath(String videoPath) async {
+    try {
+      final draftStorage = await _ref.read(draftStorageServiceProvider.future);
+
+      // Copy video file to permanent draft location
+      final appDir = await getApplicationDocumentsDirectory();
+      final draftsDir = Directory(path.join(appDir.path, 'drafts'));
+      if (!draftsDir.existsSync()) {
+        draftsDir.createSync(recursive: true);
+      }
+
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final extension = path.extension(videoPath);
+      final permanentPath = path.join(draftsDir.path, 'draft_$timestamp$extension');
+
+      // Copy the file to permanent location
+      final sourceFile = File(videoPath);
+      final permanentFile = await sourceFile.copy(permanentPath);
+
+      Log.info('📁 Copied draft video to permanent location: $permanentPath',
+          name: 'VineRecordingProvider', category: LogCategory.system);
+
+      // Create draft with permanent file path
+      final draft = VineDraft.create(
+        videoFile: permanentFile,
+        title: 'Untitled Draft - ${DateTime.now().toLocal().toString().split('.')[0]}',
+        description: '',
+        hashtags: [],
+        frameCount: 0,
+        selectedApproach: 'auto',
+      );
+
+      await draftStorage.saveDraft(draft);
+
+      Log.info('✅ Auto-saved recording as draft: ${draft.id}',
+          name: 'VineRecordingProvider', category: LogCategory.system);
+    } catch (e) {
+      Log.error('Failed to save draft: $e',
+          name: 'VineRecordingProvider', category: LogCategory.system);
+      rethrow;
+    }
   }
 
   // Getters that delegate to controller
@@ -137,7 +238,7 @@ class VineRecordingNotifier extends StateNotifier<VineRecordingUIState> {
 final vineRecordingProvider =
     StateNotifierProvider<VineRecordingNotifier, VineRecordingUIState>((ref) {
   final controller = VineRecordingController();
-  final notifier = VineRecordingNotifier(controller);
+  final notifier = VineRecordingNotifier(controller, ref);
 
   ref.onDispose(() {
     notifier.dispose();

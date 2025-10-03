@@ -109,6 +109,10 @@ Flutter App → Blossom Server → Nostr Event
 **Domain Architecture**:
 - User-configured Blossom servers - Decentralized media hosting (primary)
 
+**Share URL Formats**:
+- Profile URLs: `https://divine.video/profile/{npub}`
+- Video URLs: `https://divine.video/video/{videoId}`
+
 ## Native Build Scripts
 **IMPORTANT**: Use these scripts instead of direct Flutter builds for iOS/macOS to prevent CocoaPods sync errors.
 
@@ -141,17 +145,31 @@ Flutter App → Blossom Server → Nostr Event
 - For Node/TypeScript, prefer the latest stable versions from npm; only pin versions when necessary for compatibility.
 - If a newer major version exists, review changelogs/migrations and adopt it unless blocked.
 
+### Destructive Commands Policy
+**CRITICAL**: NEVER run destructive git commands or server operations without explicit confirmation from Rabble first.
+
+**Prohibited without confirmation**:
+- `git reset --hard`
+- `git push --force` or `git push -f`
+- `git clean -fd`
+- `git branch -D`
+- Any database drop/truncate commands
+- Any server deployment commands that modify production
+- Any commands that delete remote data or resources
+
+**When in doubt**: STOP and ask Rabble before running any command that could permanently delete or overwrite data.
+
 ### Code Quality Checks
 **MANDATORY**: Always run `flutter analyze` after completing any task that modifies Dart code. This catches:
 - Syntax errors
-- Linting issues  
+- Linting issues
 - Type errors
 - Import problems
 - Dead code warnings
 
 **Process**:
 1. Complete code changes
-2. Run `flutter analyze` 
+2. Run `flutter analyze`
 3. Fix any issues found
 4. Confirm clean analysis before considering task complete
 

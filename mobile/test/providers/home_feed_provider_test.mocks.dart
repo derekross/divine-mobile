@@ -929,6 +929,18 @@ class MockSubscriptionManager extends _i1.Mock
           as int);
 
   @override
+  void setCacheLookup({
+    _i9.Event? Function(String)? getCachedEvent,
+    bool Function(String)? hasProfileCached,
+  }) => super.noSuchMethod(
+    Invocation.method(#setCacheLookup, [], {
+      #getCachedEvent: getCachedEvent,
+      #hasProfileCached: hasProfileCached,
+    }),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i8.Future<String> createSubscription({
     required String? name,
     required List<_i11.Filter>? filters,
