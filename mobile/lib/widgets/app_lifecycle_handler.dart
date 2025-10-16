@@ -74,6 +74,14 @@ class _AppLifecycleHandlerState extends ConsumerState<AppLifecycleHandler>
         );
 
       case AppLifecycleState.inactive:
+        // On desktop, inactive happens during normal UI operations (clicking, menu interactions, etc.)
+        // Don't treat this as backgrounded - videos should continue playing
+        Log.debug(
+          '📱 App became inactive (normal on desktop) - keeping videos active',
+          name: 'AppLifecycleHandler',
+          category: LogCategory.system,
+        );
+
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
         Log.info(

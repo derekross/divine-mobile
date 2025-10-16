@@ -71,6 +71,12 @@ class BackgroundActivityManager {
         break;
 
       case AppLifecycleState.inactive:
+        // On desktop platforms, inactive is a normal state during UI operations
+        // Don't treat it as backgrounded to avoid disrupting video playback
+        Log.debug('App became inactive (keeping foreground state)',
+            name: 'BackgroundActivityManager', category: LogCategory.system);
+        break;
+
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
         _isAppInForeground = false;
