@@ -245,18 +245,18 @@ class OriginalVineBadge extends StatelessWidget {
         children: [
           Text(
             'V',
-            style: TextStyle(
+            style: GoogleFonts.pacifico(
               fontSize: dimensions.fontSize + 2,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               color: Colors.white,
             ),
           ),
           SizedBox(width: dimensions.iconTextSpacing),
           Text(
-            'Original Vine',
-            style: TextStyle(
+            'Original',
+            style: GoogleFonts.pacifico(
               fontSize: dimensions.fontSize,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
               color: Colors.white,
             ),
           ),

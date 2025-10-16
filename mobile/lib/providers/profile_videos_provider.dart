@@ -319,19 +319,8 @@ class ProfileVideosNotifier extends _$ProfileVideosNotifier {
       },
     );
 
-    // Complete loading after reasonable timeout instead of waiting for EOSE
-    // This ensures newly published videos show up quickly even if not synced to embedded relay yet
-    Timer(const Duration(seconds: 3), () {
-      if (!completer.isCompleted) {
-        Log.info(
-            '📱 Streaming timeout reached: completing with ${receivedVideos.length} videos for ${pubkey.substring(0, 8)}',
-            name: 'ProfileVideosProvider',
-            category: LogCategory.ui);
-        _finalizeStreamingLoad(pubkey, receivedVideos);
-        completer.complete();
-      }
-    });
-
+    // Wait for EOSE or onDone instead of using timeout
+    // Timeout was causing initial loads to complete with 0 videos before relay responded
     await completer.future;
   }
 
@@ -494,18 +483,7 @@ class ProfileVideosNotifier extends _$ProfileVideosNotifier {
       },
     );
 
-    // Complete load more after reasonable timeout instead of waiting for EOSE
-    Timer(const Duration(seconds: 3), () {
-      if (!completer.isCompleted) {
-        Log.info(
-            '📱 Load more timeout reached: completing with ${newVideos.length} additional videos for ${_currentPubkey!.substring(0, 8)}',
-            name: 'ProfileVideosProvider',
-            category: LogCategory.ui);
-        _finalizeLoadMoreStreaming(newVideos);
-        completer.complete();
-      }
-    });
-
+    // Wait for EOSE or onDone instead of using timeout
     await completer.future;
   }
 
