@@ -3,6 +3,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openvine/utils/nostr_encoding.dart';
 import 'route_utils.dart';
 
 extension NavX on BuildContext {
@@ -27,13 +28,31 @@ extension NavX on BuildContext {
         ),
       ));
 
-  void goProfile(String npub, [int index = 0]) => go(buildRoute(
-        RouteContext(
-          type: RouteType.profile,
-          npub: npub,
-          videoIndex: index,
-        ),
-      ));
+  void goProfile(String npubOrHex, [int index = 0]) {
+    final npub = npubOrHex.startsWith('npub')
+        ? npubOrHex
+        : NostrEncoding.encodePublicKey(npubOrHex); // hex -> npub
+    go(buildRoute(
+      RouteContext(
+        type: RouteType.profile,
+        npub: npub,
+        videoIndex: index,
+      ),
+    ));
+  }
+
+  void pushProfile(String npubOrHex, [int index = 0]) {
+    final npub = npubOrHex.startsWith('npub')
+        ? npubOrHex
+        : NostrEncoding.encodePublicKey(npubOrHex);
+    push(buildRoute(
+      RouteContext(
+        type: RouteType.profile,
+        npub: npub,
+        videoIndex: index,
+      ),
+    ));
+  }
 
   // Optional pushes (non-tab routes)
   Future<void> pushCamera() => push('/camera');
