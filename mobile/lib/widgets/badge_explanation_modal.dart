@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:openvine/models/video_event.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Modal dialog explaining the origin and authenticity of video content
 class BadgeExplanationModal extends StatelessWidget {
@@ -78,17 +79,32 @@ class _VineArchiveExplanation extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
-        Row(
-          children: [
-            const Icon(Icons.info_outline, size: 16, color: Colors.grey),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                'Learn more at archive.org/details/vine',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
+        InkWell(
+          onTap: () async {
+            final uri = Uri.parse('https://divine.video/dmca');
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.open_in_new, size: 16, color: Colors.blue),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Learn more about the Vine archive preservation',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ],
     );
@@ -117,6 +133,34 @@ class _ProofModeExplanation extends StatelessWidget {
         const Text(
           'ProofMode helps verify that videos are original content and not AI-generated or manipulated.',
           style: TextStyle(fontSize: 13),
+        ),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: () async {
+            final uri = Uri.parse('https://divine.video/proofmode');
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.open_in_new, size: 16, color: Colors.blue),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Learn more about ProofMode verification',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );

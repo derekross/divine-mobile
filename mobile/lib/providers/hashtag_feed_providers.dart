@@ -23,6 +23,7 @@ part 'hashtag_feed_providers.g.dart';
 @Riverpod(keepAlive: false) // Auto-dispose when no listeners
 class HashtagFeed extends _$HashtagFeed {
   static int _buildCounter = 0;
+  Timer? _rebuildDebounceTimer;
 
   @override
   Future<VideoFeedState> build() async {
@@ -66,6 +67,29 @@ class HashtagFeed extends _$HashtagFeed {
     final videoEventService = ref.watch(videoEventServiceProvider);
     await videoEventService.subscribeToHashtagVideos([tag], limit: 100);
 
+    // Set up continuous listening for video updates
+    void onVideosChanged() {
+      // Debounce rebuilds to avoid excessive updates
+      _rebuildDebounceTimer?.cancel();
+      _rebuildDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+        if (ref.mounted) {
+          Log.info('🏷️  HashtagFeed: Videos changed, rebuilding #$tag',
+              name: 'HashtagFeedProvider', category: LogCategory.video);
+          ref.invalidateSelf();
+        }
+      });
+    }
+
+    videoEventService.addListener(onVideosChanged);
+
+    // Clean up listener on dispose
+    ref.onDispose(() {
+      videoEventService.removeListener(onVideosChanged);
+      _rebuildDebounceTimer?.cancel();
+      Log.info('🏷️  HashtagFeed: Disposed listener for #$tag',
+          name: 'HashtagFeedProvider', category: LogCategory.video);
+    });
+
     // Wait for initial batch of videos to arrive
     final completer = Completer<void>();
     int stableCount = 0;
@@ -96,7 +120,7 @@ class HashtagFeed extends _$HashtagFeed {
     checkStability();
     await completer.future;
 
-    // Cleanup
+    // Cleanup stability listener (but keep the continuous listener)
     videoEventService.removeListener(checkStability);
     stabilityTimer?.cancel();
 

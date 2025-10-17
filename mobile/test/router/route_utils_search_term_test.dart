@@ -115,4 +115,197 @@ void main() {
       expect(parsed.videoIndex, original.videoIndex);
     });
   });
+
+  group('Phase 3: URL Encoding - parseRoute() edge cases', () {
+    test('parseRoute("/search/hello%20world") decodes spaces correctly', () {
+      final result = parseRoute('/search/hello%20world');
+
+      expect(result.type, RouteType.search);
+      expect(result.searchTerm, 'hello world');
+      expect(result.videoIndex, null);
+    });
+
+    test('parseRoute("/search/%23bitcoin") decodes hash symbol correctly', () {
+      final result = parseRoute('/search/%23bitcoin');
+
+      expect(result.type, RouteType.search);
+      expect(result.searchTerm, '#bitcoin');
+      expect(result.videoIndex, null);
+    });
+
+    test('parseRoute("/search/%2Fspecial") decodes forward slash correctly', () {
+      final result = parseRoute('/search/%2Fspecial');
+
+      expect(result.type, RouteType.search);
+      expect(result.searchTerm, '/special');
+      expect(result.videoIndex, null);
+    });
+
+    test('parseRoute("/search/%F0%9F%9A%80") decodes emoji correctly', () {
+      final result = parseRoute('/search/%F0%9F%9A%80');
+
+      expect(result.type, RouteType.search);
+      expect(result.searchTerm, '🚀');
+      expect(result.videoIndex, null);
+    });
+
+    test('parseRoute("/search/hello%20world/5") decodes spaces with index', () {
+      final result = parseRoute('/search/hello%20world/5');
+
+      expect(result.type, RouteType.search);
+      expect(result.searchTerm, 'hello world');
+      expect(result.videoIndex, 5);
+    });
+
+    test('parseRoute("/search/%23bitcoin/3") decodes hash with index', () {
+      final result = parseRoute('/search/%23bitcoin/3');
+
+      expect(result.type, RouteType.search);
+      expect(result.searchTerm, '#bitcoin');
+      expect(result.videoIndex, 3);
+    });
+  });
+
+  group('Phase 3: URL Encoding - buildRoute() edge cases', () {
+    test('buildRoute encodes spaces in search term', () {
+      final context = RouteContext(
+        type: RouteType.search,
+        searchTerm: 'hello world',
+      );
+
+      final result = buildRoute(context);
+
+      expect(result, '/search/hello%20world');
+    });
+
+    test('buildRoute encodes hash symbol in search term', () {
+      final context = RouteContext(
+        type: RouteType.search,
+        searchTerm: '#bitcoin',
+      );
+
+      final result = buildRoute(context);
+
+      expect(result, '/search/%23bitcoin');
+    });
+
+    test('buildRoute encodes forward slash in search term', () {
+      final context = RouteContext(
+        type: RouteType.search,
+        searchTerm: '/special',
+      );
+
+      final result = buildRoute(context);
+
+      expect(result, '/search/%2Fspecial');
+    });
+
+    test('buildRoute encodes emoji in search term', () {
+      final context = RouteContext(
+        type: RouteType.search,
+        searchTerm: '🚀',
+      );
+
+      final result = buildRoute(context);
+
+      expect(result, '/search/%F0%9F%9A%80');
+    });
+
+    test('buildRoute encodes spaces with index', () {
+      final context = RouteContext(
+        type: RouteType.search,
+        searchTerm: 'hello world',
+        videoIndex: 5,
+      );
+
+      final result = buildRoute(context);
+
+      expect(result, '/search/hello%20world/5');
+    });
+
+    test('buildRoute encodes hash symbol with index', () {
+      final context = RouteContext(
+        type: RouteType.search,
+        searchTerm: '#bitcoin',
+        videoIndex: 3,
+      );
+
+      final result = buildRoute(context);
+
+      expect(result, '/search/%23bitcoin/3');
+    });
+  });
+
+  group('Phase 3: Round-trip with URL encoding', () {
+    test('Round-trip preserves search term with spaces', () {
+      final original = RouteContext(
+        type: RouteType.search,
+        searchTerm: 'hello world',
+      );
+
+      final url = buildRoute(original);
+      final parsed = parseRoute(url);
+
+      expect(parsed.type, original.type);
+      expect(parsed.searchTerm, original.searchTerm);
+      expect(parsed.videoIndex, original.videoIndex);
+    });
+
+    test('Round-trip preserves search term with hash symbol', () {
+      final original = RouteContext(
+        type: RouteType.search,
+        searchTerm: '#bitcoin',
+      );
+
+      final url = buildRoute(original);
+      final parsed = parseRoute(url);
+
+      expect(parsed.type, original.type);
+      expect(parsed.searchTerm, original.searchTerm);
+      expect(parsed.videoIndex, original.videoIndex);
+    });
+
+    test('Round-trip preserves search term with forward slash', () {
+      final original = RouteContext(
+        type: RouteType.search,
+        searchTerm: '/special',
+      );
+
+      final url = buildRoute(original);
+      final parsed = parseRoute(url);
+
+      expect(parsed.type, original.type);
+      expect(parsed.searchTerm, original.searchTerm);
+      expect(parsed.videoIndex, original.videoIndex);
+    });
+
+    test('Round-trip preserves search term with emoji', () {
+      final original = RouteContext(
+        type: RouteType.search,
+        searchTerm: '🚀',
+      );
+
+      final url = buildRoute(original);
+      final parsed = parseRoute(url);
+
+      expect(parsed.type, original.type);
+      expect(parsed.searchTerm, original.searchTerm);
+      expect(parsed.videoIndex, original.videoIndex);
+    });
+
+    test('Round-trip preserves complex search term with multiple special chars', () {
+      final original = RouteContext(
+        type: RouteType.search,
+        searchTerm: 'hello world #bitcoin 🚀',
+        videoIndex: 7,
+      );
+
+      final url = buildRoute(original);
+      final parsed = parseRoute(url);
+
+      expect(parsed.type, original.type);
+      expect(parsed.searchTerm, original.searchTerm);
+      expect(parsed.videoIndex, original.videoIndex);
+    });
+  });
 }

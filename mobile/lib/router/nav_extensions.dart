@@ -84,8 +84,8 @@ extension NavX on BuildContext {
     ));
   }
 
-  void goSearch([int? index]) => go(buildRoute(
-        RouteContext(type: RouteType.search, videoIndex: index),
+  void goSearch([String? searchTerm, int? index]) => go(buildRoute(
+        RouteContext(type: RouteType.search, searchTerm: searchTerm, videoIndex: index),
       ));
 
   // Optional pushes (non-tab routes)

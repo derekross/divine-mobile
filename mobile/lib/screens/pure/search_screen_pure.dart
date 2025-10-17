@@ -357,7 +357,7 @@ class _SearchScreenPureState extends ConsumerState<SearchScreenPure>
         Log.info('🔍 SearchScreenPure: Tapped video at index $index',
             category: LogCategory.video);
         // Navigate using GoRouter to enable router-driven video playback
-        context.goSearch(index);
+        context.goSearch(_currentQuery.isNotEmpty ? _currentQuery : null, index);
       },
       emptyBuilder: () => Center(
         child: Column(
