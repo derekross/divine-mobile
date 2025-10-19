@@ -4,6 +4,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nostr_sdk/filter.dart' as nostr;
 import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/services/video_event_service.dart';
 import 'package:openvine/theme/vine_theme.dart';
@@ -44,6 +45,27 @@ class _RelayDiagnosticScreenState extends ConsumerState<RelayDiagnosticScreen> {
       setState(() {
         _relayStats = stats;
       });
+
+      // Check if there are video events in the database
+      if (stats != null && stats['database'] != null) {
+        final totalEvents = stats['database']['total_events'] ?? 0;
+        Log.info('Embedded relay has $totalEvents total events in database',
+            name: 'RelayDiagnostic');
+
+        // Query for video events specifically to see if any exist
+        try {
+          final videoEvents = await nostrService.getEvents(
+            filters: [
+              nostr.Filter(kinds: [34236, 34235, 22, 21])
+            ],
+            limit: 10,
+          );
+          Log.info('Found ${videoEvents.length} video events in embedded relay database',
+              name: 'RelayDiagnostic');
+        } catch (e) {
+          Log.error('Failed to query video events: $e', name: 'RelayDiagnostic');
+        }
+      }
     } catch (e) {
       Log.error('Failed to get relay stats: $e', name: 'RelayDiagnostic');
     }

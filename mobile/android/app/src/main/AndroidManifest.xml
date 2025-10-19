@@ -66,6 +66,14 @@
                     android:scheme="https"
                     android:host="divine.video"
                     android:pathPrefix="/profile"/>
+                <data
+                    android:scheme="https"
+                    android:host="divine.video"
+                    android:pathPrefix="/hashtag"/>
+                <data
+                    android:scheme="https"
+                    android:host="divine.video"
+                    android:pathPrefix="/search"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

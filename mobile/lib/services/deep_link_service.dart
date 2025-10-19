@@ -9,6 +9,8 @@ import 'package:app_links/app_links.dart';
 enum DeepLinkType {
   video,
   profile,
+  hashtag,
+  search,
   unknown,
 }
 
@@ -18,11 +20,15 @@ class DeepLink {
     required this.type,
     this.videoId,
     this.npub,
+    this.hashtag,
+    this.searchTerm,
   });
 
   final DeepLinkType type;
   final String? videoId;
   final String? npub;
+  final String? hashtag;
+  final String? searchTerm;
 
   @override
   String toString() {
@@ -31,6 +37,10 @@ class DeepLink {
         return 'DeepLink(type: video, videoId: $videoId)';
       case DeepLinkType.profile:
         return 'DeepLink(type: profile, npub: $npub)';
+      case DeepLinkType.hashtag:
+        return 'DeepLink(type: hashtag, hashtag: $hashtag)';
+      case DeepLinkType.search:
+        return 'DeepLink(type: search, searchTerm: $searchTerm)';
       case DeepLinkType.unknown:
         return 'DeepLink(type: unknown)';
     }
@@ -101,6 +111,22 @@ class DeepLinkService {
         Log.info('📱 Parsed profile deep link: $npub',
             name: 'DeepLinkService', category: LogCategory.ui);
         return DeepLink(type: DeepLinkType.profile, npub: npub);
+      }
+
+      // Handle /hashtag/{tag}
+      if (pathSegments.length == 2 && pathSegments[0] == 'hashtag') {
+        final hashtag = pathSegments[1];
+        Log.info('📱 Parsed hashtag deep link: $hashtag',
+            name: 'DeepLinkService', category: LogCategory.ui);
+        return DeepLink(type: DeepLinkType.hashtag, hashtag: hashtag);
+      }
+
+      // Handle /search/{term}
+      if (pathSegments.length == 2 && pathSegments[0] == 'search') {
+        final searchTerm = pathSegments[1];
+        Log.info('📱 Parsed search deep link: $searchTerm',
+            name: 'DeepLinkService', category: LogCategory.ui);
+        return DeepLink(type: DeepLinkType.search, searchTerm: searchTerm);
       }
 
       Log.warning('Unknown deep link path: ${uri.path}',

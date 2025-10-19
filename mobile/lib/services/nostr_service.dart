@@ -94,7 +94,7 @@ class NostrService implements INostrService {
 
         // Check if this is a Web platform issue (path_provider not supported)
         if (e.toString().contains('path_provider') ||
-            e.toString().contains('getApplicationDocumentsDirectory')) {
+            e.toString().contains('getApplicationSupportDirectory')) {
           Log.warning('Embedded relay not supported on Web platform, will use fallback',
               name: 'NostrService', category: LogCategory.relay);
           _embeddedRelay = null; // Clear the failed instance

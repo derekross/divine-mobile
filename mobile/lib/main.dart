@@ -336,6 +336,42 @@ class _DivineAppState extends ConsumerState<DivineApp> {
                     name: 'DeepLinkHandler', category: LogCategory.ui);
               }
               break;
+            case DeepLinkType.hashtag:
+              if (deepLink.hashtag != null) {
+                final targetPath = '/hashtag/${deepLink.hashtag}';
+                Log.info('📱 Navigating to hashtag: $targetPath',
+                    name: 'DeepLinkHandler', category: LogCategory.ui);
+                try {
+                  router.go(targetPath);
+                  Log.info('✅ Navigation completed to: $targetPath',
+                      name: 'DeepLinkHandler', category: LogCategory.ui);
+                } catch (e) {
+                  Log.error('❌ Navigation failed: $e',
+                      name: 'DeepLinkHandler', category: LogCategory.ui);
+                }
+              } else {
+                Log.warning('⚠️ Hashtag deep link missing hashtag',
+                    name: 'DeepLinkHandler', category: LogCategory.ui);
+              }
+              break;
+            case DeepLinkType.search:
+              if (deepLink.searchTerm != null) {
+                final targetPath = '/search/${deepLink.searchTerm}';
+                Log.info('📱 Navigating to search: $targetPath',
+                    name: 'DeepLinkHandler', category: LogCategory.ui);
+                try {
+                  router.go(targetPath);
+                  Log.info('✅ Navigation completed to: $targetPath',
+                      name: 'DeepLinkHandler', category: LogCategory.ui);
+                } catch (e) {
+                  Log.error('❌ Navigation failed: $e',
+                      name: 'DeepLinkHandler', category: LogCategory.ui);
+                }
+              } else {
+                Log.warning('⚠️ Search deep link missing search term',
+                    name: 'DeepLinkHandler', category: LogCategory.ui);
+              }
+              break;
             case DeepLinkType.unknown:
               Log.warning('📱 Unknown deep link type',
                   name: 'DeepLinkHandler', category: LogCategory.ui);
