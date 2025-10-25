@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:video_player_media_kit/video_player_media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/providers/deep_link_provider.dart';
@@ -41,19 +40,9 @@ Future<void> _startOpenVineApp() async {
   await StartupPerformanceService.instance.initialize();
   StartupPerformanceService.instance.startPhase('bindings');
 
-  // DEFER video player initialization until UI is ready to avoid blocking main thread
-  // This is a major cause of startup lag on iOS
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    StartupPerformanceService.instance.startPhase('video_player_init');
-    try {
-      VideoPlayerMediaKit.ensureInitialized(iOS: true, android: true, macOS: true, web: true);
-      StartupPerformanceService.instance.completePhase('video_player_init');
-      StartupPerformanceService.instance.markVideoReady();
-    } catch (e) {
-      Log.error('Failed to initialize video player: $e', name: 'Main');
-      StartupPerformanceService.instance.completePhase('video_player_init');
-    }
-  });
+  // NOTE: Native video players (AVPlayer on iOS/macOS, ExoPlayer on Android)
+  // do not require explicit initialization like media_kit did.
+  // They initialize automatically when VideoPlayerController is first created.
 
   StartupPerformanceService.instance.completePhase('bindings');
 

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.0.1+46
+version: 0.0.1+47
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -59,11 +59,7 @@ dependencies:
   # Camera and media
   camera: ^0.11.2
   camera_macos: ^0.0.9  # macOS camera support
-  video_player: ^2.9.1
-  video_player_media_kit: ^1.0.6
-  media_kit_libs_ios_video: any
-  media_kit_libs_android_video: any
-  media_kit_libs_macos_video: any
+  video_player: ^2.9.1  # Uses native AVPlayer (iOS/macOS) and ExoPlayer (Android)
   visibility_detector: ^0.4.0+2  # Detect widget visibility for proper video control
   image: ^4.1.7  # Image processing for GIF generation
   video_thumbnail: ^0.5.3  # Extract thumbnails from videos
