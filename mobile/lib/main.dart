@@ -19,6 +19,7 @@ import 'package:openvine/router/app_router.dart';
 import 'package:openvine/router/route_normalization_provider.dart';
 import 'package:openvine/services/logging_config_service.dart';
 import 'package:openvine/services/startup_performance_service.dart';
+import 'package:openvine/services/video_cache_manager.dart';
 import 'package:openvine/theme/vine_theme.dart';
 import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/utils/log_message_batcher.dart';
@@ -119,6 +120,20 @@ Future<void> _startOpenVineApp() async {
   LogMessageBatcher.instance.initialize();
 
   StartupPerformanceService.instance.completePhase('logging_config');
+
+  // Initialize video cache manifest for instant cache lookups
+  if (!kIsWeb) {  // Web doesn't use file-based caching
+    StartupPerformanceService.instance.startPhase('video_cache');
+    CrashReportingService.instance.logInitializationStep('Initializing video cache manifest');
+    try {
+      await openVineVideoCache.initialize();
+      StartupPerformanceService.instance.completePhase('video_cache');
+    } catch (e) {
+      Log.error('[STARTUP] Video cache initialization failed: $e',
+          name: 'Main', category: LogCategory.system);
+      StartupPerformanceService.instance.completePhase('video_cache');
+    }
+  }
 
   // Log that core startup is complete
   CrashReportingService.instance.logInitializationStep('Core app startup complete');

@@ -6,6 +6,9 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/io_client.dart';
 import 'package:openvine/services/broken_video_tracker.dart';
 import 'package:openvine/utils/unified_logger.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart' as sqflite;
 
 class VideoCacheManager extends CacheManager {
   static const key = 'openvine_video_cache';
@@ -35,6 +38,91 @@ class VideoCacheManager extends CacheManager {
       fileService: _createVideoHttpFileService(),
     ),
   );
+
+  // Track initialization state
+  bool _initialized = false;
+
+  /// Initialize cache manifest by loading all cached videos from database
+  /// Should be called on app startup to enable synchronous cache lookups
+  Future<void> initialize() async {
+    if (_initialized) {
+      Log.debug('📋 Cache manifest already initialized, skipping',
+          name: 'VideoCacheManager', category: LogCategory.video);
+      return;
+    }
+
+    try {
+      Log.info('🔄 Initializing video cache manifest from database...',
+          name: 'VideoCacheManager', category: LogCategory.video);
+
+      final startTime = DateTime.now();
+
+      // Query the cache database directly to get all cached objects
+      // flutter_cache_manager stores cache metadata in a sqflite database
+      final dbPath = await sqflite.getDatabasesPath();
+      final cacheDbPath = path.join(dbPath, '$key.db');
+
+      // Check if database exists
+      if (!await File(cacheDbPath).exists()) {
+        Log.info('📋 No cache database found yet, skipping initialization',
+            name: 'VideoCacheManager', category: LogCategory.video);
+        _initialized = true;
+        return;
+      }
+
+      final database = await sqflite.openDatabase(cacheDbPath, readOnly: true);
+
+      try {
+        // Query all cache objects from the cacheObject table
+        final List<Map<String, dynamic>> maps = await database.query('cacheObject');
+
+        int loadedCount = 0;
+        int missingCount = 0;
+
+        // Get the base cache directory for constructing full paths
+        final tempDir = await getTemporaryDirectory();
+        final baseCacheDir = path.join(tempDir.path, key);
+
+        // Populate manifest with verified cache entries
+        for (final map in maps) {
+          final videoKey = map['key'] as String;
+          final relativePath = map['relativePath'] as String;
+
+          // Construct full file path
+          final fullPath = path.join(baseCacheDir, relativePath);
+          final file = File(fullPath);
+
+          // Only add to manifest if file actually exists
+          if (file.existsSync()) {
+            _cacheManifest[videoKey] = fullPath;
+            loadedCount++;
+          } else {
+            // File is in database but missing from filesystem
+            missingCount++;
+            Log.debug('⚠️ Cached video $videoKey missing from filesystem',
+                name: 'VideoCacheManager', category: LogCategory.video);
+          }
+        }
+
+        final duration = DateTime.now().difference(startTime);
+        _initialized = true;
+
+        Log.info('✅ Cache manifest initialized: $loadedCount videos loaded, '
+            '$missingCount missing (${duration.inMilliseconds}ms)',
+            name: 'VideoCacheManager', category: LogCategory.video);
+
+      } finally {
+        await database.close();
+      }
+
+    } catch (error) {
+      Log.error('❌ Failed to initialize cache manifest: $error',
+          name: 'VideoCacheManager', category: LogCategory.video);
+      // Don't throw - degraded functionality is better than crash
+      // App will still work but without instant cache lookups
+      _initialized = true; // Mark as initialized to avoid retry loops
+    }
+  }
 
   static HttpFileService _createVideoHttpFileService() {
     final httpClient = HttpClient();

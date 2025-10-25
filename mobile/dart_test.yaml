@@ -1,0 +1,25 @@
+# ABOUTME: Dart test configuration for Flutter tests
+# ABOUTME: Excludes old/deprecated test files and configures test behavior
+
+# Exclude patterns - don't run tests in these directories
+exclude:
+  - test/old_files/**
+  - test/**/old_files/**
+  - test/**/*.mocks.dart  # Mock files are generated, not run
+  - test/**/*.g.dart      # Generated files
+
+# Test timeouts (in seconds)
+# Default timeout for all tests
+timeout: 10m
+
+# Platforms to test on (can override with --platform flag)
+platforms:
+  - vm
+  - chrome
+
+# Reporter configuration
+reporter: expanded
+
+# Test randomization
+shuffle: false
+chain_stack_traces: true
