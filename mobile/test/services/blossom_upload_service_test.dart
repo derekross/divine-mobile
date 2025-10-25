@@ -296,10 +296,10 @@ void main() {
         // Assert
         expect(result.success, isTrue);
 
-        // Verify PUT was called with raw bytes (Stream)
+        // Verify PUT was called with raw bytes (List<int>)
         verify(() => mockDio.put(
           'https://cdn.satellite.earth/upload',
-          data: any(named: 'data', that: isA<Stream>()),
+          data: any(named: 'data', that: isA<List<int>>()),
           options: any(named: 'options', that: isA<Options>().having(
             (opts) => opts.headers?['Authorization'],
             'Authorization header',
