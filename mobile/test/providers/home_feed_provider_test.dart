@@ -107,24 +107,22 @@ void main() {
 
     test('should preserve video list when socialProvider updates with same following list', () async {
       // Setup: Create mock videos
+      final now = DateTime.now();
+      final timestamp = now.millisecondsSinceEpoch ~/ 1000;
       final mockVideos = [
         VideoEvent(
           id: 'video1',
           pubkey: 'author1',
           content: 'Test video 1',
-          kind: 34236,
-          createdAt: DateTime.now(),
-          tags: [],
-          sig: 'sig1',
+          createdAt: timestamp,
+          timestamp: now,
         ),
         VideoEvent(
           id: 'video2',
           pubkey: 'author2',
           content: 'Test video 2',
-          kind: 34236,
-          createdAt: DateTime.now(),
-          tags: [],
-          sig: 'sig2',
+          createdAt: timestamp,
+          timestamp: now,
         ),
       ];
 

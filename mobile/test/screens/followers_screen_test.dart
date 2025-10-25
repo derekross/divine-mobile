@@ -71,15 +71,13 @@ void main() {
 
       // Simulate follower events arriving
       final event1 = nostr_sdk.Event(
-        id: 'event1',
-        pubkey: 'follower1',
-        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        kind: 3,
-        tags: [
+        'follower1',  // pubkey
+        3,  // kind
+        [
           ['p', 'target_pubkey']
-        ],
-        content: '',
-        sig: 'sig1',
+        ],  // tags
+        '',  // content
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       );
 
       eventStreamController.add(event1);
@@ -137,27 +135,23 @@ void main() {
 
       // Add same follower twice
       final event1 = nostr_sdk.Event(
-        id: 'event1',
-        pubkey: 'follower1',
-        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        kind: 3,
-        tags: [
+        'follower1',  // pubkey
+        3,  // kind
+        [
           ['p', 'target_pubkey']
-        ],
-        content: '',
-        sig: 'sig1',
+        ],  // tags
+        '',  // content
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       );
 
       final event2 = nostr_sdk.Event(
-        id: 'event2',
-        pubkey: 'follower1', // Same follower
-        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        kind: 3,
-        tags: [
+        'follower1',  // pubkey - Same follower
+        3,  // kind
+        [
           ['p', 'target_pubkey']
-        ],
-        content: '',
-        sig: 'sig2',
+        ],  // tags
+        '',  // content
+        createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       );
 
       eventStreamController.add(event1);
