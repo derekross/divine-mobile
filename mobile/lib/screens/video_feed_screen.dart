@@ -4,14 +4,17 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openvine/constants/app_constants.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/providers/home_feed_provider.dart';
 import 'package:openvine/providers/user_profile_providers.dart';
 import 'package:openvine/providers/social_providers.dart' as social;
 import 'package:openvine/router/nav_extensions.dart';
+import 'package:openvine/services/video_cache_manager.dart';
 import 'package:openvine/theme/vine_theme.dart';
 import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/widgets/video_feed_item.dart';
@@ -234,6 +237,9 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
 
     // Batch fetch profiles for videos around current position
     _batchFetchProfilesAroundIndex(index, videos);
+
+    // Prefetch videos around current position for instant playback
+    _prefetchVideosAroundIndex(index, videos);
 
     // Update URL to trigger derived provider chain:
     // context.go() → routerLocationStream → pageContextProvider → activeVideoIdProvider → VideoFeedItem reacts
@@ -611,6 +617,48 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
 
     // Fetch profile only for the currently visible video
     userProfilesNotifier.prefetchProfilesImmediately(pubkeysToFetch.toList());
+  }
+
+  /// Prefetch videos around current index for smooth playback
+  /// Uses AppConstants.preloadBefore and AppConstants.preloadAfter to determine range
+  void _prefetchVideosAroundIndex(int currentIndex, List<VideoEvent> videos) {
+    if (videos.isEmpty) return;
+
+    // Skip prefetch on web platform - file caching not supported
+    if (kIsWeb) return;
+
+    // Calculate prefetch range using app constants
+    final startIndex = (currentIndex - AppConstants.preloadBefore).clamp(0, videos.length - 1);
+    final endIndex = (currentIndex + AppConstants.preloadAfter + 1).clamp(0, videos.length);
+
+    final videosToPreFetch = <VideoEvent>[];
+    for (int i = startIndex; i < endIndex; i++) {
+      // Skip current video and videos without URLs
+      if (i != currentIndex && i >= 0 && i < videos.length) {
+        final video = videos[i];
+        if (video.videoUrl != null && video.videoUrl!.isNotEmpty) {
+          videosToPreFetch.add(video);
+        }
+      }
+    }
+
+    if (videosToPreFetch.isEmpty) return;
+
+    final videoUrls = videosToPreFetch.map((v) => v.videoUrl!).toList();
+    final videoIds = videosToPreFetch.map((v) => v.id).toList();
+
+    Log.info(
+      '🎬 Prefetching ${videosToPreFetch.length} videos around index $currentIndex '
+      '(${videoIds.join(', ')})',
+      name: 'VideoFeedScreen',
+      category: LogCategory.video,
+    );
+
+    // Fire and forget - don't await to avoid blocking page change
+    openVineVideoCache.preCache(videoUrls, videoIds).catchError((error) {
+      Log.error('❌ Error prefetching videos: $error',
+          name: 'VideoFeedScreen', category: LogCategory.video);
+    });
   }
 
   // Note: Keyboard navigation methods removed to avoid unused warnings
