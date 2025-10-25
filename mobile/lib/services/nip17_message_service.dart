@@ -90,7 +90,7 @@ class NIP17MessageService {
       }
 
       Log.debug(
-          'Created kind 1059 gift wrap event with ephemeral key: ${giftWrapEvent.pubkey.substring(0, 16)}...',
+          'Created kind 1059 gift wrap event with ephemeral key: ${giftWrapEvent.pubkey}',
           category: LogCategory.system);
 
       // Broadcast the gift wrap event

@@ -109,14 +109,14 @@ class FeatureFlagService {
     'optimized_batch_api': false,
     'prefetch_manager': false,
     'analytics_v2': false,
-    // ProofMode feature flags
-    'proofmode_dev': false,
-    'proofmode_crypto': false,
-    'proofmode_capture': false,
-    'proofmode_publish': false,
-    'proofmode_verify': false,
-    'proofmode_ui': false,
-    'proofmode_production': false,
+    // ProofMode feature flags - ALL ENABLED FOR TESTING
+    'proofmode_dev': true,
+    'proofmode_crypto': true,
+    'proofmode_capture': true,
+    'proofmode_publish': true,
+    'proofmode_verify': true,
+    'proofmode_ui': true,
+    'proofmode_production': false,  // Keep production off for now
     // NIP-46 bunker authentication (not yet fully implemented)
     'enableNip46': false,
   };

@@ -247,7 +247,7 @@ class ProfileVideosNotifier extends _$ProfileVideosNotifier {
     );
 
     Log.info(
-        '📱 Starting streaming query for videos: authors=[${pubkey.length > 16 ? pubkey.substring(0, 16) : pubkey}], kinds=${NIP71VideoKinds.getAllVideoKinds()}, limit=$_profileVideosPageSize',
+        '📱 Starting streaming query for videos: authors=[$pubkey], kinds=${NIP71VideoKinds.getAllVideoKinds()}, limit=$_profileVideosPageSize',
         name: 'ProfileVideosProvider',
         category: LogCategory.ui);
 

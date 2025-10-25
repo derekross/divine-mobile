@@ -36,7 +36,7 @@ final class LatestVideosProvider
   LatestVideos create() => LatestVideos();
 }
 
-String _$latestVideosHash() => r'4720f1bfae1af82216203b0e87bbc6a0fd14cd2a';
+String _$latestVideosHash() => r'ce538cc85fea10d223b7293a257b7b9de1ae226e';
 
 /// Provider for the latest videos from the network
 

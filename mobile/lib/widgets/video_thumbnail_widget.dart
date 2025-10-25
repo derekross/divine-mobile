@@ -56,9 +56,16 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   }
 
   Future<void> _loadThumbnail() async {
+    final videoId = widget.video.id;
+
     // Check if we have an existing thumbnail URL
     if (widget.video.thumbnailUrl != null &&
         widget.video.thumbnailUrl!.isNotEmpty) {
+      Log.debug(
+        '🖼️ Using existing thumbnailUrl for video $videoId',
+        name: 'VideoThumbnailWidget',
+        category: LogCategory.video,
+      );
       setState(() {
         _thumbnailUrl = widget.video.thumbnailUrl;
         _isLoading = false;
@@ -66,23 +73,78 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
       return;
     }
 
+    // Check if video is hosted on api.openvine.co - only try API thumbnails for those
+    final videoUrl = widget.video.videoUrl;
+    final shouldTryApiThumbnail =
+        videoUrl != null && videoUrl.contains('api.openvine.co');
+
+    if (!shouldTryApiThumbnail) {
+      // Video not hosted on api.openvine.co - don't try to generate thumbnail
+      // Just show blurhash or placeholder
+      Log.debug(
+        '🖼️ Video $videoId not hosted on api.openvine.co - skipping API thumbnail generation',
+        name: 'VideoThumbnailWidget',
+        category: LogCategory.video,
+      );
+      if (mounted) {
+        setState(() {
+          _thumbnailUrl = null;
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    // Video is on api.openvine.co - try to get API thumbnail
+    Log.debug(
+      '🖼️ No thumbnailUrl for video $videoId - trying API thumbnail generation',
+      name: 'VideoThumbnailWidget',
+      category: LogCategory.video,
+    );
+
+    // Keep in loading state - show blurhash or loading indicator while generating
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final generatedThumbnailUrl = await widget.video.getApiThumbnailUrl();
       if (generatedThumbnailUrl != null && generatedThumbnailUrl.isNotEmpty) {
-        setState(() {
-          _thumbnailUrl = generatedThumbnailUrl;
-          _isLoading = false;
-        });
+        Log.debug(
+          '✅ Got API thumbnail URL for video $videoId: $generatedThumbnailUrl',
+          name: 'VideoThumbnailWidget',
+          category: LogCategory.video,
+        );
+        if (mounted) {
+          setState(() {
+            _thumbnailUrl = generatedThumbnailUrl;
+            _isLoading = false;
+          });
+        }
         return;
+      } else {
+        Log.debug(
+          '⚠️ API returned empty thumbnail URL for video $videoId',
+          name: 'VideoThumbnailWidget',
+          category: LogCategory.video,
+        );
       }
     } catch (e) {
       // Silently fail - will use blurhash or placeholder
+      Log.debug(
+        '❌ Failed to get API thumbnail for video $videoId: $e',
+        name: 'VideoThumbnailWidget',
+        category: LogCategory.video,
+      );
     }
 
-    setState(() {
-      _thumbnailUrl = null;
-      _isLoading = false;
-    });
+    // No API thumbnail available - stop loading and show blurhash or placeholder
+    if (mounted) {
+      setState(() {
+        _thumbnailUrl = null;
+        _isLoading = false;
+      });
+    }
   }
 
   Widget _buildContent(BoxFit fit) {
@@ -335,16 +397,16 @@ class _SafeNetworkImage extends StatelessWidget {
   }
 
   Widget _buildFallback() {
-    // Try to use blurhash first
+    // Don't show blurhash here - it's already shown as background in the outer Stack
+    // Just show a transparent container so the background blurhash is visible
     if (blurhash != null && blurhash!.isNotEmpty) {
-      return BlurhashDisplay(
-        blurhash: blurhash!,
+      return Container(
         width: width,
         height: height,
-        fit: fit,
+        color: Colors.transparent,
       );
     }
-    // Fall back to icon placeholder
+    // Fall back to icon placeholder if no blurhash
     return VideoIconPlaceholder(
       width: width,
       height: height,

@@ -514,10 +514,25 @@ class PlatformSecureStorage {
         );
       }
     } catch (e) {
-      throw PlatformSecureStorageException(
-        'Android initialization failed: $e',
-        platform: 'Android',
-      );
+      // If native Android Keystore plugin is not available, use fallback storage
+      // (same pattern as macOS - see _initializeMacOS)
+      Log.warning(
+          'Android native plugin not available, using flutter_secure_storage fallback: $e',
+          name: 'PlatformSecureStorage',
+          category: LogCategory.system);
+
+      // Enable fallback storage for Android
+      _useFallbackStorage = true;
+
+      // Set basic capabilities for Android with fallback storage
+      _capabilities = {
+        SecureStorageCapability.basicSecureStorage,
+        // Note: Using software-based storage without native Keystore plugin
+      };
+      _platformName = 'Android (fallback)';
+
+      Log.info('Android using flutter_secure_storage fallback',
+          name: 'PlatformSecureStorage', category: LogCategory.system);
     }
   }
 

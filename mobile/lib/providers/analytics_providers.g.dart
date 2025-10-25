@@ -123,7 +123,7 @@ final class AnalyticsProvider
   }
 }
 
-String _$analyticsHash() => r'78a1e18f67ada8f45b03d6ca4b3e725701bf432f';
+String _$analyticsHash() => r'e3659247ed7efe0dc0534deea0e788346d54f0de';
 
 abstract class _$Analytics extends $Notifier<AnalyticsState> {
   AnalyticsState build();

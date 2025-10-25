@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openvine/models/video_event.dart';
+import 'package:openvine/providers/social_providers.dart';
 import 'package:openvine/router/app_shell.dart';
 import 'package:openvine/screens/explore_screen.dart';
 import 'package:openvine/screens/hashtag_screen_router.dart';
@@ -54,6 +55,30 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootKey,
     initialLocation: '/home/0',
+    redirect: (context, state) {
+      // Redirect to explore if user follows nobody
+      final location = state.matchedLocation;
+
+      // Only redirect if navigating to home
+      if (location.startsWith('/home')) {
+        // Read social provider to check following count
+        // Note: We use a try-catch in case the provider isn't ready yet
+        try {
+          final socialState = ref.read(socialProvider);
+
+          // Only redirect if social state is initialized and user follows 0 people
+          if (socialState.isInitialized && socialState.followingPubkeys.isEmpty) {
+            return '/explore';
+          }
+        } catch (e) {
+          // If social provider isn't ready, let the route proceed
+          // (home screen will show loading or empty state)
+        }
+      }
+
+      // No redirect needed
+      return null;
+    },
     routes: [
       // Shell keeps tab navigators alive
       ShellRoute(

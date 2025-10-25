@@ -68,3 +68,4 @@ flutter_*.log
 
 # Git worktrees
 .worktrees/
+android/play-store-service-account.json

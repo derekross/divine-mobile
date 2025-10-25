@@ -142,7 +142,7 @@ class _RelayDiagnosticScreenState extends ConsumerState<RelayDiagnosticScreen> {
         Log.info('📹 Sample events:', name: 'RelayDiagnostic');
         for (var i = 0; i < videoEvents.take(3).length; i++) {
           final event = videoEvents[i];
-          Log.info('  Event $i: kind=${event.kind}, author=${event.pubkey.substring(0, 16)}..., timestamp=${event.createdAt}',
+          Log.info('  Event $i: kind=${event.kind}, author=${event.pubkey}, timestamp=${event.createdAt}',
               name: 'RelayDiagnostic');
         }
       } else {

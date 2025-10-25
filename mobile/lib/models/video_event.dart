@@ -870,11 +870,17 @@ class VideoEvent {
 
   /// Score video URL by format preference
   /// Higher scores = better format preference
-  /// MP4 is most reliable, HLS/m3u8 is currently broken so avoid it
+  /// HLS is best for adaptive bitrate, then fall back to MP4
   static int _scoreVideoUrl(String url) {
     final urlLower = url.toLowerCase();
 
-    // MP4 is best - universal compatibility and works reliably
+    // Reject broken vine.co URLs immediately
+    if (urlLower.contains('vine.co')) return -1;
+
+    // HLS (.m3u8) is BEST - adaptive bitrate streaming
+    if (urlLower.contains('.m3u8') || urlLower.contains('hls')) return 110;
+
+    // MP4 is good fallback - universal compatibility
     if (urlLower.contains('.mp4')) return 100;
 
     // WebM is good for web
@@ -885,9 +891,6 @@ class VideoEvent {
 
     // AVI is supported but not optimal
     if (urlLower.contains('.avi')) return 60;
-
-    // HLS (.m3u8) is BROKEN - avoid it
-    if (urlLower.contains('.m3u8') || urlLower.contains('hls')) return 10;
 
     // DASH can be problematic
     if (urlLower.contains('.mpd') || urlLower.contains('dash')) return 10;

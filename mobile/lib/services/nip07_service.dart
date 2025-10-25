@@ -149,7 +149,7 @@ class Nip07Service {
 
       Log.info('NIP-07 authentication successful',
           name: 'Nip07Service', category: LogCategory.system);
-      Log.verbose('Public key: ${pubkey.substring(0, 16)}...',
+      Log.verbose('Public key: $pubkey',
           name: 'Nip07Service', category: LogCategory.system);
 
       return Nip07AuthResult.success(pubkey);
