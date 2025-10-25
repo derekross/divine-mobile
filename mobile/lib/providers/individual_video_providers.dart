@@ -102,15 +102,18 @@ VideoPlayerController individualVideoController(
   Ref ref,
   VideoControllerParams params,
 ) {
-  // Riverpod-native lifecycle: keep controller alive with 30s cache timeout
+  // Riverpod-native lifecycle: keep controller alive with 5-minute cache timeout
+  // This prevents excessive codec churn during scrolling (creating/disposing controllers rapidly)
+  // 5 minutes allows smooth scrolling back and forth without re-initializing codecs
   final link = ref.keepAlive();
   Timer? cacheTimer;
 
   // Riverpod lifecycle hooks for idiomatic cache behavior
   ref.onCancel(() {
-    // Last listener removed - start 30s cache timeout
-    cacheTimer = Timer(const Duration(seconds: 30), () {
-      link.close(); // Allow autoDispose after 30s of no listeners
+    // Last listener removed - start 5-minute cache timeout
+    // Longer timeout reduces jittery scrolling caused by rapid codec initialization/disposal
+    cacheTimer = Timer(const Duration(minutes: 5), () {
+      link.close(); // Allow autoDispose after 5 minutes of no listeners
     });
   });
 

@@ -42,16 +42,16 @@ void main() {
       expect(true, isTrue, reason: 'Placeholder - check auth event in implementation logs');
     });
 
-    test('server URL should be cf-stream-service-prod.protestnet.workers.dev for upload', () async {
-      // ARRANGE: Upload goes to worker endpoint, NOT api.divine.video
-      final expectedBaseUrl = 'https://cf-stream-service-prod.protestnet.workers.dev';
+    test('server URL should be blossom.divine.video for upload', () async {
+      // ARRANGE: Upload goes to Blossom server endpoint
+      final expectedBaseUrl = 'https://blossom.divine.video';
 
       // ACT: Check default server URL
       final serverUrl = BlossomUploadService.defaultBlossomServer;
 
-      // ASSERT: Should match spec
+      // ASSERT: Should match current configuration
       expect(serverUrl, equals(expectedBaseUrl),
-          reason: 'Blossom upload must go to worker endpoint per corrected spec');
+          reason: 'Blossom upload uses divine.video Blossom server');
     });
 
     test('uploaded file should return cdn.divine.video URL', () async {

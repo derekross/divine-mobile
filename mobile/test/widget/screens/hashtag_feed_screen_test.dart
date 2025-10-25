@@ -8,6 +8,7 @@ import 'package:openvine/models/video_event.dart';
 import 'package:openvine/screens/hashtag_feed_screen.dart';
 import 'package:openvine/services/hashtag_service.dart';
 import 'package:openvine/services/video_event_service.dart';
+import 'package:openvine/services/subscription_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openvine/providers/app_providers.dart';
 
@@ -51,7 +52,7 @@ void main() {
       const testHashtag = 'bitcoin';
 
       when(() => mockVideoService.isLoading).thenReturn(false);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(false);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(false);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn([]);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
@@ -67,7 +68,7 @@ void main() {
       const testHashtag = 'bitcoin';
 
       when(() => mockVideoService.isLoading).thenReturn(true);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(true);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(true);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn([]);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
@@ -83,7 +84,7 @@ void main() {
       const testHashtag = 'bitcoin';
 
       when(() => mockVideoService.isLoading).thenReturn(false);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(false);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(false);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn([]);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
@@ -116,7 +117,7 @@ void main() {
       );
 
       when(() => mockVideoService.isLoading).thenReturn(false);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(false);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(false);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn(testVideos);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
@@ -146,7 +147,7 @@ void main() {
       );
 
       when(() => mockVideoService.isLoading).thenReturn(false);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(false);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(false);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn(testVideos);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
@@ -174,7 +175,7 @@ void main() {
       );
 
       when(() => mockVideoService.isLoading).thenReturn(false);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(false);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(false);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn(testVideos);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
@@ -189,7 +190,7 @@ void main() {
       const testHashtag = 'bitcoin';
 
       when(() => mockVideoService.isLoading).thenReturn(false);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(false);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(false);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn([]);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
@@ -209,7 +210,7 @@ void main() {
       const testHashtag = 'bitcoin';
 
       when(() => mockVideoService.isLoading).thenReturn(false);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(false);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(false);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn([]);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
@@ -236,7 +237,7 @@ void main() {
       ];
 
       when(() => mockVideoService.isLoading).thenReturn(false);
-      when(() => mockVideoService.isLoadingForSubscription(any)).thenReturn(false);
+      when(() => mockVideoService.isLoadingForSubscription(any<SubscriptionType>())).thenReturn(false);
       when(() => mockHashtagService.getVideosByHashtags([testHashtag]))
           .thenReturn(testVideos);
       when(() => mockHashtagService.getHashtagStats(testHashtag))
