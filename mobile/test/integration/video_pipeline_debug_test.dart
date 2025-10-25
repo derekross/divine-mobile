@@ -74,7 +74,7 @@ void main() {
       final eventsCompleter = Completer<List<VideoEvent>>();
 
       // Listen to the provider
-      container.listen(eventsProvider, (previous, next) {
+      final subscription = container.listen(eventsProvider, (previous, next) {
         if (next.hasValue) {
           final events = next.value!;
           Log.info('✅ VideoEventsProvider received ${events.length} events',
@@ -162,6 +162,9 @@ void main() {
         // Fail the test with debug info
         fail(
             'Pipeline did not complete within timeout. Debug info printed above.');
+      } finally {
+        // Close the subscription listener to prevent leaks
+        subscription.close();
       }
     });
 
