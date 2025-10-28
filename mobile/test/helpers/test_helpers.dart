@@ -5,7 +5,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:openvine/models/video_event.dart';
+import 'package:openvine/services/upload_initialization_helper.dart';
 import 'package:openvine/utils/unified_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -187,6 +189,49 @@ class TestHelpers {
     }
 
     return events;
+  }
+
+  /// Clean up Hive box to ensure test isolation
+  /// Call this in setUp() BEFORE initializing your manager
+  ///
+  /// This ensures proper unit test isolation by:
+  /// - Resetting static state in UploadInitializationHelper
+  /// - Closing any open Hive boxes
+  /// - Deleting the box from disk
+  /// - Clearing ALL data from the box after reopen
+  ///
+  /// Example usage:
+  /// ```dart
+  /// setUp(() async {
+  ///   await TestHelpers.cleanupHiveBox('pending_uploads');
+  ///   manager = UploadManager(...);
+  ///   await manager.initialize(); // This will create a fresh empty box
+  ///   await TestHelpers.ensureBoxEmpty('pending_uploads'); // Verify it's really empty
+  /// });
+  /// ```
+  static Future<void> cleanupHiveBox(String boxName) async {
+    // Reset static state
+    UploadInitializationHelper.reset();
+
+    // Close and delete the box
+    try {
+      if (Hive.isBoxOpen(boxName)) {
+        await Hive.box(boxName).close();
+      }
+      await Hive.deleteBoxFromDisk(boxName);
+    } catch (e) {
+      // Box might not exist, that's fine
+    }
+  }
+
+  /// Ensure a Hive box is completely empty
+  /// Call this AFTER initialization to verify the box is truly empty
+  static Future<void> ensureBoxEmpty<T>(String boxName) async {
+    if (Hive.isBoxOpen(boxName)) {
+      final box = Hive.box<T>(boxName);
+      // Clear all keys
+      await box.clear();
+    }
   }
 
   /// Generate test data for performance testing

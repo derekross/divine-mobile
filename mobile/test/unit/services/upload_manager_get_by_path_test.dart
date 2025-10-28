@@ -6,9 +6,12 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:openvine/models/pending_upload.dart';
 import 'package:openvine/services/blossom_upload_service.dart';
+import 'package:openvine/services/upload_initialization_helper.dart';
 import 'package:openvine/services/upload_manager.dart';
 import '../../helpers/real_integration_test_helper.dart';
+import '../../helpers/test_helpers.dart';
 
 class MockBlossomUploadService extends Mock implements BlossomUploadService {}
 
@@ -25,25 +28,31 @@ void main() {
     await RealIntegrationTestHelper.setupTestEnvironment();
     // Initialize Hive for testing
     await Hive.initFlutter();
-  });
 
-  setUp(() async {
-    // Clean up before each test to ensure clean state
+    // CRITICAL: Delete the entire pending_uploads box from disk ONCE before any tests run
+    // This ensures we don't have accumulated data from previous test runs
     try {
       if (Hive.isBoxOpen('pending_uploads')) {
-        final box = Hive.box('pending_uploads');
-        await box.clear();
-        await box.close();
+        await Hive.box('pending_uploads').close();
       }
+      await Hive.deleteBoxFromDisk('pending_uploads');
     } catch (e) {
       // Box might not exist, that's fine
     }
+  });
+
+  setUp(() async {
+    // Use the reusable test helper to ensure a fresh empty Hive box
+    await TestHelpers.cleanupHiveBox('pending_uploads');
 
     mockUploadService = MockBlossomUploadService();
     uploadManager = UploadManager(blossomService: mockUploadService);
 
-    // Initialize the upload manager (this will open the Hive box)
+    // Initialize creates a fresh empty box
     await uploadManager.initialize();
+
+    // CRITICAL: Explicitly clear the box after initialization to remove any stale data
+    await TestHelpers.ensureBoxEmpty<PendingUpload>('pending_uploads');
   });
 
   tearDown() async {
