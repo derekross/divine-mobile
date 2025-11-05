@@ -168,34 +168,63 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
             final videos = state.videos;
             final socialService = ref.watch(socialServiceProvider);
 
-            // If videoIndex > 0, show fullscreen video mode
-            // Note: videoIndex is 1-based (0 = grid, 1 = first video, etc.)
-            if (videoIndex != null && videoIndex > 0 && videos.isNotEmpty) {
-              // Convert URL index to list index (subtract 1)
-              final listIndex = videoIndex - 1;
+            // If videoIndex is set, show fullscreen video mode
+            // Note: videoIndex maps directly to list index (0 = first video, 1 = second video, etc.)
+            // When videoIndex is null, show grid mode
+            if (videoIndex != null && videos.isNotEmpty) {
+              // videoIndex IS the list index - no conversion needed
+              final listIndex = videoIndex;
               final safeIndex = listIndex.clamp(0, videos.length - 1);
+
+              Log.debug(
+                '🎬 ProfileScreenRouter video mode: videoIndex=$videoIndex, listIndex=$listIndex, safeIndex=$safeIndex, '
+                'videos.length=${videos.length}, controllerExists=${_videoController != null}, '
+                'lastUrlIndex=$_lastVideoUrlIndex',
+                name: 'ProfileScreenRouter',
+                category: LogCategory.video,
+              );
 
               // Initialize controller once with URL index
               if (_videoController == null) {
-                _videoController = PageController(initialPage: safeIndex);
-                _lastVideoUrlIndex = safeIndex;
-              }
-
-              // Sync controller when URL changes externally (back/forward/deeplink)
-              // OR when videos list changes (e.g., provider reloads)
-              final targetIndex = listIndex.clamp(0, videos.length - 1);
-              if (shouldSync(
-                urlIndex: listIndex,
-                lastUrlIndex: _lastVideoUrlIndex,
-                controller: _videoController,
-                targetIndex: targetIndex,
-              )) {
-                _lastVideoUrlIndex = listIndex;
-                syncPageController(
-                  controller: _videoController!,
-                  targetIndex: listIndex,
-                  itemCount: videos.length,
+                Log.info(
+                  '🆕 Creating PageController with initialPage=$safeIndex for videoIndex=$videoIndex',
+                  name: 'ProfileScreenRouter',
+                  category: LogCategory.video,
                 );
+                _videoController = PageController(initialPage: safeIndex);
+                _lastVideoUrlIndex = listIndex; // Track URL index, not safe index
+              } else {
+                // Sync controller when URL changes externally (back/forward/deeplink)
+                // OR when videos list changes (e.g., provider reloads)
+                // Only sync if controller already exists - initialPage handles first navigation
+                final targetIndex = listIndex.clamp(0, videos.length - 1);
+                final currentPage = _videoController!.hasClients ? _videoController!.page?.round() : null;
+
+                Log.debug(
+                  '🔄 Checking sync: urlIndex=$listIndex, lastUrlIndex=$_lastVideoUrlIndex, '
+                  'hasClients=${_videoController!.hasClients}, currentPage=$currentPage, targetIndex=$targetIndex',
+                  name: 'ProfileScreenRouter',
+                  category: LogCategory.video,
+                );
+
+                if (shouldSync(
+                  urlIndex: listIndex,
+                  lastUrlIndex: _lastVideoUrlIndex,
+                  controller: _videoController,
+                  targetIndex: targetIndex,
+                )) {
+                  Log.info(
+                    '📍 Syncing PageController: $currentPage → $targetIndex',
+                    name: 'ProfileScreenRouter',
+                    category: LogCategory.video,
+                  );
+                  _lastVideoUrlIndex = listIndex;
+                  syncPageController(
+                    controller: _videoController!,
+                    targetIndex: listIndex,
+                    itemCount: videos.length,
+                  );
+                }
               }
 
               // Build fullscreen video PageView
@@ -206,10 +235,9 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
                 itemCount: videos.length,
                 onPageChanged: (newIndex) {
                   // Update URL when swiping to stay in profile context
-                  // Convert list index to URL index (add 1)
-                  final newUrlIndex = newIndex + 1;
-                  if (newUrlIndex != videoIndex) {
-                    context.goProfile(npub, newUrlIndex);
+                  // videoIndex maps directly to list index (no conversion needed)
+                  if (newIndex != videoIndex) {
+                    context.goProfile(npub, newIndex);
                   }
 
                   // Trigger pagination near end
@@ -800,6 +828,27 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
                 ),
                 child: const Icon(Icons.mail_outline),
               ),
+              const SizedBox(width: 12),
+              Consumer(
+                builder: (context, ref, _) {
+                  final blocklistService = ref.watch(contentBlocklistServiceProvider);
+                  final isBlocked = blocklistService.isBlocked(userIdHex);
+                  return OutlinedButton(
+                    onPressed: () => _blockUser(userIdHex, isBlocked),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isBlocked ? Colors.grey : Colors.red,
+                      side: BorderSide(
+                        color: isBlocked ? Colors.grey : Colors.red,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(isBlocked ? 'Unblock' : 'Block User'),
+                  );
+                },
+              ),
             ],
           ],
         ),
@@ -876,13 +925,19 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
                 final videoEvent = videos[index];
                 return GestureDetector(
                   onTap: () {
-                    Log.info('🎯 ProfileScreenRouter: Tapped video at index $index',
-                        category: LogCategory.video);
-                    // Navigate to fullscreen video mode using GoRouter
-                    // This keeps user on /profile/:npub/:index routes
-                    // Note: URL index is offset by 1 (0 = grid, 1 = first video, etc.)
                     final npub = NostrEncoding.encodePublicKey(userIdHex);
-                    context.goProfile(npub, index + 1);
+                    Log.info(
+                      '🎯 ProfileScreenRouter GRID TAP: gridIndex=$index, '
+                      'npub=$npub, videoId=${videoEvent.id}',
+                      category: LogCategory.video,
+                    );
+                    // Navigate to fullscreen video mode using GoRouter
+                    // videoIndex maps directly to list index (no offset)
+                    context.goProfile(npub, index);
+                    Log.info(
+                      '✅ ProfileScreenRouter: Called goProfile($npub, $index)',
+                      category: LogCategory.video,
+                    );
                   },
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -1147,6 +1202,57 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
       pubkey: pubkey,
       contextName: 'ProfileScreenRouter',
     );
+  }
+
+  Future<void> _blockUser(String pubkey, bool currentlyBlocked) async {
+    if (currentlyBlocked) {
+      // Unblock without confirmation
+      final blocklistService = ref.read(contentBlocklistServiceProvider);
+      blocklistService.unblockUser(pubkey);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User unblocked')),
+        );
+      }
+      return;
+    }
+
+    // Show confirmation dialog for blocking
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: VineTheme.cardBackground,
+        title: const Text(
+          'Block @',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'You won\'t see their content in feeds. They won\'t be notified. You can still visit their profile.',
+          style: TextStyle(color: Colors.grey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final blocklistService = ref.read(contentBlocklistServiceProvider);
+      blocklistService.blockUser(pubkey);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User blocked')),
+        );
+      }
+    }
   }
 
   void _sendMessage() {
