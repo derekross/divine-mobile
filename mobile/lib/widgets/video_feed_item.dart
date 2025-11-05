@@ -914,11 +914,46 @@ class VideoOverlayActions extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          // Flag/Report icon for content moderation
-          const Icon(
-            Icons.flag_outlined,
-            color: Colors.white,
-            size: 18,
+          // Flag/Report button for content moderation
+          Column(
+            children: [
+              IconButton(
+                onPressed: () {
+                  Log.info(
+                    '🚩 Report button tapped for ${video.id}',
+                    name: 'VideoFeedItem',
+                    category: LogCategory.ui,
+                  );
+                  _showShareMenu(context, video);
+                },
+                icon: const Icon(
+                  Icons.flag_outlined,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 0),
+              const Text(
+                'Report',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      offset: Offset(0, 0),
+                      blurRadius: 6,
+                      color: Colors.black,
+                    ),
+                    Shadow(
+                      offset: Offset(1, 1),
+                      blurRadius: 3,
+                      color: Colors.black,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
 
           // Edit button (only show for owned videos when feature is enabled)

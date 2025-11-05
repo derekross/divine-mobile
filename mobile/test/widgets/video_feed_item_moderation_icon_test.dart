@@ -87,12 +87,12 @@ void main() {
         final flagIcon = find.byIcon(Icons.flag_outlined);
         expect(flagIcon, findsOneWidget);
 
-        // RED: Check icon size (should be 18px per design spec)
+        // RED: Check icon size (should be 32px to match other action buttons)
         final iconWidget = tester.widget<Icon>(flagIcon);
         expect(
           iconWidget.size,
-          equals(18.0),
-          reason: 'Flag icon should be 18px per design specification',
+          equals(32.0),
+          reason: 'Flag icon should be 32px to match other action buttons',
         );
       });
     });
