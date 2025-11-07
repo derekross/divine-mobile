@@ -166,29 +166,77 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
               ),
             ),
           ),
-          TextButton(
-            onPressed: _isUploading ? null : _publishVideo,
-            child: _isUploading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text(
-                  'Publish',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-          ),
+          if (_currentDraft?.canRetry ?? false)
+            // Show Retry button for failed drafts
+            TextButton(
+              key: const Key('retry-button'),
+              onPressed: _isUploading ? null : _publishVideo,
+              child: _isUploading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Retry',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            )
+          else
+            // Show Publish button for draft status
+            TextButton(
+              onPressed: (_isUploading || (_currentDraft?.isPublishing ?? false)) ? null : _publishVideo,
+              child: (_isUploading || (_currentDraft?.isPublishing ?? false))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Publish',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
         ],
       ),
       body: Column(
         children: [
+          // Error banner for failed publishes
+          if (_currentDraft?.publishStatus == PublishStatus.failed && _currentDraft?.publishError != null)
+            Container(
+              width: double.infinity,
+              color: Colors.red[900],
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _currentDraft!.publishError!,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  Text(
+                    'Attempt ${_currentDraft!.publishAttempts}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+
           // Video preview section
           Expanded(
             flex: 3,
@@ -395,11 +443,27 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
     });
 
     try {
+      // Update draft status to "publishing"
+      final prefs = await SharedPreferences.getInstance();
+      final draftService = DraftStorageService(prefs);
+
+      final publishing = _currentDraft!.copyWith(
+        publishStatus: PublishStatus.publishing,
+      );
+      await draftService.saveDraft(publishing);
+      setState(() {
+        _currentDraft = publishing;
+      });
+
       Log.info('🎬 VinePreviewScreenPure: Publishing video: ${_currentDraft!.videoFile.path}',
           category: LogCategory.video);
 
-      // TODO: Implement video publishing with upload service
-      // For now, just navigate back (no mock delay needed)
+      // TODO: Implement actual video upload service
+      // For now, simulate success
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Success: delete draft
+      await draftService.deleteDraft(_currentDraft!.id);
 
       if (mounted) {
         // Navigate back to main feed after successful upload
@@ -409,17 +473,32 @@ class _VinePreviewScreenPureState extends ConsumerState<VinePreviewScreenPure> {
       Log.error('🎬 VinePreviewScreenPure: Failed to publish video: $e',
           category: LogCategory.video);
 
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
+      // Failed: update draft with error
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final draftService = DraftStorageService(prefs);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to publish video: $e'),
-            backgroundColor: Colors.red,
-          ),
+        final failed = _currentDraft!.copyWith(
+          publishStatus: PublishStatus.failed,
+          publishError: e.toString(),
+          publishAttempts: _currentDraft!.publishAttempts + 1,
         );
+        await draftService.saveDraft(failed);
+
+        if (mounted) {
+          setState(() {
+            _currentDraft = failed;
+            _isUploading = false;
+          });
+        }
+      } catch (saveError) {
+        Log.error('🎬 VinePreviewScreenPure: Failed to save error state: $saveError',
+            category: LogCategory.video);
+        if (mounted) {
+          setState(() {
+            _isUploading = false;
+          });
+        }
       }
     }
   }
