@@ -528,12 +528,33 @@ class VideoOverlayActions extends ConsumerWidget {
           left: 16,
           child: Consumer(
             builder: (context, ref, _) {
-              // Watch profile provider - now checks both module cache AND service cache
-              final profileAsync = ref.watch(fetchUserProfileProvider(video.pubkey));
-              final display = profileAsync.maybeWhen(
-                data: (p) => p?.bestDisplayName ?? p?.displayName ?? p?.name,
-                orElse: () => null,
-              ) ?? 'Loading...';
+              // Watch the reactive notifier state which updates when profiles are added
+              final profileState = ref.watch(userProfileProvider);
+              var profile = profileState.getCachedProfile(video.pubkey);
+
+              // If not in notifier cache, check service cache (VideoEventService might have fetched it)
+              if (profile == null) {
+                final userProfileService = ref.read(userProfileServiceProvider);
+                final serviceCached = userProfileService.getCachedProfile(video.pubkey);
+
+                if (serviceCached != null) {
+                  // Found in service cache - sync it to notifier state to trigger rebuild
+                  Future.microtask(() {
+                    ref.read(userProfileProvider.notifier).syncProfileFromService(video.pubkey, serviceCached);
+                  });
+                  profile = serviceCached; // Use it immediately for this render
+                } else if (!profileState.shouldSkipFetch(video.pubkey)) {
+                  // Not in either cache - fetch it
+                  Future.microtask(() {
+                    ref.read(userProfileProvider.notifier).fetchProfile(video.pubkey);
+                  });
+                }
+              }
+
+              final display = profile?.bestDisplayName ??
+                              profile?.displayName ??
+                              profile?.name ??
+                              'Loading...';
 
               final authService = ref.watch(authServiceProvider);
               final currentUserPubkey = authService.currentPublicKeyHex;

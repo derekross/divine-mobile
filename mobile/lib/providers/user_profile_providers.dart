@@ -287,6 +287,31 @@ class UserProfileNotifier extends _$UserProfileNotifier {
     }
   }
 
+  /// Sync a profile from UserProfileService cache into notifier state
+  /// Used when VideoEventService fetches profiles but doesn't update notifier
+  void syncProfileFromService(String pubkey, UserProfile profile) {
+    if (state.hasProfile(pubkey)) {
+      return; // Already in cache
+    }
+
+    // Update state cache
+    final newCache = Map<String, UserProfile>.from(state.profileCache);
+    newCache[pubkey] = profile;
+    state = state.copyWith(
+      profileCache: newCache,
+      totalProfilesCached: newCache.length,
+    );
+
+    // Also update module-level cache
+    _cacheUserProfile(pubkey, profile);
+
+    Log.debug(
+      '🔄 Synced profile from service cache: ${profile.bestDisplayName}',
+      name: 'UserProfileNotifier',
+      category: LogCategory.ui,
+    );
+  }
+
   /// Aggressively pre-fetch profiles for immediate display (no debouncing)
   Future<void> prefetchProfilesImmediately(List<String> pubkeys) async {
     // Only prefetch when a relevant UI tab is active to avoid background churn
