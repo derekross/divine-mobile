@@ -7,8 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:openvine/screens/pure/video_metadata_screen_pure.dart';
 import 'package:openvine/providers/app_providers.dart';
+import 'package:openvine/features/feature_flags/providers/feature_flag_providers.dart';
 import 'package:openvine/services/upload_manager.dart';
 import 'package:openvine/services/auth_service.dart';
+import 'package:openvine/services/draft_storage_service.dart';
+import 'package:openvine/models/vine_draft.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
 class MockUploadManager extends Mock implements UploadManager {}
@@ -22,14 +26,33 @@ void main() {
     late MockUploadManager mockUploadManager;
     late MockAuthService mockAuthService;
     late MockFile mockVideoFile;
+    late SharedPreferences prefs;
+    late String testDraftId;
 
-    setUp(() {
+    setUp(() async {
       mockUploadManager = MockUploadManager();
       mockAuthService = MockAuthService();
       mockVideoFile = MockFile();
 
       when(() => mockVideoFile.path).thenReturn('/test/video.mp4');
       when(() => mockAuthService.currentPublicKeyHex).thenReturn('test_pubkey_hex');
+
+      // Set up SharedPreferences with a test draft
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+
+      final draft = VineDraft.create(
+        videoFile: mockVideoFile,
+        title: 'Test Video',
+        description: 'Test description',
+        hashtags: ['test'],
+        frameCount: 10,
+        selectedApproach: 'native',
+      );
+      testDraftId = draft.id;
+
+      final draftService = DraftStorageService(prefs);
+      await draftService.saveDraft(draft);
     });
 
     testWidgets('should access upload manager and auth service from providers',
@@ -40,15 +63,20 @@ void main() {
           overrides: [
             uploadManagerProvider.overrideWithValue(mockUploadManager),
             authServiceProvider.overrideWithValue(mockAuthService),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: MaterialApp(
             home: VideoMetadataScreenPure(
-              videoFile: mockVideoFile,
-              duration: const Duration(seconds: 2),
+              draftId: testDraftId,
             ),
           ),
         ),
       );
+
+      // Pump a few frames to allow draft loading
+      // Note: We don't use pumpAndSettle() because video player never settles in tests
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Assert - Screen should build without errors
       expect(find.byType(VideoMetadataScreenPure), findsOneWidget);
@@ -69,15 +97,20 @@ void main() {
           overrides: [
             uploadManagerProvider.overrideWithValue(mockUploadManager),
             authServiceProvider.overrideWithValue(mockAuthService),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: MaterialApp(
             home: VideoMetadataScreenPure(
-              videoFile: mockVideoFile,
-              duration: const Duration(seconds: 2),
+              draftId: testDraftId,
             ),
           ),
         ),
       );
+
+      // Pump a few frames to allow draft loading
+      // Note: We don't use pumpAndSettle() because video player never settles in tests
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Find the publish button
       final publishButton = find.text('Publish');

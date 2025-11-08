@@ -2,7 +2,6 @@
 // ABOUTME: Used by Riverpod UserProfileProvider to manage reactive profile state
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:openvine/models/user_profile.dart';
 
 part 'user_profile_state.freezed.dart';
 part 'user_profile_state.g.dart';
@@ -10,9 +9,6 @@ part 'user_profile_state.g.dart';
 @freezed
 sealed class UserProfileState with _$UserProfileState {
   const factory UserProfileState({
-    // Profile cache - pubkey -> profile
-    @Default({}) Map<String, UserProfile> profileCache,
-
     // Pending profile requests
     @Default({}) Set<String> pendingRequests,
 
@@ -29,7 +25,6 @@ sealed class UserProfileState with _$UserProfileState {
     String? error,
 
     // Stats
-    @Default(0) int totalProfilesCached,
     @Default(0) int totalProfilesRequested,
   }) = _UserProfileState;
 
@@ -40,12 +35,6 @@ sealed class UserProfileState with _$UserProfileState {
 
   /// Create initial state
   static final UserProfileState initial = UserProfileState();
-
-  /// Check if a profile is cached
-  bool hasProfile(String pubkey) => profileCache.containsKey(pubkey);
-
-  /// Get cached profile
-  UserProfile? getCachedProfile(String pubkey) => profileCache[pubkey];
 
   /// Check if profile request is pending
   bool isRequestPending(String pubkey) => pendingRequests.contains(pubkey);

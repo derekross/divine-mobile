@@ -9,11 +9,13 @@ part of 'user_profile_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Async provider for loading a single user profile
+/// Delegates to UserProfileService which is the single source of truth
 
 @ProviderFor(fetchUserProfile)
 const fetchUserProfileProvider = FetchUserProfileFamily._();
 
 /// Async provider for loading a single user profile
+/// Delegates to UserProfileService which is the single source of truth
 
 final class FetchUserProfileProvider
     extends
@@ -24,6 +26,7 @@ final class FetchUserProfileProvider
         >
     with $FutureModifier<UserProfile?>, $FutureProvider<UserProfile?> {
   /// Async provider for loading a single user profile
+  /// Delegates to UserProfileService which is the single source of truth
   const FetchUserProfileProvider._({
     required FetchUserProfileFamily super.from,
     required String super.argument,
@@ -68,9 +71,10 @@ final class FetchUserProfileProvider
   }
 }
 
-String _$fetchUserProfileHash() => r'c30ba0a35abcc311ebf1b1ceecd6600b06a661bb';
+String _$fetchUserProfileHash() => r'8fcb96c584b9590712ec8e1681ebae84e0f66627';
 
 /// Async provider for loading a single user profile
+/// Delegates to UserProfileService which is the single source of truth
 
 final class FetchUserProfileFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<UserProfile?>, String> {
@@ -84,6 +88,7 @@ final class FetchUserProfileFamily extends $Family
       );
 
   /// Async provider for loading a single user profile
+  /// Delegates to UserProfileService which is the single source of truth
 
   FetchUserProfileProvider call(String pubkey) =>
       FetchUserProfileProvider._(argument: pubkey, from: this);
@@ -125,7 +130,7 @@ final class UserProfileNotifierProvider
 }
 
 String _$userProfileNotifierHash() =>
-    r'a89247462faf6dd36ce8804e701d2f57982f9017';
+    r'66d6fbe940e477bbd08ecd5c0d1958ade072cbc8';
 
 abstract class _$UserProfileNotifier extends $Notifier<UserProfileState> {
   UserProfileState build();

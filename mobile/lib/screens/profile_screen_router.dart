@@ -543,6 +543,7 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
                           : null,
                       'Vines',
                       profileStatsAsync.isLoading,
+                      onTap: null, // Videos aren't tappable
                     ),
                     _buildStatColumn(
                       profileStatsAsync.hasValue
@@ -550,6 +551,7 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
                           : null,
                       'Followers',
                       profileStatsAsync.isLoading,
+                      onTap: () => _navigateToFollowers(context, userIdHex, displayName),
                     ),
                     _buildStatColumn(
                       profileStatsAsync.hasValue
@@ -557,6 +559,7 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
                           : null,
                       'Following',
                       profileStatsAsync.isLoading,
+                      onTap: () => _navigateToFollowing(context, userIdHex, displayName),
                     ),
                   ],
                 ),
@@ -664,7 +667,8 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
     );
   }
 
-  Widget _buildStatColumn(int? count, String label, bool isLoading) => Column(
+  Widget _buildStatColumn(int? count, String label, bool isLoading, {VoidCallback? onTap}) {
+    final column = Column(
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
@@ -696,6 +700,21 @@ class _ProfileScreenRouterState extends ConsumerState<ProfileScreenRouter>
           ),
         ],
       );
+
+    // Wrap in InkWell if tappable
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: column,
+        ),
+      );
+    }
+
+    return column;
+  }
 
   String _formatCount(int count) {
     return StringUtils.formatCompactNumber(count);

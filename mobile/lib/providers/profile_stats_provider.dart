@@ -118,18 +118,21 @@ Future<ProfileStats> fetchProfileStats(Ref ref, String pubkey) async {
     Log.debug('📊 Step 1 complete: User videos subscription ready',
         name: 'ProfileStatsProvider', category: LogCategory.ui);
 
-    // Get follower stats from cache (don't wait for network - it takes 8+ seconds!)
-    Log.debug('📊 Step 2: Getting cached follower stats...',
+    // Get follower stats - use cache if available, otherwise fetch from network
+    Log.debug('📊 Step 2: Getting follower stats...',
         name: 'ProfileStatsProvider', category: LogCategory.ui);
-    final followerStats = socialService.getCachedFollowerStats(pubkey) ?? {'followers': 0, 'following': 0};
 
-    // Trigger background refresh (don't await it) - provider will auto-refresh on next access
-    socialService.getFollowerStats(pubkey).then((_) {
-      Log.debug('📊 Background: Follower stats refreshed',
+    // Check cache first for instant display
+    final cachedStats = socialService.getCachedFollowerStats(pubkey);
+    if (cachedStats != null) {
+      Log.debug('📊 Using cached follower stats: $cachedStats',
           name: 'ProfileStatsProvider', category: LogCategory.ui);
-    });
+    }
 
-    Log.debug('📊 Step 2 complete: Using cached follower stats - followers=${followerStats['followers']}, following=${followerStats['following']}',
+    // Fetch fresh stats from network (will use cache if recent)
+    final followerStats = await socialService.getFollowerStats(pubkey);
+
+    Log.debug('📊 Step 2 complete: Follower stats - followers=${followerStats['followers']}, following=${followerStats['following']}',
         name: 'ProfileStatsProvider', category: LogCategory.ui);
 
     // Get videos from VideoEventService (now populated via subscription)

@@ -11,7 +11,6 @@ import 'package:openvine/services/bug_report_service.dart';
 import 'package:openvine/widgets/bug_report_dialog.dart';
 
 import 'bug_report_dialog_test.mocks.dart';
-import '../helpers/test_provider_overrides.dart';
 
 @GenerateMocks([BugReportService])
 void main() {
@@ -119,7 +118,7 @@ void main() {
         additionalContext: anyNamed('additionalContext'),
       )).thenAnswer((_) async => testReportData);
 
-      when(mockBugReportService.sendBugReportViaEmail(any)).thenAnswer(
+      when(mockBugReportService.sendBugReport(any)).thenAnswer(
         (_) async => BugReportResult(
           success: true,
           reportId: 'test-123',
@@ -151,7 +150,7 @@ void main() {
         additionalContext: anyNamed('additionalContext'),
       )).called(1);
 
-      verify(mockBugReportService.sendBugReportViaEmail(any)).called(1);
+      verify(mockBugReportService.sendBugReport(any)).called(1);
     });
 
     testWidgets('should show loading indicator while submitting',
@@ -175,7 +174,7 @@ void main() {
         );
       });
 
-      when(mockBugReportService.sendBugReportViaEmail(any)).thenAnswer((_) async {
+      when(mockBugReportService.sendBugReport(any)).thenAnswer((_) async {
         await Future.delayed(const Duration(milliseconds: 100));
         return BugReportResult.createSuccess(
           reportId: 'test-123',
@@ -203,7 +202,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('should show success message on successful submission',
+    testWidgets('should show improved success message on successful submission',
         (tester) async {
       when(mockBugReportService.collectDiagnostics(
         userDescription: anyNamed('userDescription'),
@@ -220,7 +219,7 @@ void main() {
             errorCounts: {},
           ));
 
-      when(mockBugReportService.sendBugReportViaEmail(any)).thenAnswer(
+      when(mockBugReportService.sendBugReport(any)).thenAnswer(
         (_) async => BugReportResult(
           success: true,
           reportId: 'test-123',
@@ -239,10 +238,134 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Test bug');
       await tester.pump();
       await tester.tap(find.text('Send Report'));
+      await tester.pump();
+
+      // Wait for async to complete
+      await tester.pump();
+
+      // Should show improved success message
+      expect(
+        find.textContaining("Thank you! We've received your report"),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should auto-dismiss dialog after 1.5 seconds on success',
+        (tester) async {
+      when(mockBugReportService.collectDiagnostics(
+        userDescription: anyNamed('userDescription'),
+        currentScreen: anyNamed('currentScreen'),
+        userPubkey: anyNamed('userPubkey'),
+        additionalContext: anyNamed('additionalContext'),
+      )).thenAnswer((_) async => BugReportData(
+            reportId: 'test-123',
+            timestamp: DateTime.now(),
+            userDescription: 'Test',
+            deviceInfo: {},
+            appVersion: '1.0.0',
+            recentLogs: [],
+            errorCounts: {},
+          ));
+
+      when(mockBugReportService.sendBugReport(any)).thenAnswer(
+        (_) async => BugReportResult(
+          success: true,
+          reportId: 'test-123',
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => BugReportDialog(
+                      bugReportService: mockBugReportService,
+                    ),
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Open dialog
+      await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Should show success message with email instructions
-      expect(find.textContaining('Opening email to contact@divine.video'), findsOneWidget);
+      expect(find.text('Report a Bug'), findsOneWidget);
+
+      // Submit report
+      await tester.enterText(find.byType(TextField), 'Test bug');
+      await tester.pump();
+      await tester.tap(find.text('Send Report'));
+      await tester.pump(); // Start async operation
+      await tester.pump(); // Complete async operation (success state set)
+
+      // Dialog should still be open after success
+      expect(find.text('Report a Bug'), findsOneWidget);
+
+      // Wait for 1.5 seconds (auto-dismiss timer) + execute callback
+      await tester.pumpAndSettle(const Duration(milliseconds: 1500));
+
+      // Dialog should now be closed
+      expect(find.text('Report a Bug'), findsNothing);
+    });
+
+    testWidgets('should change Send button to Close after successful submission',
+        (tester) async {
+      when(mockBugReportService.collectDiagnostics(
+        userDescription: anyNamed('userDescription'),
+        currentScreen: anyNamed('currentScreen'),
+        userPubkey: anyNamed('userPubkey'),
+        additionalContext: anyNamed('additionalContext'),
+      )).thenAnswer((_) async => BugReportData(
+            reportId: 'test-123',
+            timestamp: DateTime.now(),
+            userDescription: 'Test',
+            deviceInfo: {},
+            appVersion: '1.0.0',
+            recentLogs: [],
+            errorCounts: {},
+          ));
+
+      when(mockBugReportService.sendBugReport(any)).thenAnswer(
+        (_) async => BugReportResult(
+          success: true,
+          reportId: 'test-123',
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BugReportDialog(bugReportService: mockBugReportService),
+          ),
+        ),
+      );
+
+      // Initial state - should have "Send Report" button
+      expect(find.text('Send Report'), findsOneWidget);
+      expect(find.text('Close'), findsNothing);
+
+      await tester.enterText(find.byType(TextField), 'Test bug');
+      await tester.pump();
+      await tester.tap(find.text('Send Report'));
+      await tester.pump();
+
+      // Wait for async to complete
+      await tester.pump();
+
+      // After success - should have "Close" button instead of "Send Report"
+      expect(find.text('Send Report'), findsNothing);
+      expect(find.text('Close'), findsOneWidget);
     });
 
     testWidgets('should show error message on failed submission',
@@ -262,7 +385,7 @@ void main() {
             errorCounts: {},
           ));
 
-      when(mockBugReportService.sendBugReportViaEmail(any)).thenAnswer(
+      when(mockBugReportService.sendBugReport(any)).thenAnswer(
         (_) async => BugReportResult.failure(
           'Could not create file',
           reportId: 'test-123',
@@ -280,10 +403,11 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Test bug');
       await tester.pump();
       await tester.tap(find.text('Send Report'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
 
       // Should show error message
-      expect(find.textContaining('Failed to create bug report'), findsOneWidget);
+      expect(find.textContaining('Failed to send bug report'), findsOneWidget);
     });
 
     testWidgets('should close dialog on Cancel', (tester) async {

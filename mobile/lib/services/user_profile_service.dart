@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:nostr_sdk/event.dart';
 import 'package:nostr_sdk/filter.dart';
 import 'package:openvine/models/user_profile.dart';
@@ -14,8 +15,8 @@ import 'package:openvine/services/subscription_manager.dart';
 import 'package:openvine/utils/unified_logger.dart';
 
 /// Service for managing user profiles from Nostr kind 0 events
-/// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
-class UserProfileService {
+/// Reactive service that notifies listeners when profiles are updated
+class UserProfileService extends ChangeNotifier {
   UserProfileService(this._nostrService,
       {required SubscriptionManager subscriptionManager})
       : _subscriptionManager = subscriptionManager;
@@ -73,6 +74,8 @@ class UserProfileService {
       if (profile != null) {
         // Load into memory cache for faster access
         _profileCache[pubkey] = profile;
+        // Notify listeners that profile is now available
+        notifyListeners();
         return profile;
       }
     }
@@ -133,6 +136,9 @@ class UserProfileService {
       await _persistentCache!.updateCachedProfile(profile);
     }
 
+    // Notify listeners that profile was updated
+    notifyListeners();
+
     Log.debug(
         'Updated cached profile for ${profile.pubkey}: ${profile.bestDisplayName}',
         name: 'UserProfileService',
@@ -182,6 +188,9 @@ class UserProfileService {
       if (_persistentCache?.isInitialized == true) {
         _persistentCache!.removeCachedProfile(pubkey);
       }
+
+      // Notify listeners that profile was removed for refresh
+      notifyListeners();
 
       // Cancel any existing subscriptions for this pubkey
       _cleanupProfileRequest(pubkey);
@@ -312,6 +321,9 @@ class UserProfileService {
       if (_persistentCache?.isInitialized == true) {
         _persistentCache!.cacheProfile(profile);
       }
+
+      // Notify listeners that profile is now available
+      notifyListeners();
 
       // Complete any pending fetch requests for this profile
       final completer = _profileFetchCompleters.remove(event.pubkey);
@@ -651,6 +663,9 @@ class UserProfileService {
   void clearCache() {
     _profileCache.clear();
 
+    // Notify listeners that all profiles are gone
+    notifyListeners();
+
     Log.debug('🧹 Profile cache cleared',
         name: 'UserProfileService', category: LogCategory.system);
   }
@@ -658,6 +673,9 @@ class UserProfileService {
   /// Remove specific profile from cache
   void removeProfile(String pubkey) {
     if (_profileCache.remove(pubkey) != null) {
+      // Notify listeners that profile was removed
+      notifyListeners();
+
       Log.debug('📱️ Removed profile from cache: ${pubkey}...',
           name: 'UserProfileService', category: LogCategory.system);
     }
@@ -713,6 +731,7 @@ class UserProfileService {
     _handleProfileEvent(event);
   }
 
+  @override
   void dispose() {
     // Cancel batch operations
     _batchDebounceTimer?.cancel();
@@ -750,6 +769,9 @@ class UserProfileService {
 
     Log.debug('🗑️ UserProfileService disposed',
         name: 'UserProfileService', category: LogCategory.system);
+
+    // Call super.dispose() to properly clean up ChangeNotifier
+    super.dispose();
   }
 }
 

@@ -36,7 +36,7 @@ void main() {
       mockNostrService = MockNostrService();
       mockSubscriptionManager = MockSubscriptionManager();
 
-      // Mock SubscriptionManager.createSubscription to call onComplete immediately
+      // Mock SubscriptionManager.createSubscription to simulate profile event delivery
       when(() => mockSubscriptionManager.createSubscription(
             name: any(named: 'name'),
             filters: any(named: 'filters'),
@@ -45,8 +45,13 @@ void main() {
             onComplete: any(named: 'onComplete'),
             priority: any(named: 'priority'),
           )).thenAnswer((invocation) async {
-        // Get the onComplete callback and call it after a short delay
+        // Get callbacks
+        final onEvent = invocation.namedArguments[const Symbol('onEvent')] as void Function(Event)?;
         final onComplete = invocation.namedArguments[const Symbol('onComplete')] as void Function()?;
+
+        // Note: Real tests should create proper mock events for their specific scenarios
+        // This default handler just calls onComplete without events (simulates no profile found)
+
         if (onComplete != null) {
           Future.delayed(const Duration(milliseconds: 50), onComplete);
         }
@@ -74,7 +79,6 @@ void main() {
       final state = container.read(userProfileProvider);
 
       expect(state, equals(UserProfileState.initial));
-      expect(state.profileCache, isEmpty);
       expect(state.pendingRequests, isEmpty);
       expect(state.isLoading, isFalse);
       expect(state.error, isNull);
@@ -175,10 +179,29 @@ void main() {
       when(() => mockEvent.content).thenReturn('{"name":"Notifier Test User"}');
       when(() => mockEvent.tags).thenReturn([]);
 
-      // Mock Nostr service subscription
-      when(() => mockNostrService.subscribeToEvents(
-              filters: any(named: 'filters')))
-          .thenAnswer((_) => Stream.value(mockEvent));
+      // Override the subscription manager mock for this specific test
+      // to actually deliver the profile event
+      when(() => mockSubscriptionManager.createSubscription(
+            name: any(named: 'name'),
+            filters: any(named: 'filters'),
+            onEvent: any(named: 'onEvent'),
+            onError: any(named: 'onError'),
+            onComplete: any(named: 'onComplete'),
+            priority: any(named: 'priority'),
+          )).thenAnswer((invocation) async {
+        final onEvent = invocation.namedArguments[const Symbol('onEvent')] as void Function(Event)?;
+        final onComplete = invocation.namedArguments[const Symbol('onComplete')] as void Function()?;
+
+        // Deliver the profile event
+        if (onEvent != null) {
+          Future.delayed(const Duration(milliseconds: 10), () => onEvent(mockEvent));
+        }
+
+        if (onComplete != null) {
+          Future.delayed(const Duration(milliseconds: 50), onComplete);
+        }
+        return 'test-subscription-id';
+      });
 
       // Test notifier fetch method - this is what matters
       final profile = await container
@@ -249,10 +272,28 @@ void main() {
         when(() => mockEvent.content).thenReturn('{"name":"User $pubkey"}');
         when(() => mockEvent.tags).thenReturn([]);
 
-        // Mock stream for this specific pubkey
-        when(() => mockNostrService.subscribeToEvents(
-                filters: any(named: 'filters')))
-            .thenAnswer((_) => Stream.value(mockEvent));
+        // Override mock to deliver this specific event
+        when(() => mockSubscriptionManager.createSubscription(
+              name: any(named: 'name'),
+              filters: any(named: 'filters'),
+              onEvent: any(named: 'onEvent'),
+              onError: any(named: 'onError'),
+              onComplete: any(named: 'onComplete'),
+              priority: any(named: 'priority'),
+            )).thenAnswer((invocation) async {
+          final onEvent = invocation.namedArguments[const Symbol('onEvent')] as void Function(Event)?;
+          final onComplete = invocation.namedArguments[const Symbol('onComplete')] as void Function()?;
+
+          // Deliver the profile event
+          if (onEvent != null) {
+            Future.delayed(const Duration(milliseconds: 10), () => onEvent(mockEvent));
+          }
+
+          if (onComplete != null) {
+            Future.delayed(const Duration(milliseconds: 50), onComplete);
+          }
+          return 'test-subscription-id-$i';
+        });
 
         // Fetch this profile
         final profile = await container
@@ -334,9 +375,28 @@ void main() {
       when(() => mockEvent.content).thenReturn('{"name":"New Name"}');
       when(() => mockEvent.tags).thenReturn([]);
 
-      when(() => mockNostrService.subscribeToEvents(
-              filters: any(named: 'filters')))
-          .thenAnswer((_) => Stream.value(mockEvent));
+      // Override mock to deliver the new profile event
+      when(() => mockSubscriptionManager.createSubscription(
+            name: any(named: 'name'),
+            filters: any(named: 'filters'),
+            onEvent: any(named: 'onEvent'),
+            onError: any(named: 'onError'),
+            onComplete: any(named: 'onComplete'),
+            priority: any(named: 'priority'),
+          )).thenAnswer((invocation) async {
+        final onEvent = invocation.namedArguments[const Symbol('onEvent')] as void Function(Event)?;
+        final onComplete = invocation.namedArguments[const Symbol('onComplete')] as void Function()?;
+
+        // Deliver the new profile event
+        if (onEvent != null) {
+          Future.delayed(const Duration(milliseconds: 10), () => onEvent(mockEvent));
+        }
+
+        if (onComplete != null) {
+          Future.delayed(const Duration(milliseconds: 50), onComplete);
+        }
+        return 'test-subscription-refresh-id';
+      });
 
       // Force refresh
       final profile = await container
@@ -346,9 +406,15 @@ void main() {
       expect(profile, isNotNull);
       expect(profile!.name, equals('New Name'));
 
-      // Verify network call was made
-      verify(() => mockNostrService.subscribeToEvents(
-          filters: any(named: 'filters'))).called(1);
+      // Verify subscription was created for refresh
+      verify(() => mockSubscriptionManager.createSubscription(
+            name: any(named: 'name'),
+            filters: any(named: 'filters'),
+            onEvent: any(named: 'onEvent'),
+            onError: any(named: 'onError'),
+            onComplete: any(named: 'onComplete'),
+            priority: any(named: 'priority'),
+          )).called(1);
     });
 
     test('should handle errors gracefully', () async {

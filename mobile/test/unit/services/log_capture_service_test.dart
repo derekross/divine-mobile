@@ -30,9 +30,9 @@ void main() {
       expect(logs.length, equals(1));
     });
 
-    test('should not exceed max buffer size of 1000 entries', () {
-      // Add 1100 log entries
-      for (int i = 0; i < 1100; i++) {
+    test('should not exceed max buffer size of 50000 entries', () {
+      // Add 50100 log entries
+      for (int i = 0; i < 50100; i++) {
         service.captureLog(LogEntry(
           timestamp: DateTime.now().add(Duration(milliseconds: i)),
           level: LogLevel.info,
@@ -41,13 +41,13 @@ void main() {
       }
 
       final logs = service.getRecentLogs();
-      expect(logs.length, lessThanOrEqualTo(1000));
-      expect(logs.length, equals(1000)); // Should be exactly 1000
+      expect(logs.length, lessThanOrEqualTo(50000));
+      expect(logs.length, equals(50000)); // Should be exactly 50000
     });
 
     test('should evict oldest entries when buffer is full', () {
-      // Add 1000 entries
-      for (int i = 0; i < 1000; i++) {
+      // Add 50000 entries
+      for (int i = 0; i < 50000; i++) {
         service.captureLog(LogEntry(
           timestamp: DateTime.now().add(Duration(milliseconds: i)),
           level: LogLevel.info,
@@ -57,14 +57,14 @@ void main() {
 
       // Add one more - should evict the first
       final newestEntry = LogEntry(
-        timestamp: DateTime.now().add(Duration(milliseconds: 1000)),
+        timestamp: DateTime.now().add(Duration(milliseconds: 50000)),
         level: LogLevel.info,
-        message: 'Log 1000',
+        message: 'Log 50000',
       );
       service.captureLog(newestEntry);
 
       final logs = service.getRecentLogs();
-      expect(logs.length, equals(1000));
+      expect(logs.length, equals(50000));
       expect(logs.last, equals(newestEntry));
       expect(logs.first.message, equals('Log 1')); // First was evicted
     });
@@ -116,12 +116,12 @@ void main() {
 
     test('should clear all entries from buffer', () async {
       // Add some entries
-      await service.captureLog(LogEntry(
+      service.captureLog(LogEntry(
         timestamp: DateTime.now(),
         level: LogLevel.info,
         message: 'Test 1',
       ));
-      await service.captureLog(LogEntry(
+      service.captureLog(LogEntry(
         timestamp: DateTime.now(),
         level: LogLevel.error,
         message: 'Test 2',

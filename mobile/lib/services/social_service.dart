@@ -833,6 +833,9 @@ class SocialService {
       // Update the event reference
       _currentUserContactListEvent = event;
 
+      // Save to SharedPreferences cache immediately
+      _saveFollowingListToCache();
+
       Log.info(
           'Successfully followed user: $pubkeyToFollow',
           name: 'SocialService',
@@ -900,6 +903,9 @@ class SocialService {
 
       // Update the event reference
       _currentUserContactListEvent = event;
+
+      // Save to SharedPreferences cache immediately
+      _saveFollowingListToCache();
 
       Log.info(
           'Successfully unfollowed user: $pubkeyToUnfollow',

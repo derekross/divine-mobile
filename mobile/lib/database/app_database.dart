@@ -31,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
       : super(NativeDatabase(File(path), logStatements: false)); // Disabled - too verbose
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Open connection to shared database file
   static QueryExecutor _openConnection() {
@@ -174,6 +174,39 @@ class AppDatabase extends _$AppDatabase {
               print('[MIGRATION] Migration completed with empty video_metrics table');
               print('[MIGRATION] New events will populate metrics going forward');
             }
+          }
+
+          // Migration from schema v4 to v5: Add indexes to event table for fast queries
+          if (from < 5) {
+            print('[MIGRATION] Adding performance indexes to event table...');
+
+            // Create indexes on NostrEvents table for common query patterns
+            await customStatement('''
+              CREATE INDEX IF NOT EXISTS idx_event_kind
+              ON event (kind)
+            ''');
+            await customStatement('''
+              CREATE INDEX IF NOT EXISTS idx_event_created_at
+              ON event (created_at)
+            ''');
+            await customStatement('''
+              CREATE INDEX IF NOT EXISTS idx_event_kind_created_at
+              ON event (kind, created_at)
+            ''');
+            await customStatement('''
+              CREATE INDEX IF NOT EXISTS idx_event_pubkey
+              ON event (pubkey)
+            ''');
+            await customStatement('''
+              CREATE INDEX IF NOT EXISTS idx_event_kind_pubkey
+              ON event (kind, pubkey)
+            ''');
+            await customStatement('''
+              CREATE INDEX IF NOT EXISTS idx_event_pubkey_created_at
+              ON event (pubkey, created_at)
+            ''');
+
+            print('[MIGRATION] ✅ Created 6 indexes on event table for fast discovery/trending/profile queries');
           }
         },
       );

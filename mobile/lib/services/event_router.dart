@@ -1,6 +1,7 @@
 // ABOUTME: Routes incoming Nostr events to appropriate database tables
 // ABOUTME: All events go to NostrEvents table, kind-specific processing extracts to denormalized tables
 
+import 'dart:async';
 import 'package:nostr_sdk/event.dart';
 import 'package:openvine/database/app_database.dart';
 import 'package:openvine/models/user_profile.dart';
@@ -10,23 +11,81 @@ import 'package:openvine/utils/unified_logger.dart';
 ///
 /// All events go to NostrEvents table (single source of truth)
 /// Kind-specific processing extracts data to denormalized tables
+/// Uses batching to avoid database lock contention
 class EventRouter {
   EventRouter(this._db);
 
   final AppDatabase _db;
+  final List<Event> _eventQueue = [];
+  Timer? _batchTimer;
+  bool _isProcessingBatch = false;
 
   /// Access to database for cache-first queries
   AppDatabase get db => _db;
 
   /// Handle incoming event from relay
   ///
-  /// Step 1: Insert ALL events to nostr_events table
-  /// Step 2: Route to specialized tables based on kind
+  /// Queues event for batch processing to avoid database locks
   Future<void> handleEvent(Event event) async {
-    // Step 1: Insert ALL events to nostr_events table
-    await _insertToEventsTable(event);
+    // Add to batch queue
+    _eventQueue.add(event);
 
-    // Step 2: Route to specialized tables based on kind
+    // Schedule batch processing if not already scheduled
+    _batchTimer ??= Timer(const Duration(milliseconds: 50), _processBatch);
+
+    // If queue is large, process immediately
+    if (_eventQueue.length >= 50 && !_isProcessingBatch) {
+      _batchTimer?.cancel();
+      _batchTimer = null;
+      await _processBatch();
+    }
+  }
+
+  /// Process queued events in a single batch
+  Future<void> _processBatch() async {
+    if (_isProcessingBatch || _eventQueue.isEmpty) return;
+
+    _isProcessingBatch = true;
+    _batchTimer = null;
+
+    try {
+      final batch = List<Event>.from(_eventQueue);
+      _eventQueue.clear();
+
+      Log.debug(
+        'Processing batch of ${batch.length} events',
+        name: 'EventRouter',
+        category: LogCategory.system,
+      );
+
+      // Batch insert to nostr_events table
+      await _db.nostrEventsDao.upsertEventsBatch(batch);
+
+      // Process kind-specific routing for each event
+      for (final event in batch) {
+        await _routeEvent(event);
+      }
+
+      Log.verbose(
+        'Completed batch of ${batch.length} events',
+        name: 'EventRouter',
+        category: LogCategory.system,
+      );
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to process event batch: $e',
+        name: 'EventRouter',
+        category: LogCategory.system,
+        error: e,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _isProcessingBatch = false;
+    }
+  }
+
+  /// Route event to specialized tables based on kind
+  Future<void> _routeEvent(Event event) async {
     switch (event.kind) {
       case 0: // Profile metadata
         await _handleProfileEvent(event);
@@ -49,20 +108,8 @@ class EventRouter {
         // Still in events table, just not processed further
         break;
     }
-
-    Log.verbose(
-      'Routed event ${event.id} (kind ${event.kind}) to database',
-      name: 'EventRouter',
-      category: LogCategory.system,
-    );
   }
 
-  /// Insert event to nostr_events table
-  ///
-  /// Uses INSERT OR REPLACE for upsert behavior
-  Future<void> _insertToEventsTable(Event event) async {
-    await _db.nostrEventsDao.upsertEvent(event);
-  }
 
   /// Handle kind 0 (profile) event
   ///

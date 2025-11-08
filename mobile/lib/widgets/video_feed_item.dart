@@ -528,27 +528,16 @@ class VideoOverlayActions extends ConsumerWidget {
           left: 16,
           child: Consumer(
             builder: (context, ref, _) {
-              // Watch the reactive notifier state which updates when profiles are added
-              final profileState = ref.watch(userProfileProvider);
-              var profile = profileState.getCachedProfile(video.pubkey);
+              // Watch UserProfileService directly (now a ChangeNotifier)
+              // This will rebuild when profiles are added/updated
+              final userProfileService = ref.watch(userProfileServiceProvider);
+              final profile = userProfileService.getCachedProfile(video.pubkey);
 
-              // If not in notifier cache, check service cache (VideoEventService might have fetched it)
-              if (profile == null) {
-                final userProfileService = ref.read(userProfileServiceProvider);
-                final serviceCached = userProfileService.getCachedProfile(video.pubkey);
-
-                if (serviceCached != null) {
-                  // Found in service cache - sync it to notifier state to trigger rebuild
-                  Future.microtask(() {
-                    ref.read(userProfileProvider.notifier).syncProfileFromService(video.pubkey, serviceCached);
-                  });
-                  profile = serviceCached; // Use it immediately for this render
-                } else if (!profileState.shouldSkipFetch(video.pubkey)) {
-                  // Not in either cache - fetch it
-                  Future.microtask(() {
-                    ref.read(userProfileProvider.notifier).fetchProfile(video.pubkey);
-                  });
-                }
+              // If profile not cached and not known missing, fetch it
+              if (profile == null && !userProfileService.shouldSkipProfileFetch(video.pubkey)) {
+                Future.microtask(() {
+                  ref.read(userProfileProvider.notifier).fetchProfile(video.pubkey);
+                });
               }
 
               final display = profile?.bestDisplayName ??

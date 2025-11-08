@@ -43,6 +43,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   final _errorTracker = ErrorAnalyticsTracker();
   DateTime? _feedLoadStartTime;
 
+  // Trending tab sort cache - avoid re-sorting 500 videos on every rebuild
+  List<VideoEvent>? _cachedTrendingVideos;
+  List<VideoEvent>? _lastRawVideos;
+
   @override
   void initState() {
     super.initState();
@@ -499,13 +503,49 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
         _feedTracker.trackEmptyFeed('trending');
       }
 
-      // Sort by loop count (descending order - most popular first)
-      final sortedVideos = List<VideoEvent>.from(videos);
-      sortedVideos.sort((a, b) {
-        final aLoops = a.originalLoops ?? 0;
-        final bLoops = b.originalLoops ?? 0;
-        return bLoops.compareTo(aLoops); // Descending order
-      });
+      // PERFORMANCE OPTIMIZATION: Only re-sort if video list changed
+      // Check if we can use cached sorted list
+      final List<VideoEvent> sortedVideos;
+      if (identical(videos, _lastRawVideos) && _cachedTrendingVideos != null) {
+        // Same video list object - use cached sort
+        sortedVideos = _cachedTrendingVideos!;
+        Log.debug(
+          '✨ TRENDING CACHE HIT: Reusing sorted list (${sortedVideos.length} videos)',
+          name: 'ExploreScreen',
+          category: LogCategory.video,
+        );
+      } else {
+        // New video list - sort and cache
+        sortedVideos = List<VideoEvent>.from(videos);
+        sortedVideos.sort((a, b) {
+          final aLoops = a.originalLoops ?? 0;
+          final bLoops = b.originalLoops ?? 0;
+          return bLoops.compareTo(aLoops); // Descending order
+        });
+
+        // Update cache
+        _lastRawVideos = videos;
+        _cachedTrendingVideos = sortedVideos;
+
+        // Debug: Log top 10 videos after sorting
+        Log.debug(
+          '🎯 TRENDING SORT: Sorted ${sortedVideos.length} videos by loop count',
+          name: 'ExploreScreen',
+          category: LogCategory.video,
+        );
+        if (sortedVideos.isNotEmpty) {
+          final top10 = sortedVideos.take(10).toList();
+          for (var i = 0; i < top10.length; i++) {
+            final v = top10[i];
+            Log.debug(
+              '  #${i + 1}: ${v.originalLoops ?? 0} loops (id: ${v.id})',
+              name: 'ExploreScreen',
+              category: LogCategory.video,
+            );
+          }
+        }
+      }
+
       return _buildTrendingTabWithHashtags(sortedVideos);
     }
 

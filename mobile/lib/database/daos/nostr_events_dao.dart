@@ -43,6 +43,40 @@ class NostrEventsDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
+  /// Batch insert or replace multiple events in a single transaction
+  ///
+  /// Much more efficient than calling upsertEvent() repeatedly.
+  /// Uses a single database transaction to avoid lock contention.
+  Future<void> upsertEventsBatch(List<Event> events) async {
+    if (events.isEmpty) return;
+
+    await transaction(() async {
+      // Batch insert all events
+      for (final event in events) {
+        await customInsert(
+          'INSERT OR REPLACE INTO event (id, pubkey, created_at, kind, tags, content, sig, sources) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          variables: [
+            Variable.withString(event.id),
+            Variable.withString(event.pubkey),
+            Variable.withInt(event.createdAt),
+            Variable.withInt(event.kind),
+            Variable.withString(jsonEncode(event.tags)),
+            Variable.withString(event.content),
+            Variable.withString(event.sig),
+            const Variable(null), // sources - not used yet
+          ],
+        );
+      }
+
+      // Batch upsert video metrics for video events
+      final videoEvents = events.where((e) => e.kind == 34236 || e.kind == 6).toList();
+      for (final event in videoEvents) {
+        await db.videoMetricsDao.upsertVideoMetrics(event);
+      }
+    });
+  }
+
   /// Get event by ID (one-time fetch)
   ///
   /// Returns null if event doesn't exist in database.

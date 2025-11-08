@@ -459,9 +459,13 @@ class NostrService implements INostrService {
     // Track replaceable events (kind, pubkey) -> (eventId, timestamp) for deduplication
     final replaceableEvents = <String, (String, int)>{};
 
-    // Pre-initialize replaceableEvents map from database to avoid re-processing on every startup
-    // Fire-and-forget - map will be populated asynchronously
-    _preInitializeReplaceableEvents(replaceableEvents, filters);
+    // Pre-initialize replaceableEvents map from database AND deliver cached events to subscriber
+    // This ensures cached profiles are available immediately without waiting for relay sync
+    // Skip for discovery/explore subscriptions (no authors filter = all videos, doesn't benefit from pre-init)
+    final hasAuthorsFilter = filters.any((f) => f.authors != null && f.authors!.isNotEmpty);
+    if (hasAuthorsFilter) {
+      _preInitializeReplaceableEvents(replaceableEvents, filters, controller, seenEventIds);
+    }
 
     _subscriptions[id] = controller;
     Log.debug('Total active subscriptions: ${_subscriptions.length}',
@@ -660,11 +664,13 @@ class NostrService implements INostrService {
     return controller.stream;
   }
 
-  /// Pre-initialize the replaceable events map from database to avoid re-processing on startup
-  /// This prevents logging "dropping older event" messages for events already in the database
+  /// Pre-initialize the replaceable events map from database and deliver cached events to subscriber
+  /// This ensures cached profile events are delivered immediately without waiting for relay sync
   Future<void> _preInitializeReplaceableEvents(
     Map<String, (String, int)> replaceableEvents,
     List<nostr.Filter> filters,
+    StreamController<Event> controller,
+    Set<String> seenEventIds,
   ) async {
     try {
       // Create filter for just replaceable events matching the subscription filters
@@ -691,7 +697,13 @@ class NostrService implements INostrService {
         limit: 1000,
       );
 
-      // Populate the map with existing events
+      Log.debug(
+        'Pre-initialized ${existingEvents.length} replaceable events from database',
+        name: 'NostrService',
+        category: LogCategory.relay,
+      );
+
+      // Populate the map with existing events AND deliver them to subscriber
       for (final event in existingEvents) {
         String replaceKey = '${event.kind}:${event.pubkey}';
 
@@ -709,14 +721,15 @@ class NostrService implements INostrService {
           }
         }
 
+        // Track for deduplication
         replaceableEvents[replaceKey] = (event.id, event.createdAt);
-      }
+        seenEventIds.add(event.id);
 
-      Log.debug(
-        'Pre-initialized ${replaceableEvents.length} replaceable events from database',
-        name: 'NostrService',
-        category: LogCategory.relay,
-      );
+        // CRITICAL FIX: Deliver cached event to subscriber immediately
+        if (!controller.isClosed) {
+          controller.add(event);
+        }
+      }
     } catch (e) {
       Log.warning(
         'Failed to pre-initialize replaceable events: $e',

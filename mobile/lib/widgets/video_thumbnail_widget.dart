@@ -156,6 +156,8 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
 
     if (_thumbnailUrl != null) {
       // Show the thumbnail with blurhash as placeholder while loading
+      Log.debug('🖼️ Building thumbnail: url=$_thumbnailUrl, hasBlurhash=${widget.video.blurhash != null}',
+          name: 'VideoThumbnailWidget', category: LogCategory.video);
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -340,6 +342,8 @@ class _SafeNetworkImage extends StatelessWidget {
     // Don't show blurhash here - it's already shown as background in the outer Stack
     // Just show a transparent container so the background blurhash is visible
     if (blurhash != null && blurhash!.isNotEmpty) {
+      Log.debug('🎨 Image failed, showing transparent container to reveal background blurhash',
+          name: 'VideoThumbnailWidget', category: LogCategory.video);
       return Container(
         width: width,
         height: height,
@@ -347,6 +351,8 @@ class _SafeNetworkImage extends StatelessWidget {
       );
     }
     // Fall back to icon placeholder if no blurhash
+    Log.debug('📦 Image failed, no blurhash available, showing placeholder',
+        name: 'VideoThumbnailWidget', category: LogCategory.video);
     return VideoIconPlaceholder(
       width: width,
       height: height,

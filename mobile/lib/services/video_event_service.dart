@@ -837,7 +837,8 @@ class VideoEventService extends ChangeNotifier {
 
         // Phase 3.3: Cache-first strategy - load cached events BEFORE relay subscription
         // This provides instant UI feedback while relay fetches fresh data
-        final cachedEvents = await _loadCachedEvents(
+        // Now FAST with proper database indexes on kind, created_at, and composite indexes!
+        List<Event> cachedEvents = await _loadCachedEvents(
           kinds: NIP71VideoKinds.getAllVideoKinds(),
           authors: authors,
           hashtags: lowercaseHashtags,
@@ -846,6 +847,52 @@ class VideoEventService extends ChangeNotifier {
           limit: limit,
           sortBy: sortBy,
         );
+
+        // 🎯 CACHE DEBUG: Log cached event details
+        if (cachedEvents.isNotEmpty && subscriptionType == SubscriptionType.discovery) {
+          final loopCounts = <int>[];
+          for (final event in cachedEvents) {
+            try {
+              final videoEvent = VideoEvent.fromNostrEvent(event);
+              loopCounts.add(videoEvent.originalLoops ?? 0);
+            } catch (_) {}
+          }
+          loopCounts.sort((a, b) => b.compareTo(a)); // Sort descending
+          final maxLoops = loopCounts.isNotEmpty ? loopCounts.first : 0;
+          final minLoops = loopCounts.isNotEmpty ? loopCounts.last : 0;
+          Log.info(
+            '🎯 CACHE DEBUG: Loaded ${cachedEvents.length} cached discovery videos, loop range: $maxLoops - $minLoops',
+            name: 'VideoEventService',
+            category: LogCategory.video,
+          );
+          if (loopCounts.length >= 5) {
+            Log.info(
+              '🎯 CACHE DEBUG: Top 5 cached loop counts: ${loopCounts.take(5).join(", ")}',
+              name: 'VideoEventService',
+              category: LogCategory.video,
+            );
+          }
+        }
+
+        // 🎯 OPTIMIZATION: Batch fetch profiles BEFORE processing events
+        // This prevents 100+ sequential profile fetches that cause database locks
+        if (cachedEvents.isNotEmpty && _userProfileService != null) {
+          final uniquePubkeys = cachedEvents
+              .map((e) => e.pubkey)
+              .toSet()
+              .where((pubkey) => !_userProfileService!.hasProfile(pubkey))
+              .toList();
+
+          if (uniquePubkeys.isNotEmpty) {
+            Log.info(
+              '⚡ Batch fetching ${uniquePubkeys.length} profiles for ${cachedEvents.length} cached events',
+              name: 'VideoEventService',
+              category: LogCategory.video,
+            );
+            // Use immediate prefetch for fast cache loading
+            await _userProfileService!.prefetchProfilesImmediately(uniquePubkeys);
+          }
+        }
 
         // Process cached events immediately (same flow as relay events)
         for (final event in cachedEvents) {
@@ -862,6 +909,9 @@ class VideoEventService extends ChangeNotifier {
           );
         }
 
+        // 🎯 RELAY DEBUG: Track loop counts from relay
+        final relayLoopCounts = <int>[];
+
         final eventStream = _nostrService.subscribeToEvents(
           filters: filters,
           onEose: () {
@@ -870,6 +920,25 @@ class VideoEventService extends ChangeNotifier {
             final eoseDuration = DateTime.now().difference(subscriptionStartTime);
             Log.info('✅ EOSE received for $subscriptionType after ${eoseDuration.inMilliseconds}ms with $eventCount events',
                 name: 'VideoEventService', category: LogCategory.video);
+
+            // 🎯 RELAY DEBUG: Summarize relay loop counts at EOSE
+            if (subscriptionType == SubscriptionType.discovery && relayLoopCounts.isNotEmpty) {
+              relayLoopCounts.sort((a, b) => b.compareTo(a)); // Sort descending
+              final maxLoops = relayLoopCounts.first;
+              final minLoops = relayLoopCounts.last;
+              Log.info(
+                '🎯 RELAY DEBUG: Relay returned ${relayLoopCounts.length} videos, loop range: $maxLoops - $minLoops',
+                name: 'VideoEventService',
+                category: LogCategory.video,
+              );
+              if (relayLoopCounts.length >= 5) {
+                Log.info(
+                  '🎯 RELAY DEBUG: Top 5 relay loop counts: ${relayLoopCounts.take(5).join(", ")}',
+                  name: 'VideoEventService',
+                  category: LogCategory.video,
+                );
+              }
+            }
 
             // Extra logging for hashtag subscriptions
             if (subscriptionType == SubscriptionType.hashtag) {
@@ -945,6 +1014,14 @@ class VideoEventService extends ChangeNotifier {
                   '🏷️📥 HASHTAG EVENT #$eventCount RECEIVED: kind=${event.kind}, id=${event.id}',
                   name: 'VideoEventService',
                   category: LogCategory.video);
+            }
+
+            // 🎯 RELAY DEBUG: Track loop counts for discovery subscriptions
+            if (subscriptionType == SubscriptionType.discovery) {
+              try {
+                final videoEvent = VideoEvent.fromNostrEvent(event);
+                relayLoopCounts.add(videoEvent.originalLoops ?? 0);
+              } catch (_) {}
             }
 
             _handleNewVideoEvent(event, subscriptionType);

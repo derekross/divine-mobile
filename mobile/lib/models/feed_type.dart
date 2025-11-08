@@ -3,7 +3,7 @@
 
 /// Types of infinite scroll video feeds
 enum FeedType {
-  trending('trending', 'Trending Now', 'Popular videos right now'),
+  trending('trending', 'Popular Vines', 'Popular videos right now'),
   popularNow('popular_now', 'Popular Now', 'Videos gaining popularity'),
   recent('recent', 'Recent', 'Latest videos from the network');
 

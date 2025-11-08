@@ -135,7 +135,7 @@ void main() {
       expect(videoEvent2.vineId, equals('vine-id-from-vine-id-tag'));
     });
 
-    test('should parse imeta tag with blurhash from divine.video events', () {
+    test('should parse imeta tag with blurhash from divine.video events (OLD FORMAT - space-separated)', () {
       // Arrange
       final nostrEvent = Event(
         '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
@@ -166,6 +166,48 @@ void main() {
       expect(videoEvent.duration, equals(6));
       expect(videoEvent.thumbnailUrl,
           equals('https://cdn.divine.video/test/thumbnail.jpg'));
+    });
+
+    test('should parse imeta tag with blurhash (NEW FORMAT - positional key-value pairs)', () {
+      // Arrange - This is the format used by newer divine.video events
+      final nostrEvent = Event(
+        '62054c6897d4971d03979196c0d7b6f54d501fed44cda0ce9d2bb88ff67992ba',
+               34236,
+        [
+          ['d', 'iOr5DLaPr79'],
+          [
+            'imeta',
+            'url',
+            'https://stream.divine.video/fa4a90a3-6a30-4dc6-9b9d-3f78551c9053/play_240p.mp4',
+            'm',
+            'video/mp4',
+            'image',
+            'https://stream.divine.video/fa4a90a3-6a30-4dc6-9b9d-3f78551c9053/thumbnail.jpg',
+            'blurhash',
+            'L9AAEz-o?^TK4.%gVs-o009F9E9F',
+            'dim',
+            '720x720',
+            'x',
+            '70c84853646e2e8f64ef07ebd5e5267329d21d194af1138a790cdb4463d1f0b7',
+          ],
+          ['title', 'jordan'],
+        ],
+        'jordan',
+        createdAt: 1761378640,
+      );
+
+      // Act
+      final videoEvent = VideoEvent.fromNostrEvent(nostrEvent);
+
+      // Assert
+      expect(videoEvent.blurhash, equals('L9AAEz-o?^TK4.%gVs-o009F9E9F'));
+      expect(videoEvent.dimensions, equals('720x720'));
+      expect(videoEvent.thumbnailUrl,
+          equals('https://stream.divine.video/fa4a90a3-6a30-4dc6-9b9d-3f78551c9053/thumbnail.jpg'));
+      expect(videoEvent.videoUrl,
+          equals('https://stream.divine.video/fa4a90a3-6a30-4dc6-9b9d-3f78551c9053/play_240p.mp4'));
+      expect(videoEvent.sha256, equals('70c84853646e2e8f64ef07ebd5e5267329d21d194af1138a790cdb4463d1f0b7'));
+      expect(videoEvent.mimeType, equals('video/mp4'));
     });
 
     test('should not require specific file extensions for video URLs', () {

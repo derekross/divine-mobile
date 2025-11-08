@@ -720,6 +720,118 @@ void main() {
         expect(socialService.isFollowing(testTargetPubkey), false);
       });
 
+      test('RED: should preserve other users when unfollowing one user from multiple', () async {
+        const userA = 'pubkey_user_A';
+        const userB = 'pubkey_user_B';
+        const userC = 'pubkey_user_C';
+
+        const privateKey =
+            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+        final publicKey = getPublicKey(privateKey);
+
+        // Mock follow operations for all three users
+        when(
+          mockAuthService.createAndSignEvent(
+            kind: 3,
+            content: anyNamed('content'),
+            tags: anyNamed('tags'),
+            biometricPrompt: anyNamed('biometricPrompt'),
+          ),
+        ).thenAnswer((invocation) async {
+          final tags = invocation.namedArguments[const Symbol('tags')] as List<List<String>>;
+          final event = Event(publicKey, 3, tags, '');
+          event.sign(privateKey);
+          return event;
+        });
+
+        when(mockNostrService.broadcastEvent(any)).thenAnswer(
+          (invocation) async {
+            final event = invocation.positionalArguments[0] as Event;
+            return NostrBroadcastResult(
+              event: event,
+              successCount: 1,
+              totalRelays: 1,
+              results: const {'relay1': true},
+              errors: const {},
+            );
+          },
+        );
+
+        // Follow three users
+        await socialService.followUser(userA);
+        await socialService.followUser(userB);
+        await socialService.followUser(userC);
+
+        // Verify all three are followed
+        expect(socialService.isFollowing(userA), true);
+        expect(socialService.isFollowing(userB), true);
+        expect(socialService.isFollowing(userC), true);
+        expect(socialService.followingPubkeys.length, 3);
+
+        reset(mockAuthService);
+        reset(mockNostrService);
+
+        // Re-setup authentication state after reset
+        when(mockAuthService.isAuthenticated).thenReturn(true);
+        when(mockAuthService.currentPublicKeyHex).thenReturn(testUserPubkey);
+
+        // Mock unfollowing user B - should preserve A and C
+        final mockUpdatedContactListEvent = Event(
+          publicKey,
+          3,
+          [
+            ['p', userA],
+            ['p', userC],
+          ],
+          '',
+        );
+        mockUpdatedContactListEvent.sign(privateKey);
+
+        when(
+          mockAuthService.createAndSignEvent(
+            kind: 3,
+            content: '',
+            tags: [
+              ['p', userA],
+              ['p', userC],
+            ],
+            biometricPrompt: anyNamed('biometricPrompt'),
+          ),
+        ).thenAnswer((_) async => mockUpdatedContactListEvent);
+
+        when(mockNostrService.broadcastEvent(mockUpdatedContactListEvent))
+            .thenAnswer(
+          (_) async => NostrBroadcastResult(
+            event: mockUpdatedContactListEvent,
+            successCount: 1,
+            totalRelays: 1,
+            results: const {'relay1': true},
+            errors: const {},
+          ),
+        );
+
+        // Unfollow user B
+        await socialService.unfollowUser(userB);
+
+        // Verify event was created with only A and C (not B)
+        verify(
+          mockAuthService.createAndSignEvent(
+            kind: 3,
+            content: '',
+            tags: [
+              ['p', userA],
+              ['p', userC],
+            ],
+          ),
+        ).called(1);
+
+        // Verify user B is no longer followed but A and C are still followed
+        expect(socialService.isFollowing(userA), true, reason: 'User A should still be followed');
+        expect(socialService.isFollowing(userB), false, reason: 'User B should be unfollowed');
+        expect(socialService.isFollowing(userC), true, reason: 'User C should still be followed');
+        expect(socialService.followingPubkeys.length, 2, reason: 'Should have exactly 2 users in following list');
+      });
+
       test('should not follow when user is not authenticated', () async {
         when(mockAuthService.isAuthenticated).thenReturn(false);
 

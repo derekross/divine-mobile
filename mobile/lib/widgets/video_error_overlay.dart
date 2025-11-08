@@ -4,8 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openvine/models/video_event.dart';
+import 'package:openvine/providers/active_video_provider.dart';
 import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/providers/individual_video_providers.dart';
+import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/widgets/video_thumbnail_widget.dart';
 
 /// Error overlay shown when video playback fails
@@ -102,11 +104,22 @@ class VideoErrorOverlay extends ConsumerWidget {
                           // This ensures the retry will have headers available immediately
                           await _precacheAuthHeaders(ref, controllerParams);
 
-                          // Now retry with auth after verification
-                          if (context.mounted) {
-                            ref.invalidate(
-                              individualVideoControllerProvider(controllerParams),
-                            );
+                          // CRITICAL: Only retry if this video is still active
+                          // If user swiped away during verification, don't invalidate -
+                          // the new active video's controller is already correct
+                          final activeVideoId = ref.read(activeVideoIdProvider);
+                          if (activeVideoId == video.id) {
+                            // Video is still active - safe to invalidate and retry
+                            if (context.mounted) {
+                              ref.invalidate(
+                                individualVideoControllerProvider(controllerParams),
+                              );
+                            }
+                          } else {
+                            // User swiped to different video during verification
+                            // Auth headers are cached, so when user swipes back, it will work
+                            Log.debug('Age verification completed but video no longer active (active=$activeVideoId, this=${video.id})',
+                                name: 'VideoErrorOverlay', category: LogCategory.video);
                           }
                         }
                       } else {

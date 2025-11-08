@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased Changes]
 
 ### Fixed
+- **Performance: Explore/Trending Page Hangs Eliminated**: Fixed severe performance issues causing 3-10 second freezes when opening Explore, Trending, and hashtag pages
+  - Added 9 critical database indexes on `event` and `video_metrics` tables to eliminate full table scans
+  - `idx_event_kind`, `idx_event_created_at`, `idx_event_kind_created_at` - for video discovery queries
+  - `idx_event_pubkey`, `idx_event_kind_pubkey`, `idx_event_pubkey_created_at` - for profile/author queries
+  - `idx_metrics_loop_count`, `idx_metrics_likes`, `idx_metrics_views` - for trending/popular sorting
+  - Database schema version bumped to v5 with automatic migration on app restart
+  - Re-enabled cache-first queries for discovery feeds (now fast with indexes)
+  - Queries that previously took 3+ seconds now complete in milliseconds
+
+- **Performance: Database Lock Contention Fixed**: Eliminated "database is locked" errors when receiving events
+  - Implemented event batching in `EventRouter` with 50ms debounce timer
+  - Added `upsertEventsBatch()` method using single transaction instead of individual inserts
+  - Prevents 100+ concurrent INSERT statements from blocking each other
+  - Events are now batched (50 events or 50ms window) for efficient bulk inserts
+
+- **Performance: File Descriptor Leak Fixed**: Resolved "Too many open files" error from logging system
+  - Changed `LogCaptureService` to use persistent `IOSink` instead of opening new file handle on every write
+  - Added file rotation lock and memory-tracked file size to prevent concurrent rotation issues
+  - Flush buffered logs every 100 entries to balance crash safety with I/O efficiency
+  - Logging system now handles hundreds of thousands of entries without exhausting file descriptors
+
+- **Performance: Discovery Subscription Pre-initialization Optimized**: Fixed 10-second freeze when opening Explore tab
+  - Skip expensive `_preInitializeReplaceableEvents()` for discovery subscriptions (no authors filter)
+  - Pre-initialization now only runs for home feed subscriptions where it's beneficial
+  - Explore tab opens instantly instead of hanging for 10 seconds
+
 - **Explore Screen Navigation**: Fixed critical bug where tapping videos in Explore tab would fail on first attempt
   - Made URL the single source of truth using `pageContextProvider` instead of internal widget state
   - ExploreScreen now derives feed/grid mode from URL `videoIndex` parameter reactively

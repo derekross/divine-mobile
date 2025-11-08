@@ -38,6 +38,7 @@ class VideoEvents extends _$VideoEvents {
   StreamController<List<VideoEvent>>? _controller;
   Timer? _debounceTimer;
   List<VideoEvent>? _pendingEvents;
+  List<VideoEvent>? _lastEmittedEvents;
   bool _isSubscribed = false;
   bool get _canEmit => _controller != null && !(_controller!.isClosed);
 
@@ -52,23 +53,27 @@ class VideoEvents extends _$VideoEvents {
     final isTabActive = ref.watch(isDiscoveryTabActiveProvider);
     final seenVideosState = ref.watch(seenVideosProvider);
 
-    Log.info(
-      '📺 VideoEvents: Provider built (appReady: $isAppReady, tabActive: $isTabActive, cached: ${videoEventService.discoveryVideos.length})',
+    Log.error(
+      '🔥🔥🔥 VideoEvents: Provider REBUILDING (appReady: $isAppReady, tabActive: $isTabActive, cached: ${videoEventService.discoveryVideos.length}) 🔥🔥🔥',
       name: 'VideoEventsProvider',
       category: LogCategory.video,
     );
 
     // Extra debug logging to understand state
-    Log.debug('  🔍 appReadyProvider state: $isAppReady',
+    Log.error('  🔍 appReadyProvider state: $isAppReady',
         name: 'VideoEventsProvider', category: LogCategory.video);
-    Log.debug('  🔍 isDiscoveryTabActiveProvider state: $isTabActive',
+    Log.error('  🔍 isDiscoveryTabActiveProvider state: $isTabActive',
         name: 'VideoEventsProvider', category: LogCategory.video);
-    Log.debug('  🔍 discoveryVideos cached: ${videoEventService.discoveryVideos.length}',
+    Log.error('  🔍 discoveryVideos cached: ${videoEventService.discoveryVideos.length}',
+        name: 'VideoEventsProvider', category: LogCategory.video);
+    Log.error('  🔍 VideoEventService instance: ${videoEventService.hashCode}',
         name: 'VideoEventsProvider', category: LogCategory.video);
 
     // Register cleanup handler ONCE at the top
     ref.onDispose(() {
-      Log.debug('VideoEvents: Disposing provider, cleaning up resources',
+      Log.error('🔥🔥🔥 VideoEvents: DISPOSING provider 🔥🔥🔥',
+          name: 'VideoEventsProvider', category: LogCategory.video);
+      Log.error('  🔍 Cached videos before dispose: ${videoEventService.discoveryVideos.length}',
           name: 'VideoEventsProvider', category: LogCategory.video);
       _debounceTimer?.cancel();
       videoEventService.removeListener(_onVideoEventServiceChange);
@@ -132,19 +137,21 @@ class VideoEvents extends _$VideoEvents {
 
   /// Start subscription and emit initial events
   void _startSubscription(VideoEventService service, SeenVideosState seenState) {
-    Log.debug('VideoEvents: _startSubscription called (subscribed: $_isSubscribed)',
+    Log.error('🔥🔥🔥 VideoEvents: _startSubscription called (subscribed: $_isSubscribed) 🔥🔥🔥',
+        name: 'VideoEventsProvider', category: LogCategory.video);
+    Log.error('  🔍 VideoEventService.discoveryVideos.length: ${service.discoveryVideos.length}',
         name: 'VideoEventsProvider', category: LogCategory.video);
 
     // Always ensure listener is attached - remove first for idempotency
     // This prevents duplicate listeners and ensures clean state
     service.removeListener(_onVideoEventServiceChange);
     service.addListener(_onVideoEventServiceChange);
-    Log.info('VideoEvents: Listener attached to service ${service.hashCode}',
+    Log.error('  🔍 Listener attached to service ${service.hashCode}',
         name: 'VideoEventsProvider', category: LogCategory.video);
 
     // Subscribe to discovery videos if not already subscribed
     if (!_isSubscribed) {
-      Log.info('VideoEvents: Starting discovery subscription with trending sort',
+      Log.error('  🔍 Starting NEW discovery subscription with trending sort',
           name: 'VideoEventsProvider', category: LogCategory.video);
       // Request server-side sorting by loop_count (trending) if relay supports it
       service.subscribeToDiscovery(
@@ -152,19 +159,35 @@ class VideoEvents extends _$VideoEvents {
         sortBy: VideoSortField.loopCount, // Trending videos (most looped)
       );
       _isSubscribed = true;
+    } else {
+      Log.error('  🔍 Already subscribed - skipping subscription call',
+          name: 'VideoEventsProvider', category: LogCategory.video);
     }
 
     // Always emit current events if available (no reordering - preserve insertion order)
     final currentEvents = List<VideoEvent>.from(service.discoveryVideos);
 
-    Log.debug('VideoEvents: Emitting ${currentEvents.length} current events',
+    Log.error('  🔍 About to emit ${currentEvents.length} current events (canEmit: $_canEmit)',
+        name: 'VideoEventsProvider', category: LogCategory.video);
+    Log.error('  🔍 _lastEmittedEvents is null: ${_lastEmittedEvents == null}',
+        name: 'VideoEventsProvider', category: LogCategory.video);
+    Log.error('  🔍 Lists equal: ${_listEquals(currentEvents, _lastEmittedEvents)}',
         name: 'VideoEventsProvider', category: LogCategory.video);
 
     Future.microtask(() {
-      if (_canEmit) {
+      Log.error('  🔍 Inside Future.microtask - canEmit: $_canEmit',
+          name: 'VideoEventsProvider', category: LogCategory.video);
+      if (_canEmit && !_listEquals(currentEvents, _lastEmittedEvents)) {
         _controller!.add(currentEvents);
-        Log.info(
-          'VideoEvents: ✅ Emitted ${currentEvents.length} events to stream',
+        _lastEmittedEvents = List<VideoEvent>.from(currentEvents);
+        Log.error(
+          '  ✅ EMITTED ${currentEvents.length} events to stream!',
+          name: 'VideoEventsProvider',
+          category: LogCategory.video,
+        );
+      } else {
+        Log.error(
+          '  ❌ SKIPPED emission - canEmit: $_canEmit, listsEqual: ${_listEquals(currentEvents, _lastEmittedEvents)}',
           name: 'VideoEventsProvider',
           category: LogCategory.video,
         );
@@ -188,6 +211,11 @@ class VideoEvents extends _$VideoEvents {
     final service = ref.read(videoEventServiceProvider);
     final newEvents = List<VideoEvent>.from(service.discoveryVideos);
 
+    // Only process if the list has actually changed
+    if (_listEquals(newEvents, _lastEmittedEvents)) {
+      return; // No change, skip emission
+    }
+
     // Store pending events for debounced emission (no reordering - preserve order)
     _pendingEvents = newEvents;
 
@@ -197,15 +225,29 @@ class VideoEvents extends _$VideoEvents {
     // Create a new debounce timer to batch updates
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       if (_pendingEvents != null && _canEmit) {
-        Log.debug(
-          '📺 VideoEvents: Batched update - ${_pendingEvents!.length} discovery videos',
-          name: 'VideoEventsProvider',
-          category: LogCategory.video,
-        );
-        _controller!.add(_pendingEvents!);
+        // Double-check the list has changed before emitting
+        if (!_listEquals(_pendingEvents, _lastEmittedEvents)) {
+          Log.debug(
+            '📺 VideoEvents: Batched update - ${_pendingEvents!.length} discovery videos',
+            name: 'VideoEventsProvider',
+            category: LogCategory.video,
+          );
+          _controller!.add(_pendingEvents!);
+          _lastEmittedEvents = List<VideoEvent>.from(_pendingEvents!);
+        }
         _pendingEvents = null;
       }
     });
+  }
+
+  /// Check if two video lists are equal (same videos in same order)
+  bool _listEquals(List<VideoEvent>? a, List<VideoEvent>? b) {
+    if (a == null || b == null) return a == b;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
   }
 
 

@@ -73,7 +73,7 @@ class _BugReportDialogState extends State<BugReportDialog> {
           _isSuccess = result.success;
           if (result.success) {
             _resultMessage =
-                'Bug report sent successfully! Thank you for your feedback.';
+                "Thank you! We've received your report and will use it to make diVine better.";
           } else {
             _resultMessage = 'Failed to send bug report: ${result.error}';
           }
@@ -81,7 +81,7 @@ class _BugReportDialogState extends State<BugReportDialog> {
 
         // Close dialog after delay if successful
         if (result.success) {
-          _closeTimer = Timer(const Duration(seconds: 3), () {
+          _closeTimer = Timer(const Duration(milliseconds: 1500), () {
             if (!_isDisposed && mounted) {
               Navigator.of(context).pop();
             }
@@ -178,23 +178,26 @@ class _BugReportDialogState extends State<BugReportDialog> {
         ),
       ),
       actions: [
-        // Cancel button
-        TextButton(
-          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.grey),
+        // Cancel button (hide after success)
+        if (_isSuccess != true)
+          TextButton(
+            onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
-        ),
 
-        // Send button
+        // Send/Close button
         ElevatedButton(
-          onPressed: _canSubmit ? _submitReport : null,
+          onPressed: _isSuccess == true
+              ? () => Navigator.of(context).pop()
+              : (_canSubmit ? _submitReport : null),
           style: ElevatedButton.styleFrom(
             backgroundColor: VineTheme.vineGreen,
             foregroundColor: VineTheme.whiteText,
           ),
-          child: const Text('Send Report'),
+          child: Text(_isSuccess == true ? 'Close' : 'Send Report'),
         ),
       ],
     );
