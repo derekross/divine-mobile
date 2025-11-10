@@ -203,7 +203,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Divine is reviving the dream of 6 second looping videos, by and for humans. Do it for the vine!',
+                        'Divine brings back 6-second looping videos, recovered from the internet archive and created by humans.',
                         style: TextStyle(
                           color: Colors.grey[300],
                           fontSize: 14,
