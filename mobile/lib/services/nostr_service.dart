@@ -1149,15 +1149,16 @@ class NostrService implements INostrService {
       throw StateError('Embedded relay not initialized');
     }
 
-    // Create filter for video events with NIP-50 search query
-    final filter = embedded.Filter(
+    // Create filter for video events with NIP-50 search query using nostr.Filter
+    final nostrFilter = nostr.Filter(
       kinds: [34236, 34235, 22, 21, 6], // Video event kinds + repost (kind 6)
       authors: authors,
       since: since != null ? (since.millisecondsSinceEpoch ~/ 1000) : null,
       until: until != null ? (until.millisecondsSinceEpoch ~/ 1000) : null,
       limit: limit ?? 100,
-      unknownFields: {'search': query}, // NIP-50 search parameter
+      search: query, // NIP-50 search parameter
     );
+    final filter = _convertToEmbeddedFilter(nostrFilter);
 
     // Query embedded relay - it will forward the NIP-50 search to external relays
     final controller = StreamController<Event>();

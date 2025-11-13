@@ -375,17 +375,6 @@ class _VideoFeedItemState extends ConsumerState<VideoFeedItem> {
                     final videoWidget = ValueListenableBuilder<VideoPlayerValue>(
                       valueListenable: controller,
                       builder: (context, value, _) {
-                        // DEBUG: Log render state changes
-                        Log.debug(
-                          '🎨 VideoPlayer RENDER [${video.id}]:\n'
-                          '   • Position: ${value.position.inMilliseconds}ms\n'
-                          '   • Playing: ${value.isPlaying}\n'
-                          '   • Buffering: ${value.isBuffering}\n'
-                          '   • Initialized: ${value.isInitialized}',
-                          name: 'VideoFeedItem',
-                          category: LogCategory.video,
-                        );
-
                         // Let the individual controller handle autoplay based on active state
                         // Don't interfere with playback control here
 
