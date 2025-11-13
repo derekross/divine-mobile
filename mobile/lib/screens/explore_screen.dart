@@ -126,10 +126,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
       tabName: tabName,
     );
 
-    // Refresh editor's picks when that tab becomes active
+    // Refresh Divine Team when that tab becomes active
     // This ensures the provider checks for newly fetched videos
-    if (_tabController.index == 2) { // Editor's Pick tab
-      Log.debug('🔄 Refreshing editor\'s picks provider on tab change',
+    if (_tabController.index == 2) { // Divine Team tab
+      Log.debug('🔄 Refreshing Divine Team provider on tab change',
           category: LogCategory.video);
       ref.read(curationProvider.notifier).refreshAll();
     }
@@ -254,7 +254,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
             tabs: const [
               Tab(text: 'New Videos'),
               Tab(text: 'Popular Videos'),
-              Tab(text: "Editor's Pick"),
+              Tab(text: 'Divine Team'),
             ],
           ),
         ),
@@ -359,7 +359,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
               Icon(Icons.star, size: 64, color: VineTheme.secondaryText),
               const SizedBox(height: 16),
               Text(
-                "Editor's Pick",
+                'Divine Team',
                 style: TextStyle(
                   color: VineTheme.primaryText,
                   fontSize: 18,
@@ -380,7 +380,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
       );
     }
 
-    return _buildVideoGrid(editorsPicks, "Editor's Pick");
+    return _buildVideoGrid(editorsPicks, 'Divine Team');
   }
 
   Widget _buildNewVinesTab() {
@@ -736,7 +736,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
             category: LogCategory.video);
 
         // Refresh the appropriate provider based on tab
-        if (tabName == "Editor's Pick") {
+        if (tabName == 'Divine Team') {
           await ref.read(curationProvider.notifier).refreshAll();
         } else if (tabName == "New Videos") {
           // Refresh popular now feed - call refresh() to force new subscription

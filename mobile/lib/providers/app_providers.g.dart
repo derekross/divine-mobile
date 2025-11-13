@@ -1369,7 +1369,7 @@ final class NotificationServiceEnhancedProvider
 }
 
 String _$notificationServiceEnhancedHash() =>
-    r'61b7e96c485c44c2667fd747d1947c832c020f73';
+    r'70a0b1344beaf6934f1fd0007620aa0dccb5336e';
 
 /// NIP-98 authentication service
 

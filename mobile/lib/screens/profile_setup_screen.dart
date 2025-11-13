@@ -1256,6 +1256,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           _pictureController.text = result.cdnUrl!;
         });
 
+        // Dismiss keyboard after programmatically setting text field value
+        if (mounted) {
+          FocusScope.of(context).unfocus();
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

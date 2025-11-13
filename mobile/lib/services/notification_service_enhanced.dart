@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:nostr_sdk/event.dart';
@@ -12,6 +13,7 @@ import 'package:openvine/services/nostr_service_interface.dart';
 import 'package:openvine/services/user_profile_service.dart';
 import 'package:openvine/services/video_event_service.dart';
 import 'package:openvine/utils/unified_logger.dart';
+import 'package:synchronized/synchronized.dart';
 
 /// Enhanced notification service with social features
 /// REFACTORED: Removed ChangeNotifier - now uses pure state management via Riverpod
@@ -32,6 +34,7 @@ class NotificationServiceEnhanced {
 
   final List<NotificationModel> _notifications = [];
   final Map<String, StreamSubscription> _subscriptions = {};
+  final Lock _notificationLock = Lock(); // Mutex for atomic deduplication
 
   INostrService? _nostrService;
   UserProfileService? _profileService;
@@ -412,30 +415,41 @@ class NotificationServiceEnhanced {
   }
 
   /// Add a notification
+  /// Uses mutex lock to prevent race condition when same notification arrives via multiple handlers
   Future<void> _addNotification(NotificationModel notification) async {
-    // Check if we already have this notification
-    if (_notifications.any((n) => n.id == notification.id)) {
-      return;
-    }
+    // Use synchronized lock to make check-and-insert atomic
+    // This prevents duplicates when the same event triggers multiple handlers concurrently
+    await _notificationLock.synchronized(() async {
+      // Check if we already have this notification (now atomic with insert)
+      if (_notifications.any((n) => n.id == notification.id)) {
+        return;
+      }
 
-    // Add to list
-    _notifications.insert(0, notification);
+      // Add to list
+      _notifications.insert(0, notification);
 
-    // Update unread count
-    _updateUnreadCount();
+      // Update unread count
+      _updateUnreadCount();
 
-    // Save to cache
-    await _saveNotificationToCache(notification);
+      // Save to cache
+      await _saveNotificationToCache(notification);
 
-    // Show platform notification if permissions granted
-    if (_permissionsGranted && !notification.isRead) {
-      await _showPlatformNotification(notification);
-    }
+      // Show platform notification if permissions granted
+      if (_permissionsGranted && !notification.isRead) {
+        await _showPlatformNotification(notification);
+      }
 
-    // Keep only recent notifications
-    if (_notifications.length > 100) {
-      _notifications.removeRange(100, _notifications.length);
-    }
+      // Keep only recent notifications
+      if (_notifications.length > 100) {
+        _notifications.removeRange(100, _notifications.length);
+      }
+    });
+  }
+
+  /// Add notification for testing (exposes private _addNotification for tests)
+  @visibleForTesting
+  Future<void> addNotificationForTesting(NotificationModel notification) async {
+    await _addNotification(notification);
   }
 
   /// Mark notification as read

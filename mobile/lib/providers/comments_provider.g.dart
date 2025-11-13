@@ -61,7 +61,7 @@ final class CommentsNotifierProvider
   }
 }
 
-String _$commentsNotifierHash() => r'b10e631fd9da76c9cdbf8ab3151fb1b2f8342b92';
+String _$commentsNotifierHash() => r'8de16790121f70fd9ba53e6c714aa72450e80293';
 
 /// Notifier for managing comments for a specific video
 

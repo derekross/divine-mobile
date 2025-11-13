@@ -6,6 +6,7 @@ import 'package:openvine/models/notification_model.dart';
 import 'package:openvine/models/user_profile.dart' as models;
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/router/nav_extensions.dart';
+import 'package:openvine/screens/comments_screen.dart';
 import 'package:openvine/screens/pure/explore_video_screen_pure.dart';
 import 'package:openvine/widgets/user_avatar.dart';
 import 'package:openvine/services/video_event_service.dart';
@@ -273,7 +274,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
       final video =
           videoEventService.getVideoEventById(notification.targetEventId!);
       if (video != null) {
-        _openVideo(video, videoEventService);
+        // For comment notifications, open comments screen
+        // For other notifications (like, repost), open video feed
+        if (notification.type == NotificationType.comment) {
+          _openComments(video);
+        } else {
+          _openVideo(video, videoEventService);
+        }
       }
     } else {
       // Navigate to user profile
@@ -284,6 +291,18 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
   void _openUserProfile(String pubkey) {
     // Navigate to profile tab using GoRouter
     context.goProfile(pubkey, 0);
+  }
+
+  void _openComments(VideoEvent video) {
+    Log.debug('Opening comments from Activity: ${video.id}...',
+        name: 'ActivityScreen', category: LogCategory.ui);
+
+    // Navigate to comments screen with the video
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CommentsScreen(videoEvent: video),
+      ),
+    );
   }
 
   void _openVideo(VideoEvent video, VideoEventService videoEventService) {

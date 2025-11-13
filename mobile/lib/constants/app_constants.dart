@@ -13,6 +13,22 @@ class AppConstants {
   static const String classicVinesPubkey =
       '033877f4080835f162880482590762c0a7508851e88fe164dd89028743914da5';
 
+  /// Divine Team member 1 pubkey (hex format)
+  /// npub: npub199wma3u7u7z5jmms8jty3ujxvew5dquur404stqrg269s0d9ej6qzewzu3
+  static const String divineTeamPubkey1 =
+      '295dbec79ee785496f703c9648f246665d46839c1d5f582c0342b4583da5ccb4';
+
+  /// Divine Team member 2 pubkey (hex format)
+  /// npub: npub1m9d23lqwl78y3z2jf9dcqeyer5nlh9hdsef0ztx7m3dyaz66u4qq4stysk
+  static const String divineTeamPubkey2 =
+      'd95aa8fc0eff8e488952495b8064991d27fb96ed8652f12cdedc5a4e8b5ae540';
+
+  /// List of all Divine Team pubkeys
+  static const List<String> divineTeamPubkeys = [
+    divineTeamPubkey1,
+    divineTeamPubkey2,
+  ];
+
   // ============================================================================
   // FEED CONFIGURATION
   // ============================================================================

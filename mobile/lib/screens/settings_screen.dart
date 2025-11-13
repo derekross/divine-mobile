@@ -85,10 +85,19 @@ class SettingsScreen extends ConsumerWidget {
             ),
             _buildSettingsTile(
               context,
+              icon: Icons.key_off,
+              title: 'Remove Keys from Device',
+              subtitle: 'Delete your nsec from this device (content stays on relays)',
+              onTap: () => _handleRemoveKeys(context, ref),
+              iconColor: Colors.orange,
+              titleColor: Colors.orange,
+            ),
+            _buildSettingsTile(
+              context,
               icon: Icons.delete_forever,
-              title: 'Delete Account',
-              subtitle: 'Permanently delete all your content from Nostr relays',
-              onTap: () => _handleDeleteAccount(context, ref),
+              title: 'Delete All Content from Relays',
+              subtitle: 'PERMANENTLY delete all your content from Nostr relays',
+              onTap: () => _handleDeleteAllContent(context, ref),
               iconColor: Colors.red,
               titleColor: Colors.red,
             ),
@@ -334,12 +343,12 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref) async {
-    final deletionService = ref.read(accountDeletionServiceProvider);
+  /// Handle removing keys from device only (no relay broadcast)
+  Future<void> _handleRemoveKeys(BuildContext context, WidgetRef ref) async {
     final authService = ref.read(authServiceProvider);
 
     // Show warning dialog
-    await showDeleteAccountWarningDialog(
+    await showRemoveKeysWarningDialog(
       context: context,
       onConfirm: () async {
         // Show loading indicator
@@ -352,7 +361,75 @@ class SettingsScreen extends ConsumerWidget {
           ),
         );
 
-        // Execute deletion
+        try {
+          // Sign out and delete keys (no relay broadcast)
+          await authService.signOut(deleteKeys: true);
+
+          // Close loading indicator
+          if (!context.mounted) return;
+          Navigator.of(context).pop();
+
+          // Show success message
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Keys removed from device. Your content remains on Nostr relays.',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: VineTheme.vineGreen,
+            ),
+          );
+
+          // Navigate to profile setup
+          if (!context.mounted) return;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const ProfileSetupScreen(isNewUser: true),
+            ),
+            (route) => false,
+          );
+        } catch (e) {
+          // Close loading indicator
+          if (!context.mounted) return;
+          Navigator.of(context).pop();
+
+          // Show error
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to remove keys: $e',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  /// Handle deleting ALL content from Nostr relays (nuclear option)
+  Future<void> _handleDeleteAllContent(BuildContext context, WidgetRef ref) async {
+    final deletionService = ref.read(accountDeletionServiceProvider);
+    final authService = ref.read(authServiceProvider);
+
+    // Show double-confirmation warning dialogs
+    await showDeleteAllContentWarningDialog(
+      context: context,
+      onConfirm: () async {
+        // Show loading indicator
+        if (!context.mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: VineTheme.vineGreen),
+          ),
+        );
+
+        // Execute NIP-62 deletion request
         final result = await deletionService.deleteAccount();
 
         // Close loading indicator
@@ -382,7 +459,7 @@ class SettingsScreen extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                result.error ?? 'Failed to delete account',
+                result.error ?? 'Failed to delete content from relays',
                 style: const TextStyle(color: Colors.white),
               ),
               backgroundColor: Colors.red,

@@ -186,18 +186,26 @@ class _VineDrawerState extends ConsumerState<VineDrawer> {
                     subtitle: 'Send diagnostic info to developers',
                     onTap: () {
                       Navigator.pop(context); // Close drawer
-                      final bugReportService =
-                          ref.read(bugReportServiceProvider);
-                      final userPubkey = authService.currentPublicKeyHex;
 
-                      showDialog(
-                        context: context,
-                        builder: (context) => BugReportDialog(
-                          bugReportService: bugReportService,
-                          currentScreen: 'VineDrawer',
-                          userPubkey: userPubkey,
-                        ),
-                      );
+                      // Wait for drawer close animation to complete before showing dialog
+                      // This prevents navigation corruption that causes black screen after
+                      // returning from external apps (Mail)
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!context.mounted) return;
+
+                        final bugReportService =
+                            ref.read(bugReportServiceProvider);
+                        final userPubkey = authService.currentPublicKeyHex;
+
+                        showDialog(
+                          context: context,
+                          builder: (context) => BugReportDialog(
+                            bugReportService: bugReportService,
+                            currentScreen: 'VineDrawer',
+                            userPubkey: userPubkey,
+                          ),
+                        );
+                      });
                     },
                   ),
                   _buildDrawerItem(
@@ -206,6 +214,11 @@ class _VineDrawerState extends ConsumerState<VineDrawer> {
                     subtitle: 'Export logs to file for manual sending',
                     onTap: () async {
                       Navigator.pop(context); // Close drawer
+
+                      // Wait for drawer close animation to complete
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      if (!context.mounted) return;
+
                       final bugReportService =
                           ref.read(bugReportServiceProvider);
                       final userPubkey = authService.currentPublicKeyHex;
