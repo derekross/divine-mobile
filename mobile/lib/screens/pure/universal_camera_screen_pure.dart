@@ -390,72 +390,36 @@ class _UniversalCameraScreenPureState
           style: TextStyle(color: Colors.white),
         ),
         actions: [
-          // Drafts button - only show when not recording
+          // Drafts button - moved to right end of app bar with proper vertical alignment
           Consumer(
             builder: (context, ref, child) {
               final recordingState = ref.watch(vineRecordingProvider);
               if (recordingState.isRecording) {
                 return const SizedBox.shrink();
               }
-              return TextButton(
-                key: const Key('drafts-button'),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const VineDraftsScreen(),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Drafts',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              );
-            },
-          ),
-          // Recording status indicator
-          Consumer(
-            builder: (context, ref, child) {
-              final recordingState = ref.watch(vineRecordingProvider);
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: recordingState.isRecording
-                      ? Colors.red.withValues(alpha: 0.7)
-                      : Colors.black.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      recordingState.isRecording
-                          ? Icons.fiber_manual_record
-                          : Icons.videocam,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      recordingState.isRecording
-                          ? _formatDuration(recordingState.recordingDuration)
-                          : 'Ready',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+              return Center(
+                child: TextButton(
+                  key: const Key('drafts-button'),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const VineDraftsScreen(),
                       ),
-                    ),
-                  ],
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    minimumSize: const Size(0, 48), // Match IconButton height
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Drafts',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
               );
             },
           ),
-          // ProofMode status indicator - HIDDEN (now shown in Settings -> ProofMode Info)
         ],
       ),
       body: Consumer(
