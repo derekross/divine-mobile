@@ -549,6 +549,29 @@ class _UniversalCameraScreenPureState
                   ),
                 ),
 
+              // Square crop mask overlay (only shown in square mode)
+              // Positioned OUTSIDE ClipRect so it's not clipped away
+              if (recordingState.aspectRatio == vine.AspectRatio.square && recordingState.isInitialized)
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    Log.info('🎭 Building square crop mask overlay',
+                        name: 'UniversalCameraScreenPure', category: LogCategory.video);
+
+                    // Use screen dimensions, not camera preview dimensions
+                    final screenWidth = constraints.maxWidth;
+                    final screenHeight = constraints.maxHeight;
+                    final squareSize = screenWidth; // Square uses full screen width
+
+                    Log.info('🎭 Mask dimensions: screenWidth=$screenWidth, screenHeight=$screenHeight, squareSize=$squareSize',
+                        name: 'UniversalCameraScreenPure', category: LogCategory.video);
+
+                    return _buildSquareCropMaskForPreview(
+                      screenWidth,
+                      screenHeight,
+                    );
+                  },
+                ),
+
               // Recording controls overlay (bottom)
               Positioned(
                 bottom: 0,
@@ -917,15 +940,72 @@ class _UniversalCameraScreenPureState
         onPressed: recordingState.isRecording
             ? null
             : () {
+                final currentRatio = recordingState.aspectRatio;
                 final newRatio =
                     recordingState.aspectRatio == vine.AspectRatio.square
                     ? vine.AspectRatio.vertical
                     : vine.AspectRatio.square;
+                Log.info('🎭 Aspect ratio button pressed: $currentRatio -> $newRatio',
+                    name: 'UniversalCameraScreenPure', category: LogCategory.video);
                 ref
                     .read(vineRecordingProvider.notifier)
                     .setAspectRatio(newRatio);
               },
       ),
+    );
+  }
+
+  /// Build square crop mask overlay centered on screen
+  /// Shows semi-transparent overlay outside the 1:1 square
+  Widget _buildSquareCropMaskForPreview(double screenWidth, double screenHeight) {
+    // Square uses full screen width
+    final squareSize = screenWidth;
+
+    // Calculate top/bottom areas to darken (centered vertically on screen)
+    final topBottomHeight = (screenHeight - squareSize) / 2;
+
+    return Stack(
+      children: [
+        // Top darkened area
+        if (topBottomHeight > 0)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: topBottomHeight,
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.6),
+            ),
+          ),
+
+        // Bottom darkened area
+        if (topBottomHeight > 0)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: topBottomHeight,
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.6),
+            ),
+          ),
+
+        // Square frame outline (visual guide)
+        Positioned(
+          top: topBottomHeight > 0 ? topBottomHeight : 0,
+          left: 0,
+          width: squareSize,
+          height: squareSize,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: VineTheme.vineGreen,
+                width: 3,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
