@@ -1,7 +1,9 @@
 // ABOUTME: Riverpod providers for user lists (kind 30000) and curated video lists (kind 30005)
 // ABOUTME: Manages list state and provides reactive updates for the Lists tab
 
+import 'package:openvine/models/video_event.dart';
 import 'package:openvine/providers/app_providers.dart';
+import 'package:openvine/providers/video_events_providers.dart';
 import 'package:openvine/services/curated_list_service.dart';
 import 'package:openvine/services/user_list_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -48,9 +50,24 @@ Future<List<String>> curatedListVideos(Ref ref, String listId) async {
 
 /// Provider for videos from all members of a user list
 @riverpod
-Stream<List<VideoEvent>> userListMemberVideos(Ref ref, List<String> pubkeys) {
-  final videoEventService = ref.watch(videoEventServiceProvider);
+Stream<List<VideoEvent>> userListMemberVideos(
+    Ref ref, List<String> pubkeys) async* {
+  // Watch discovery videos and filter to only those from list members
+  final allVideosAsync = ref.watch(videoEventsProvider);
 
-  // Subscribe to videos from all pubkeys in the list
-  return videoEventService.subscribeToMultipleAuthorsVideos(pubkeys);
+  await for (final _ in Stream.value(null)) {
+    if (allVideosAsync.hasValue) {
+      final allVideos = allVideosAsync.value!;
+
+      // Filter videos to only those authored by list members
+      final listMemberVideos = allVideos
+          .where((video) => pubkeys.contains(video.authorPubkey))
+          .toList();
+
+      // Sort by creation time (newest first)
+      listMemberVideos.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      yield listMemberVideos;
+    }
+  }
 }
