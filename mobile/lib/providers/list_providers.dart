@@ -28,10 +28,16 @@ Future<List<CuratedList>> curatedLists(Ref ref) async {
 @riverpod
 Future<({List<UserList> userLists, List<CuratedList> curatedLists})> allLists(
     Ref ref) async {
-  final userLists = await ref.watch(userListsProvider.future);
-  final curatedLists = await ref.watch(curatedListsProvider.future);
+  // Fetch both in parallel for better performance
+  final results = await Future.wait([
+    ref.watch(userListsProvider.future),
+    ref.watch(curatedListsProvider.future),
+  ]);
 
-  return (userLists: userLists, curatedLists: curatedLists);
+  return (
+    userLists: results[0] as List<UserList>,
+    curatedLists: results[1] as List<CuratedList>,
+  );
 }
 
 /// Provider for videos in a specific curated list

@@ -2,6 +2,7 @@
 // ABOUTME: Prevents network image loading deadlocks by limiting concurrent connections and setting appropriate timeouts
 
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/io_client.dart';
 
@@ -36,6 +37,16 @@ class ImageCacheManager extends CacheManager {
 
     // Limit concurrent connections to prevent resource exhaustion
     httpClient.maxConnectionsPerHost = 6;
+
+    // In debug mode on desktop platforms, allow self-signed certificates
+    // This is needed for local development and CDN certificate chain issues
+    if (kDebugMode && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+      httpClient.badCertificateCallback = (cert, host, port) {
+        // Accept all certificates in debug mode on desktop platforms
+        // This helps with CDN certificate validation issues during development
+        return true;
+      };
+    }
 
     return HttpFileService(
       httpClient: IOClient(httpClient),

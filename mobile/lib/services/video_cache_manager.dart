@@ -135,6 +135,16 @@ class VideoCacheManager extends CacheManager {
     // Optimize for video streaming
     httpClient.maxConnectionsPerHost = 4;
 
+    // In debug mode on desktop platforms, allow self-signed certificates
+    // This is needed for local development and CDN certificate chain issues
+    if (kDebugMode && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+      httpClient.badCertificateCallback = (cert, host, port) {
+        // Accept all certificates in debug mode on desktop platforms
+        // This helps with CDN certificate validation issues during development
+        return true;
+      };
+    }
+
     return HttpFileService(
       httpClient: IOClient(httpClient),
     );

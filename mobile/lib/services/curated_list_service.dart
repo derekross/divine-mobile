@@ -165,15 +165,18 @@ class CuratedListService {
         _authService = authService,
         _prefs = prefs {
     _loadLists();
+    _loadSubscribedListIds();
   }
   final INostrService _nostrService;
   final AuthService _authService;
   final SharedPreferences _prefs;
 
   static const String listsStorageKey = 'curated_lists';
+  static const String subscribedListsStorageKey = 'subscribed_list_ids';
   static const String defaultListId = 'my_vine_list';
 
   final List<CuratedList> _lists = [];
+  final Set<String> _subscribedListIds = {};
   bool _isInitialized = false;
 
   // Track relay sync status
@@ -182,6 +185,16 @@ class CuratedListService {
   // Getters
   List<CuratedList> get lists => List.unmodifiable(_lists);
   bool get isInitialized => _isInitialized;
+
+  /// Get all subscribed list IDs
+  Set<String> get subscribedListIds => Set.unmodifiable(_subscribedListIds);
+
+  /// Get all subscribed lists
+  List<CuratedList> get subscribedLists {
+    return _lists
+        .where((list) => _subscribedListIds.contains(list.id))
+        .toList();
+  }
 
   /// Initialize the service and create default list if needed
   Future<void> initialize() async {
@@ -664,6 +677,74 @@ class CuratedListService {
         .toList();
   }
 
+  // === SUBSCRIPTION MANAGEMENT ===
+
+  /// Subscribe to a curated list to follow its updates
+  Future<bool> subscribeToList(String listId) async {
+    try {
+      // Check if list exists
+      final list = getListById(listId);
+      if (list == null) {
+        Log.warning('Cannot subscribe - list not found: $listId',
+            name: 'CuratedListService', category: LogCategory.system);
+        return false;
+      }
+
+      // Check if already subscribed
+      if (_subscribedListIds.contains(listId)) {
+        Log.debug('Already subscribed to list: ${list.name}',
+            name: 'CuratedListService', category: LogCategory.system);
+        return true;
+      }
+
+      // Add to subscribed lists
+      _subscribedListIds.add(listId);
+      await _saveSubscribedListIds();
+
+      Log.info('✅ Subscribed to list: ${list.name} ($listId)',
+          name: 'CuratedListService', category: LogCategory.system);
+
+      return true;
+    } catch (e) {
+      Log.error('Failed to subscribe to list: $e',
+          name: 'CuratedListService', category: LogCategory.system);
+      return false;
+    }
+  }
+
+  /// Unsubscribe from a curated list
+  Future<bool> unsubscribeFromList(String listId) async {
+    try {
+      // Check if subscribed
+      if (!_subscribedListIds.contains(listId)) {
+        Log.debug('Not subscribed to list: $listId',
+            name: 'CuratedListService', category: LogCategory.system);
+        return true;
+      }
+
+      final list = getListById(listId);
+      final listName = list?.name ?? listId;
+
+      // Remove from subscribed lists
+      _subscribedListIds.remove(listId);
+      await _saveSubscribedListIds();
+
+      Log.info('➖ Unsubscribed from list: $listName ($listId)',
+          name: 'CuratedListService', category: LogCategory.system);
+
+      return true;
+    } catch (e) {
+      Log.error('Failed to unsubscribe from list: $e',
+          name: 'CuratedListService', category: LogCategory.system);
+      return false;
+    }
+  }
+
+  /// Check if user is subscribed to a list
+  bool isSubscribedToList(String listId) {
+    return _subscribedListIds.contains(listId);
+  }
+
   /// Get readable summary of lists containing a video
   String getVideoListSummary(String videoEventId) {
     final listsContaining = getListsContainingVideo(videoEventId);
@@ -800,6 +881,23 @@ class CuratedListService {
     }
   }
 
+  /// Load subscribed list IDs from local storage
+  void _loadSubscribedListIds() {
+    final subscribedJson = _prefs.getString(subscribedListsStorageKey);
+    if (subscribedJson != null) {
+      try {
+        final List<dynamic> subscribedData = jsonDecode(subscribedJson);
+        _subscribedListIds.clear();
+        _subscribedListIds.addAll(subscribedData.cast<String>());
+        Log.debug('📱 Loaded ${_subscribedListIds.length} subscribed lists from storage',
+            name: 'CuratedListService', category: LogCategory.system);
+      } catch (e) {
+        Log.error('Failed to load subscribed list IDs: $e',
+            name: 'CuratedListService', category: LogCategory.system);
+      }
+    }
+  }
+
   /// Save lists to local storage
   Future<void> _saveLists() async {
     try {
@@ -807,6 +905,19 @@ class CuratedListService {
       await _prefs.setString(listsStorageKey, jsonEncode(listsJson));
     } catch (e) {
       Log.error('Failed to save curated lists: $e',
+          name: 'CuratedListService', category: LogCategory.system);
+    }
+  }
+
+  /// Save subscribed list IDs to local storage
+  Future<void> _saveSubscribedListIds() async {
+    try {
+      final subscribedJson = _subscribedListIds.toList();
+      await _prefs.setString(subscribedListsStorageKey, jsonEncode(subscribedJson));
+      Log.debug('💾 Saved ${_subscribedListIds.length} subscribed list IDs to storage',
+          name: 'CuratedListService', category: LogCategory.system);
+    } catch (e) {
+      Log.error('Failed to save subscribed list IDs: $e',
           name: 'CuratedListService', category: LogCategory.system);
     }
   }
@@ -894,6 +1005,208 @@ class CuratedListService {
     } catch (e) {
       Log.error('Failed to fetch lists from relays: $e',
           name: 'CuratedListService', category: LogCategory.system);
+    }
+  }
+
+  /// Fetch public curated lists from Nostr relays for discovery
+  /// Queries kind 30005 events WITHOUT author filter to get all public lists
+  /// Returns list of CuratedList objects without saving to local storage
+  Future<List<CuratedList>> fetchPublicListsFromRelays({
+    int limit = 50,
+    List<String>? searchTags,
+  }) async {
+    Log.info('📋 Fetching public curated lists from relays...',
+        name: 'CuratedListService', category: LogCategory.system);
+
+    try {
+      final completer = Completer<void>();
+      final receivedEvents = <Event>[];
+
+      // Build filter for public lists
+      final filter = Filter(
+        kinds: [30005], // NIP-51 curated lists
+        limit: limit,
+      );
+
+      // Subscribe to all public Kind 30005 events (no author filter)
+      final subscription = _nostrService.subscribeToEvents(
+        filters: [filter],
+      );
+
+      // Set a timeout for the subscription
+      Timer? timeoutTimer;
+      timeoutTimer = Timer(const Duration(seconds: 10), () {
+        Log.debug('Public lists fetch timeout reached, processing received events',
+            name: 'CuratedListService', category: LogCategory.system);
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      });
+
+      subscription.listen(
+        (event) {
+          receivedEvents.add(event);
+          Log.debug(
+              'Received public list event from relay: ${event.id}',
+              name: 'CuratedListService',
+              category: LogCategory.system);
+        },
+        onDone: () {
+          timeoutTimer?.cancel();
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        },
+        onError: (error) {
+          Log.error('Error fetching public lists from relay: $error',
+              name: 'CuratedListService', category: LogCategory.system);
+          timeoutTimer?.cancel();
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        },
+      );
+
+      await completer.future;
+
+      // Process received events into CuratedList objects
+      final publicLists = <CuratedList>[];
+
+      if (receivedEvents.isNotEmpty) {
+        // Group events by 'd' tag to handle replaceable events (keep newest)
+        final eventsByDTag = <String, Event>{};
+
+        for (final event in receivedEvents) {
+          final dTag = _extractDTag(event);
+          if (dTag != null) {
+            // Keep only the latest event for each 'd' tag
+            final existingEvent = eventsByDTag[dTag];
+            if (existingEvent == null ||
+                event.createdAt > existingEvent.createdAt) {
+              eventsByDTag[dTag] = event;
+            }
+          }
+        }
+
+        Log.debug('Processing ${eventsByDTag.length} unique public lists from relays',
+            name: 'CuratedListService', category: LogCategory.system);
+
+        // Convert events to CuratedList objects
+        for (final event in eventsByDTag.values) {
+          final curatedList = _eventToCuratedList(event);
+          if (curatedList != null) {
+            // Apply tag filter if specified
+            if (searchTags == null || searchTags.isEmpty) {
+              publicLists.add(curatedList);
+            } else {
+              // Check if list has any of the search tags
+              final hasMatchingTag = curatedList.tags.any(
+                (tag) => searchTags.contains(tag.toLowerCase()),
+              );
+              if (hasMatchingTag) {
+                publicLists.add(curatedList);
+              }
+            }
+          }
+        }
+      }
+
+      Log.info(
+          '✅ Public lists fetch complete. Found ${publicLists.length} lists',
+          name: 'CuratedListService',
+          category: LogCategory.system);
+
+      return publicLists;
+    } catch (e) {
+      Log.error('Failed to fetch public lists from relays: $e',
+          name: 'CuratedListService', category: LogCategory.system);
+      return [];
+    }
+  }
+
+  /// Convert a Nostr event to a CuratedList object
+  /// Returns null if event is invalid or cannot be parsed
+  CuratedList? _eventToCuratedList(Event event) {
+    try {
+      final dTag = _extractDTag(event);
+      if (dTag == null) {
+        Log.warning('List event missing d tag: ${event.id}',
+            name: 'CuratedListService', category: LogCategory.system);
+        return null;
+      }
+
+      // Extract list metadata from tags (same logic as _processListEvent)
+      String? title;
+      String? description;
+      String? imageUrl;
+      String? thumbnailEventId;
+      String? playOrderStr;
+      final tags = <String>[];
+      final videoEventIds = <String>[];
+      bool isCollaborative = false;
+      final allowedCollaborators = <String>[];
+
+      for (final tag in event.tags) {
+        if (tag.isEmpty) continue;
+
+        switch (tag[0]) {
+          case 'title':
+            if (tag.length > 1) title = tag[1];
+            break;
+          case 'description':
+            if (tag.length > 1) description = tag[1];
+            break;
+          case 'image':
+            if (tag.length > 1) imageUrl = tag[1];
+            break;
+          case 'thumbnail':
+            if (tag.length > 1) thumbnailEventId = tag[1];
+            break;
+          case 'playorder':
+            if (tag.length > 1) playOrderStr = tag[1];
+            break;
+          case 't':
+            if (tag.length > 1) tags.add(tag[1]);
+            break;
+          case 'e':
+            if (tag.length > 1) videoEventIds.add(tag[1]);
+            break;
+          case 'collaborative':
+            if (tag.length > 1 && tag[1] == 'true') isCollaborative = true;
+            break;
+          case 'collaborator':
+            if (tag.length > 1) allowedCollaborators.add(tag[1]);
+            break;
+        }
+      }
+
+      // Use title or fall back to content or default
+      final contentFirstLine = event.content.split('\n').first;
+      final name = title ??
+          (contentFirstLine.isNotEmpty ? contentFirstLine : 'Untitled List');
+
+      return CuratedList(
+        id: dTag,
+        name: name,
+        description: description ?? event.content,
+        imageUrl: imageUrl,
+        videoEventIds: videoEventIds,
+        createdAt: DateTime.fromMillisecondsSinceEpoch(event.createdAt * 1000),
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(event.createdAt * 1000),
+        isPublic: true, // Lists from relays are public
+        nostrEventId: event.id,
+        tags: tags,
+        isCollaborative: isCollaborative,
+        allowedCollaborators: allowedCollaborators,
+        thumbnailEventId: thumbnailEventId,
+        playOrder: playOrderStr != null
+            ? PlayOrderExtension.fromString(playOrderStr)
+            : PlayOrder.chronological,
+      );
+    } catch (e) {
+      Log.error('Failed to convert event ${event.id} to CuratedList: $e',
+          name: 'CuratedListService', category: LogCategory.system);
+      return null;
     }
   }
 

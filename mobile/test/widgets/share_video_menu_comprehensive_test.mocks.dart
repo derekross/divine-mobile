@@ -457,6 +457,24 @@ class MockCuratedListService extends _i1.Mock
           as bool);
 
   @override
+  Set<String> get subscribedListIds =>
+      (super.noSuchMethod(
+            Invocation.getter(#subscribedListIds),
+            returnValue: <String>{},
+            returnValueForMissingStub: <String>{},
+          )
+          as Set<String>);
+
+  @override
+  List<_i10.CuratedList> get subscribedLists =>
+      (super.noSuchMethod(
+            Invocation.getter(#subscribedLists),
+            returnValue: <_i10.CuratedList>[],
+            returnValueForMissingStub: <_i10.CuratedList>[],
+          )
+          as List<_i10.CuratedList>);
+
+  @override
   _i7.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
@@ -669,6 +687,33 @@ class MockCuratedListService extends _i1.Mock
           as List<_i10.CuratedList>);
 
   @override
+  _i7.Future<bool> subscribeToList(String? listId) =>
+      (super.noSuchMethod(
+            Invocation.method(#subscribeToList, [listId]),
+            returnValue: _i7.Future<bool>.value(false),
+            returnValueForMissingStub: _i7.Future<bool>.value(false),
+          )
+          as _i7.Future<bool>);
+
+  @override
+  _i7.Future<bool> unsubscribeFromList(String? listId) =>
+      (super.noSuchMethod(
+            Invocation.method(#unsubscribeFromList, [listId]),
+            returnValue: _i7.Future<bool>.value(false),
+            returnValueForMissingStub: _i7.Future<bool>.value(false),
+          )
+          as _i7.Future<bool>);
+
+  @override
+  bool isSubscribedToList(String? listId) =>
+      (super.noSuchMethod(
+            Invocation.method(#isSubscribedToList, [listId]),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
   String getVideoListSummary(String? videoEventId) =>
       (super.noSuchMethod(
             Invocation.method(#getVideoListSummary, [videoEventId]),
@@ -691,6 +736,25 @@ class MockCuratedListService extends _i1.Mock
             returnValueForMissingStub: _i7.Future<void>.value(),
           )
           as _i7.Future<void>);
+
+  @override
+  _i7.Future<List<_i10.CuratedList>> fetchPublicListsFromRelays({
+    int? limit = 50,
+    List<String>? searchTags,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchPublicListsFromRelays, [], {
+              #limit: limit,
+              #searchTags: searchTags,
+            }),
+            returnValue: _i7.Future<List<_i10.CuratedList>>.value(
+              <_i10.CuratedList>[],
+            ),
+            returnValueForMissingStub: _i7.Future<List<_i10.CuratedList>>.value(
+              <_i10.CuratedList>[],
+            ),
+          )
+          as _i7.Future<List<_i10.CuratedList>>);
 }
 
 /// A class which mocks [SocialService].

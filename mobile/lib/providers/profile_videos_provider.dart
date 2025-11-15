@@ -242,12 +242,15 @@ class ProfileVideosNotifier extends _$ProfileVideosNotifier {
 
     final filter = Filter(
       authors: [pubkey],
-      kinds: NIP71VideoKinds.getAllVideoKinds(), // NIP-71 video events
+      kinds: [
+        ...NIP71VideoKinds.getAllVideoKinds(), // NIP-71 video events
+        NIP71VideoKinds.repost, // Include reposts (kind 6)
+      ],
       limit: _profileVideosPageSize,
     );
 
     Log.info(
-        '📱 Starting streaming query for videos: authors=[$pubkey], kinds=${NIP71VideoKinds.getAllVideoKinds()}, limit=$_profileVideosPageSize',
+        '📱 Starting streaming query for videos: authors=[$pubkey], kinds=${[...NIP71VideoKinds.getAllVideoKinds(), NIP71VideoKinds.repost]}, limit=$_profileVideosPageSize',
         name: 'ProfileVideosProvider',
         category: LogCategory.ui);
 
@@ -438,7 +441,10 @@ class ProfileVideosNotifier extends _$ProfileVideosNotifier {
 
     final filter = Filter(
       authors: [_currentPubkey!],
-      kinds: NIP71VideoKinds.getAllVideoKinds(), // NIP-71 video events
+      kinds: [
+        ...NIP71VideoKinds.getAllVideoKinds(), // NIP-71 video events
+        NIP71VideoKinds.repost, // Include reposts (kind 6)
+      ],
       until: state.lastTimestamp! - 1, // Load older videos
       limit: _profileVideosPageSize,
     );

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openvine/models/video_event.dart';
+import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/providers/video_events_providers.dart';
 import 'package:openvine/providers/tab_visibility_provider.dart';
 import 'package:openvine/providers/curation_providers.dart';
@@ -26,6 +27,7 @@ import 'package:openvine/widgets/list_card.dart';
 import 'package:openvine/providers/list_providers.dart';
 import 'package:openvine/screens/curated_list_feed_screen.dart';
 import 'package:openvine/screens/user_list_people_screen.dart';
+import 'package:openvine/screens/discover_lists_screen.dart';
 
 /// Pure ExploreScreen using revolutionary Riverpod architecture
 class ExploreScreen extends ConsumerStatefulWidget {
@@ -346,13 +348,29 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   Widget _buildListsTab() {
     final allListsAsync = ref.watch(allListsProvider);
+    final serviceAsync = ref.watch(curatedListServiceProvider);
 
     return allListsAsync.when(
       data: (data) {
         final userLists = data.userLists;
-        final curatedLists = data.curatedLists;
+        final allCuratedLists = data.curatedLists;
 
-        if (userLists.isEmpty && curatedLists.isEmpty) {
+        return serviceAsync.when(
+          data: (service) {
+            // Split curated lists into user's own lists and subscribed lists
+            // Filter user's own curated lists (local lists created by user)
+            final myLists = allCuratedLists.where((list) {
+              // Lists without nostrEventId are local-only user lists
+              return list.nostrEventId == null;
+            }).toList();
+
+            // Filter subscribed lists (only lists user has explicitly subscribed to)
+            final subscribedLists = allCuratedLists.where((list) {
+              // Check if user is subscribed to this list
+              return service.isSubscribedToList(list.id);
+            }).toList();
+
+        if (userLists.isEmpty && allCuratedLists.isEmpty) {
           return Container(
             key: const Key('lists-tab-content'),
             child: Center(
@@ -395,11 +413,234 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
           child: ListView(
             key: const Key('lists-tab-content'),
             children: [
+              // Discover Lists button at top
+              Container(
+                margin: const EdgeInsets.all(16),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Log.info('Tapped Discover Lists button',
+                        category: LogCategory.ui);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const DiscoverListsScreen(),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.search, color: VineTheme.backgroundColor),
+                  label: Text(
+                    'Discover Lists',
+                    style: TextStyle(
+                      color: VineTheme.backgroundColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: VineTheme.vineGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Help text explaining lists feature
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: VineTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: VineTheme.vineGreen.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: VineTheme.vineGreen, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'About Lists',
+                          style: TextStyle(
+                            color: VineTheme.whiteText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Lists help you organize and curate Divine content in two ways:',
+                      style: TextStyle(
+                        color: VineTheme.primaryText,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.group,
+                            color: VineTheme.vineGreen, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'People Lists',
+                                style: TextStyle(
+                                  color: VineTheme.whiteText,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Follow groups of creators and see their latest videos',
+                                style: TextStyle(
+                                  color: VineTheme.secondaryText,
+                                  fontSize: 13,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.video_library,
+                            color: VineTheme.vineGreen, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Video Lists',
+                                style: TextStyle(
+                                  color: VineTheme.whiteText,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Create playlists of your favorite videos to watch later',
+                                style: TextStyle(
+                                  color: VineTheme.secondaryText,
+                                  fontSize: 13,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // My Lists section (user's own curated video lists)
+              if (myLists.isNotEmpty) ...[
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.video_library,
+                          color: VineTheme.vineGreen, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'My Lists',
+                        style: TextStyle(
+                          color: VineTheme.primaryText,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ...myLists.map((curatedList) => CuratedListCard(
+                      curatedList: curatedList,
+                      onTap: () {
+                        Log.info('Tapped my curated list: ${curatedList.name}',
+                            category: LogCategory.ui);
+                        // Navigate to curated list video feed
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => CuratedListFeedScreen(
+                              listId: curatedList.id,
+                              listName: curatedList.name,
+                            ),
+                          ),
+                        );
+                      },
+                    )),
+                const SizedBox(height: 16),
+              ],
+
+              // Subscribed Lists section (public lists from other users)
+              if (subscribedLists.isNotEmpty) ...[
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.playlist_add_check,
+                          color: VineTheme.vineGreen, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Subscribed Lists',
+                        style: TextStyle(
+                          color: VineTheme.primaryText,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ...subscribedLists.map((curatedList) => CuratedListCard(
+                      curatedList: curatedList,
+                      onTap: () {
+                        Log.info('Tapped subscribed list: ${curatedList.name}',
+                            category: LogCategory.ui);
+                        // Navigate to curated list video feed
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => CuratedListFeedScreen(
+                              listId: curatedList.id,
+                              listName: curatedList.name,
+                            ),
+                          ),
+                        );
+                      },
+                    )),
+                const SizedBox(height: 16),
+              ],
+
               // User Lists section (people lists)
               if (userLists.isNotEmpty) ...[
                 Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: [
                       Icon(Icons.group,
@@ -432,46 +673,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                     )),
                 const SizedBox(height: 16),
               ],
-
-              // Curated Video Lists section
-              if (curatedLists.isNotEmpty) ...[
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.video_library,
-                          color: VineTheme.vineGreen, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Video Lists',
-                        style: TextStyle(
-                          color: VineTheme.primaryText,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                ...curatedLists.map((curatedList) => CuratedListCard(
-                      curatedList: curatedList,
-                      onTap: () {
-                        Log.info('Tapped curated list: ${curatedList.name}',
-                            category: LogCategory.ui);
-                        // Navigate to curated list video feed
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => CuratedListFeedScreen(
-                              listId: curatedList.id,
-                              listName: curatedList.name,
-                            ),
-                          ),
-                        );
-                      },
-                    )),
-              ],
             ],
+          ),
+        );
+          },
+          loading: () => Center(
+            child: CircularProgressIndicator(color: VineTheme.vineGreen),
+          ),
+          error: (_, __) => Center(
+            child: Text('Error loading subscription data',
+                style: TextStyle(color: VineTheme.likeRed)),
           ),
         );
       },
@@ -505,6 +716,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
       ),
     );
   }
+
 
   // Keep Divine Team functionality for now - will migrate to a list
   // ignore: unused_element
@@ -679,8 +891,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     // CRITICAL: Check hasValue FIRST before isLoading
     // StreamProviders can have both isLoading:true and hasValue:true during rebuilds
     if (videoEventsAsync.hasValue && videoEventsAsync.value != null) {
-      final videos = videoEventsAsync.value!;
-      Log.info('✅ TrendingTab: Data state - ${videos.length} videos',
+      // Filter to show ONLY imported classic Vines (videos with originalLoops metadata)
+      // New user-uploaded videos won't have this metadata and shouldn't appear here
+      final allVideos = videoEventsAsync.value!;
+      final videos = allVideos.where((v) => v.isOriginalVine).toList();
+
+      Log.info('✅ TrendingTab: Data state - ${videos.length} classic Vines (filtered from ${allVideos.length} total videos)',
           name: 'ExploreScreen', category: LogCategory.video);
 
       // Track feed loaded with videos

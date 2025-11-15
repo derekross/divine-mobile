@@ -14,6 +14,7 @@ import 'package:openvine/screens/settings_screen.dart';
 import 'package:openvine/theme/vine_theme.dart';
 import 'package:openvine/widgets/bug_report_dialog.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Navigation drawer with app settings and configuration options
 class VineDrawer extends ConsumerStatefulWidget {
@@ -37,6 +38,35 @@ class _VineDrawerState extends ConsumerState<VineDrawer> {
     setState(() {
       _appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
     });
+  }
+
+  /// Launch a URL in the external browser
+  Future<void> _launchWebPage(BuildContext context, String urlString, String pageName) async {
+    final url = Uri.parse(urlString);
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open $pageName'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening $pageName: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -244,6 +274,38 @@ class _VineDrawerState extends ConsumerState<VineDrawer> {
                           ),
                         );
                       }
+                    },
+                  ),
+
+                  const Divider(color: Colors.grey, height: 1),
+
+                  // Legal & Safety section
+                  _buildSectionHeader('Legal & Safety'),
+                  _buildDrawerItem(
+                    icon: Icons.privacy_tip,
+                    title: 'Privacy Policy',
+                    subtitle: 'How we handle your data',
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      _launchWebPage(context, 'https://divine.video/privacy', 'Privacy Policy');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.shield,
+                    title: 'Safety Center',
+                    subtitle: 'Community safety guidelines',
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      _launchWebPage(context, 'https://divine.video/safety', 'Safety Center');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.help,
+                    title: 'FAQ',
+                    subtitle: 'Frequently asked questions',
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      _launchWebPage(context, 'https://divine.video/faq', 'FAQ');
                     },
                   ),
                 ],
