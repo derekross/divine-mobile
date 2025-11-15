@@ -600,7 +600,11 @@ class _UniversalCameraScreenPureState
                 Positioned(
                   top: 16,
                   right: 16,
-                  child: _buildCameraControls(recordingState),
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      return _buildCameraControls(recordingState, ref);
+                    },
+                  ),
                 ),
 
               // Countdown overlay
@@ -903,7 +907,7 @@ class _UniversalCameraScreenPureState
     );
   }
 
-  Widget _buildCameraControls(dynamic recordingState) {
+  Widget _buildCameraControls(dynamic recordingState, WidgetRef ref) {
     final cameraInterface = ref.read(vineRecordingProvider.notifier).cameraInterface;
     final isFrontCamera = cameraInterface is EnhancedMobileCameraInterface && cameraInterface.isFrontCamera;
 
@@ -912,7 +916,10 @@ class _UniversalCameraScreenPureState
         // Flash toggle (only show for rear camera - front cameras don't have flash)
         if (!isFrontCamera) ...[
           IconButton(
-            onPressed: _toggleFlash,
+            onPressed: () {
+              Log.info('🔦 Flash IconButton.onPressed called', category: LogCategory.video);
+              _toggleFlash();
+            },
             icon: Icon(_getFlashIcon(), color: Colors.white, size: 28),
           ),
           const SizedBox(height: 8),
@@ -1020,11 +1027,10 @@ class _UniversalCameraScreenPureState
     switch (_flashMode) {
       case FlashMode.off:
         return Icons.flash_off;
-      case FlashMode.auto:
-        return Icons.flash_auto;
-      case FlashMode.always:
-        return Icons.flash_on;
       case FlashMode.torch:
+        return Icons.flashlight_on;
+      case FlashMode.auto:
+      case FlashMode.always:
         return Icons.flash_on;
     }
   }
@@ -1172,17 +1178,16 @@ class _UniversalCameraScreenPureState
     final cameraInterface = ref.read(vineRecordingProvider.notifier).cameraInterface;
 
     if (cameraInterface is EnhancedMobileCameraInterface) {
-      // Update local state to cycle through: off → auto → always → off
+      // Update local state to cycle through: off → torch (for video recording)
+      // For video, we use torch mode (continuous light) instead of flash
       setState(() {
         switch (_flashMode) {
           case FlashMode.off:
-            _flashMode = FlashMode.auto;
+            _flashMode = FlashMode.torch;
             break;
-          case FlashMode.auto:
-            _flashMode = FlashMode.always;
-            break;
-          case FlashMode.always:
           case FlashMode.torch:
+          case FlashMode.auto:
+          case FlashMode.always:
             _flashMode = FlashMode.off;
             break;
         }
