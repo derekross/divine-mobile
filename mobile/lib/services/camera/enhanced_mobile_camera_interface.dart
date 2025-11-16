@@ -313,6 +313,30 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
   @override
   bool get canSwitchCamera => _availableCameras.length > 1;
 
+  /// Check if currently using front camera
+  bool get isFrontCamera {
+    if (_availableCameras.isEmpty || _currentCameraIndex >= _availableCameras.length) {
+      return false;
+    }
+    return _availableCameras[_currentCameraIndex].lensDirection == CameraLensDirection.front;
+  }
+
+  /// Set flash mode directly
+  Future<void> setFlashMode(FlashMode mode) async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    try {
+      _currentFlashMode = mode;
+      await _controller!.setFlashMode(mode);
+
+      Log.info('Flash mode set to $mode',
+          name: 'EnhancedMobileCamera', category: LogCategory.system);
+    } catch (e) {
+      Log.error('Failed to set flash mode: $e',
+          name: 'EnhancedMobileCamera', category: LogCategory.system);
+    }
+  }
+
   @override
   void dispose() {
     if (_isRecording) {

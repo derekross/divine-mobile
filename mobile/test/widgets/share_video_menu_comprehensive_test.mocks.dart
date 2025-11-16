@@ -30,6 +30,7 @@ import 'package:openvine/services/video_sharing_service.dart' as _i6;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeDeleteResult_0 extends _i1.SmartFake implements _i2.DeleteResult {
   _FakeDeleteResult_0(Object parent, Invocation parentInvocation)
@@ -687,9 +688,12 @@ class MockCuratedListService extends _i1.Mock
           as List<_i10.CuratedList>);
 
   @override
-  _i7.Future<bool> subscribeToList(String? listId) =>
+  _i7.Future<bool> subscribeToList(
+    String? listId, [
+    _i10.CuratedList? listData,
+  ]) =>
       (super.noSuchMethod(
-            Invocation.method(#subscribeToList, [listId]),
+            Invocation.method(#subscribeToList, [listId, listData]),
             returnValue: _i7.Future<bool>.value(false),
             returnValueForMissingStub: _i7.Future<bool>.value(false),
           )
