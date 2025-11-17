@@ -13,12 +13,10 @@ class NIP71VideoKinds {
   static const int repost = 6; // NIP-18 reposts
 
   /// Get all NIP-71 video kinds
+  /// OpenVine uses ONLY kind 34236 (addressable short videos)
   static List<int> getAllVideoKinds() {
     return [
-      shortVideo,
-      normalVideo,
-      addressableShortVideo,
-      addressableNormalVideo,
+      addressableShortVideo, // Kind 34236 - OpenVine's exclusive video kind
     ];
   }
 
