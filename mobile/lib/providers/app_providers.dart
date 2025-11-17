@@ -254,8 +254,16 @@ INostrService nostrService(Ref ref) {
     },
   );
 
-  // Note: Initialization is handled explicitly in main.dart to ensure proper async timing
-  // Do NOT call NostrServiceFactory.initialize(service) here as it causes double initialization
+  // Initialize the service asynchronously (relay connections happen here)
+  // This is safe because the provider is keepAlive - it won't be disposed during async work
+  Future.microtask(() async {
+    try {
+      await (service as dynamic).initialize(enableP2P: false);
+      UnifiedLogger.info('NostrService initialized with relay connections', name: 'AppProviders');
+    } catch (e) {
+      UnifiedLogger.error('Failed to initialize NostrService: $e', name: 'AppProviders');
+    }
+  });
 
   // Cleanup on disposal - but only in production, not during development hot reloads
   ref.onDispose(() {
