@@ -23,6 +23,7 @@ import 'package:openvine/services/user_list_service.dart';
 // Removed legacy explore_video_manager.dart import
 import 'package:openvine/providers/analytics_providers.dart';
 import 'package:openvine/providers/readiness_gate_providers.dart';
+import 'package:openvine/providers/app_lifecycle_provider.dart';
 import 'package:openvine/services/hashtag_service.dart';
 import 'package:openvine/services/mute_service.dart';
 import 'package:openvine/services/nip05_service.dart';
@@ -258,21 +259,41 @@ INostrService nostrService(Ref ref) {
   // This is safe because the provider is keepAlive - it won't be disposed during async work
   UnifiedLogger.info('🚀 About to schedule NostrService initialization', name: 'AppProviders');
 
-  // Use ref.onCancel callback to ensure initialization happens
-  ref.onCancel(() {
-    UnifiedLogger.info('🔴 NostrService provider canceled', name: 'AppProviders');
-  });
-
-  // Schedule initialization immediately
-  (() async {
+  // Use Future.microtask to ensure initialization runs immediately after provider creation
+  Future.microtask(() async {
+    UnifiedLogger.info('🔧 Future.microtask: Starting NostrService initialization...', name: 'AppProviders');
     try {
-      UnifiedLogger.info('🔧 Starting NostrService initialization...', name: 'AppProviders');
       await (service as dynamic).initialize(enableP2P: false);
       UnifiedLogger.info('✅ NostrService initialized with relay connections', name: 'AppProviders');
     } catch (e, stackTrace) {
       UnifiedLogger.error('❌ Failed to initialize NostrService: $e\n$stackTrace', name: 'AppProviders');
     }
-  })();
+  });
+
+  // Watch app lifecycle to maintain relay connections
+  // When app resumes from background, check and reconnect if needed
+  ref.listen(appForegroundProvider, (previous, next) {
+    if (!next.hasValue) return;
+
+    final isForeground = next.value ?? false;
+    final wasForeground = previous?.value ?? false;
+
+    // App just returned to foreground
+    if (isForeground && !wasForeground) {
+      UnifiedLogger.info('🔄 App resumed - checking relay connections', name: 'AppProviders');
+
+      // Reconnect to relays after app resumes
+      Future.microtask(() async {
+        try {
+          UnifiedLogger.info('🔌 Reconnecting to relays after app resume...', name: 'AppProviders');
+          await (service as dynamic).initialize(enableP2P: false);
+          UnifiedLogger.info('✅ Relay reconnection successful', name: 'AppProviders');
+        } catch (e, stackTrace) {
+          UnifiedLogger.error('❌ Failed to reconnect relays: $e\n$stackTrace', name: 'AppProviders');
+        }
+      });
+    }
+  });
 
   // Cleanup on disposal - but only in production, not during development hot reloads
   ref.onDispose(() {

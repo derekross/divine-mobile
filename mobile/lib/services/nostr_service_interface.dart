@@ -69,6 +69,16 @@ abstract class INostrService {
     bool bypassLimits = false,
     void Function()? onEose,
   });
+
+  /// Subscribe to events using custom filter JSON (bypasses Filter class)
+  /// This allows querying with custom tags like #a for addressable events
+  Stream<Event> subscribeToEventsWithCustomJson({
+    required List<Map<String, dynamic>> filtersJson,
+    String? subscriptionId,
+    bool bypassLimits = false,
+    void Function()? onEose,
+  });
+
   Future<NostrBroadcastResult> broadcastEvent(Event event);
   Future<NostrBroadcastResult> publishFileMetadata({
     required NIP94Metadata metadata,
@@ -94,6 +104,12 @@ abstract class INostrService {
 
   /// Fetch a single event by ID
   Future<Event?> fetchEventById(String eventId, {String? relayUrl});
+
+  /// Query events using custom filter JSON (bypasses Filter class)
+  /// Returns a one-time query result, not a stream
+  Future<List<Event>> queryEventsWithCustomJson({
+    required List<Map<String, dynamic>> filtersJson,
+  });
 
   // NIP-50 Search functionality
   Stream<Event> searchVideos(

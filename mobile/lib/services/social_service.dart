@@ -358,7 +358,14 @@ class SocialService {
   /// Publishes a NIP-25 reaction event (like) and returns the reaction event ID
   Future<String?> _publishLike(String eventId, String authorPubkey) async {
     try {
+      Log.info('❤️  [LIKE] Publishing like for event: $eventId',
+          name: 'SocialService', category: LogCategory.system);
+      Log.info('❤️  [LIKE] Author pubkey: $authorPubkey',
+          name: 'SocialService', category: LogCategory.system);
+
       // Create NIP-25 reaction event (Kind 7)
+      Log.info('❤️  [LIKE] Creating and signing Kind 7 reaction event...',
+          name: 'SocialService', category: LogCategory.system);
       final event = await _authService.createAndSignEvent(
         kind: 7,
         content: '+', // Standard like reaction
@@ -372,18 +379,32 @@ class SocialService {
         throw Exception('Failed to create like event');
       }
 
+      Log.info('❤️  [LIKE] Event created: ${event.id}',
+          name: 'SocialService', category: LogCategory.system);
+      Log.info('❤️  [LIKE] Event JSON: ${event.toJson()}',
+          name: 'SocialService', category: LogCategory.system);
+
       // Cache the event immediately after creation
       _personalEventCache?.cacheUserEvent(event);
 
       // Broadcast the like event
+      Log.info('❤️  [LIKE] Broadcasting to relays...',
+          name: 'SocialService', category: LogCategory.system);
       final result = await _nostrService.broadcastEvent(event);
+
+      Log.info('❤️  [LIKE] Broadcast result: success=${result.isSuccessful}, successCount=${result.successCount}/${result.totalRelays}',
+          name: 'SocialService', category: LogCategory.system);
+      Log.info('❤️  [LIKE] Relay results: ${result.results}',
+          name: 'SocialService', category: LogCategory.system);
 
       if (!result.isSuccessful) {
         final errorMessages = result.errors.values.join(', ');
+        Log.error('❤️  [LIKE] Broadcast FAILED: $errorMessages',
+            name: 'SocialService', category: LogCategory.system);
         throw Exception('Failed to broadcast like event: $errorMessages');
       }
 
-      Log.debug('Like event broadcasted: ${event.id}',
+      Log.info('❤️  [LIKE] ✅ Like broadcasted successfully: ${event.id}',
           name: 'SocialService', category: LogCategory.system);
       return event.id;
     } catch (e) {
@@ -1434,10 +1455,12 @@ class SocialService {
   // === COMMENT SYSTEM ===
 
   /// Posts a comment in reply to a root event (video)
+  /// Follows divine-web spec using NIP-22 with addressable event references
   Future<void> postComment({
     required String content,
     required String rootEventId,
     required String rootEventAuthorPubkey,
+    required String rootDTag, // d-tag from the video (vineId)
     String? replyToEventId,
     String? replyToAuthorPubkey,
   }) async {
@@ -1453,33 +1476,54 @@ class SocialService {
       throw Exception('Comment content cannot be empty');
     }
 
-    Log.debug('📱 Posting comment to event: $rootEventId',
+    Log.info('💬 [COMMENT] Posting comment to video: $rootEventId',
+        name: 'SocialService', category: LogCategory.system);
+    Log.info('💬 [COMMENT] Root d-tag: $rootDTag',
+        name: 'SocialService', category: LogCategory.system);
+    Log.info('💬 [COMMENT] Content: "${content.trim()}"',
         name: 'SocialService', category: LogCategory.system);
 
     try {
       // We don't need the keyPair directly since createAndSignEvent handles signing
 
-      // Create tags for the comment
+      // Create NIP-22 compliant tags for Kind 1111 comments
+      // Following divine-web implementation exactly
       final tags = <List<String>>[];
 
-      // Always include root event tag (the video being commented on)
-      tags.add(['e', rootEventId, '', 'root']);
+      // Root event tags (uppercase for NIP-22)
+      // Videos are Kind 34236 (addressable), so use A tag format: kind:pubkey:d
+      final rootAddressable = '34236:$rootEventAuthorPubkey:$rootDTag';
+      tags.add(['A', rootAddressable]); // Addressable event reference
+      tags.add(['K', '34236']); // Root event kind
+      tags.add(['P', rootEventAuthorPubkey]); // Root event author
 
-      // Tag the root event author
-      tags.add(['p', rootEventAuthorPubkey]);
-
-      // If this is a reply to another comment, add reply tags
+      // Reply tags (lowercase for NIP-22)
       if (replyToEventId != null) {
-        tags.add(['e', replyToEventId, '', 'reply']);
-
+        // This is a reply to another comment (Kind 1111)
+        tags.add(['e', replyToEventId]); // Reply to comment ID
+        tags.add(['k', '1111']); // Reply to comment kind
         if (replyToAuthorPubkey != null) {
-          tags.add(['p', replyToAuthorPubkey]);
+          tags.add(['p', replyToAuthorPubkey]); // Reply to comment author
         }
+        Log.info('💬 [COMMENT] Reply to comment: $replyToEventId',
+            name: 'SocialService', category: LogCategory.system);
+      } else {
+        // Top-level comment - duplicate root tags as lowercase
+        tags.add(['a', rootAddressable]); // Addressable event reference (lowercase)
+        tags.add(['k', '34236']);
+        tags.add(['p', rootEventAuthorPubkey]);
+        Log.info('💬 [COMMENT] Top-level comment',
+            name: 'SocialService', category: LogCategory.system);
       }
 
-      // Create the comment event (Kind 1 text note)
+      Log.info('💬 [COMMENT] Tags: $tags',
+          name: 'SocialService', category: LogCategory.system);
+
+      // Create the comment event (Kind 1111 - NIP-22 comment)
+      Log.info('💬 [COMMENT] Creating and signing Kind 1111 event...',
+          name: 'SocialService', category: LogCategory.system);
       final event = await _authService.createAndSignEvent(
-        kind: 1, // Text note
+        kind: 1111, // NIP-22 comment
         tags: tags,
         content: content.trim(),
       );
@@ -1488,15 +1532,29 @@ class SocialService {
         throw Exception('Failed to create comment event');
       }
 
+      Log.info('💬 [COMMENT] Event created: ${event.id}',
+          name: 'SocialService', category: LogCategory.system);
+      Log.info('💬 [COMMENT] Event JSON: ${event.toJson()}',
+          name: 'SocialService', category: LogCategory.system);
+
       // Broadcast the comment
+      Log.info('💬 [COMMENT] Broadcasting to relays...',
+          name: 'SocialService', category: LogCategory.system);
       final result = await _nostrService.broadcastEvent(event);
+
+      Log.info('💬 [COMMENT] Broadcast result: success=${result.isSuccessful}, successCount=${result.successCount}/${result.totalRelays}',
+          name: 'SocialService', category: LogCategory.system);
+      Log.info('💬 [COMMENT] Relay results: ${result.results}',
+          name: 'SocialService', category: LogCategory.system);
 
       if (!result.isSuccessful) {
         final errorMessages = result.errors.values.join(', ');
+        Log.error('💬 [COMMENT] Broadcast FAILED: $errorMessages',
+            name: 'SocialService', category: LogCategory.system);
         throw Exception('Failed to broadcast comment: $errorMessages');
       }
 
-      Log.info('Comment posted successfully: ${event.id}',
+      Log.info('💬 [COMMENT] ✅ Comment posted successfully: ${event.id}',
           name: 'SocialService', category: LogCategory.system);
     } catch (e) {
       Log.error('Error posting comment: $e',
@@ -1506,58 +1564,79 @@ class SocialService {
   }
 
   /// Fetches all comments for a given root event ID
-  Stream<Event> fetchCommentsForEvent(String rootEventId) {
-    Log.debug(
-        '📱 Fetching comments for event: $rootEventId',
+  /// Follows divine-web spec using #A tag for addressable events (Kind 34236)
+  Stream<Event> fetchCommentsForEvent(String rootEventId, String rootAuthorPubkey, String rootDTag) {
+    Log.info(
+        '💬 [FETCH] Fetching comments for video: $rootEventId',
+        name: 'SocialService',
+        category: LogCategory.system);
+    Log.info(
+        '💬 [FETCH] Root d-tag: $rootDTag',
         name: 'SocialService',
         category: LogCategory.system);
 
-    // Create filter for comments
-    // Comments are Kind 1 events that have an 'e' tag pointing to the root event
-    final filter = Filter(
-      kinds: [1], // Text notes
-      e: [rootEventId], // Comments that reference this event
-    );
+    // Create filter for NIP-22 comments (Kind 1111)
+    // For Kind 34236 (addressable videos), use #A tag with format: kind:pubkey:dtag
+    final rootAddressable = '34236:$rootAuthorPubkey:$rootDTag';
+
+    Log.info(
+        '💬 [FETCH] Filter: kinds=[1111], #a=[$rootAddressable]',
+        name: 'SocialService',
+        category: LogCategory.system);
 
     // Create a StreamController to emit events
     final controller = StreamController<Event>();
 
-    // Create managed subscription for comments
-    // NOTE: No onComplete callback - keep subscription open for real-time comments
-    // Comments should stay live to receive new comments after EOSE
-    _subscriptionManager
-        .createSubscription(
-      name: 'comments_$rootEventId',
-      filters: [
-        Filter(
-          kinds: filter.kinds,
-          e: filter.e,
-          h: filter.h,
-          limit: 50, // Limit comment fetching
-        ),
-      ],
-      onEvent: (event) {
+    // We need to use a custom filter with #a tag since nostr_sdk Filter doesn't support it
+    // We'll use NostrService's direct relay subscription with modified JSON
+
+    // Create a custom subscription directly via NostrService with filter JSON that includes #a
+    final baseFilter = Filter(
+      kinds: [1111], // NIP-22 comments
+      limit: 50,
+    );
+
+    // Get the JSON and add the #a tag (lowercase for queries)
+    final filterJson = baseFilter.toJson();
+    filterJson['#a'] = [rootAddressable];
+
+    Log.info(
+        '💬 [FETCH] Subscription filter JSON with #a tag: $filterJson',
+        name: 'SocialService',
+        category: LogCategory.system);
+
+    // Use queryEventsWithCustomJson instead of subscribe
+    // subscribe() doesn't work properly with nostr_sdk RelayPool
+    _nostrService.queryEventsWithCustomJson(
+      filtersJson: [filterJson],
+    ).then((events) {
+      Log.info(
+          '💬 [FETCH] ✅ Query returned ${events.length} comment events',
+          name: 'SocialService',
+          category: LogCategory.system);
+
+      // Add all events to the stream controller
+      for (final event in events) {
+        Log.info(
+            '💬 [FETCH] Adding comment: ${event.id} - "${event.content}"',
+            name: 'SocialService',
+            category: LogCategory.system);
         if (!controller.isClosed) {
           controller.add(event);
         }
-      },
-      onError: (error) {
-        if (!controller.isClosed) {
-          controller.addError(error);
-        }
-      },
-      // Removed onComplete callback to keep subscription open for real-time comments
-      // Only timeout or explicit cancellation will close this stream
-      timeout: const Duration(minutes: 5), // Longer timeout for live comment subscriptions
-      priority: 6, // Lower priority for comments
-    )
-        .catchError((error) {
-      Log.error('Failed to create comment subscription: $error',
+      }
+
+      // Close the controller after adding all events
+      if (!controller.isClosed) {
+        controller.close();
+      }
+    }).catchError((error) {
+      Log.error('Failed to query comments: $error',
           name: 'SocialService', category: LogCategory.system);
       if (!controller.isClosed) {
         controller.addError(error);
+        controller.close();
       }
-      return 'error_subscription'; // Return a placeholder subscription ID
     });
 
     return controller.stream;
@@ -1579,8 +1658,8 @@ class SocialService {
         name: 'comment_count_$rootEventId',
         filters: [
           Filter(
-            kinds: [1], // Text notes
-            e: [rootEventId], // Comments that reference this event
+            kinds: [1111], // NIP-22 comments
+            e: [rootEventId], // Comments that reference this event (lowercase 'e' tag)
             limit: 100, // Reasonable limit for counting
           ),
         ],

@@ -71,14 +71,32 @@ class CommentsState {
 class CommentsNotifier extends _$CommentsNotifier {
   late String _rootEventId;
   late String _rootAuthorPubkey;
+  late String _rootDTag;
 
   @override
-  CommentsState build(String rootEventId, String rootAuthorPubkey) {
+  CommentsState build(String rootEventId, String rootAuthorPubkey, String rootDTag) {
     _rootEventId = rootEventId;
     _rootAuthorPubkey = rootAuthorPubkey;
+    _rootDTag = rootDTag;
 
-    // Load comments on initialization
-    Future.microtask(() => _loadComments());
+    // Schedule comment loading AFTER provider initialization
+    // Use Future.delayed with zero duration to ensure provider state is ready
+    Log.debug('🚀 CommentsNotifier: About to schedule comment loading for: $rootEventId',
+        name: 'CommentsNotifier', category: LogCategory.ui);
+
+    Future.delayed(Duration.zero, () async {
+      if (!ref.mounted) return;
+      try {
+        Log.debug('🔧 CommentsNotifier: Starting comment loading...',
+            name: 'CommentsNotifier', category: LogCategory.ui);
+        await _loadComments();
+        Log.debug('✅ CommentsNotifier: Comments loaded successfully',
+            name: 'CommentsNotifier', category: LogCategory.ui);
+      } catch (e, stackTrace) {
+        Log.error('❌ CommentsNotifier: Failed to load comments: $e\n$stackTrace',
+            name: 'CommentsNotifier', category: LogCategory.ui);
+      }
+    });
 
     return CommentsState(rootEventId: rootEventId);
   }
@@ -87,6 +105,9 @@ class CommentsNotifier extends _$CommentsNotifier {
   Future<void> _loadComments() async {
     if (state.isLoading) return;
 
+    Log.info('💬 [FETCH] Loading comments for video: $_rootEventId',
+        name: 'CommentsNotifier', category: LogCategory.ui);
+
     state = state.copyWith(isLoading: true, error: null);
 
     // Use Completer to track stream completion while updating UI reactively
@@ -94,7 +115,11 @@ class CommentsNotifier extends _$CommentsNotifier {
 
     try {
       final socialService = ref.read(socialServiceProvider);
-      final commentsStream = socialService.fetchCommentsForEvent(_rootEventId);
+      Log.info('💬 [FETCH] Calling socialService.fetchCommentsForEvent...',
+          name: 'CommentsNotifier', category: LogCategory.ui);
+      Log.info('💬 [FETCH] Root params: eventId=$_rootEventId, pubkey=$_rootAuthorPubkey, dTag=$_rootDTag',
+          name: 'CommentsNotifier', category: LogCategory.ui);
+      final commentsStream = socialService.fetchCommentsForEvent(_rootEventId, _rootAuthorPubkey, _rootDTag);
       final commentMap = <String, Comment>{};
       final replyMap = <String, List<String>>{}; // parentId -> [childIds]
       var hasReceivedFirstEvent = false;
@@ -104,9 +129,17 @@ class CommentsNotifier extends _$CommentsNotifier {
       // Don't use .take() - let stream stay open for real-time comments
       final subscription = commentsStream.listen(
         (event) {
+          Log.info('💬 [FETCH] ✅ Received comment event: ${event.id} (kind: ${event.kind})',
+              name: 'CommentsNotifier', category: LogCategory.ui);
+          Log.info('💬 [FETCH] Event tags: ${event.tags}',
+              name: 'CommentsNotifier', category: LogCategory.ui);
+          Log.info('💬 [FETCH] Event content: "${event.content}"',
+              name: 'CommentsNotifier', category: LogCategory.ui);
           // Convert Nostr event to Comment model
           final comment = _eventToComment(event);
           if (comment != null) {
+            Log.info('💬 [FETCH] ✅ Parsed comment: "${comment.content}" by ${comment.authorPubkey}',
+                name: 'CommentsNotifier', category: LogCategory.ui);
             commentMap[comment.id] = comment;
 
             // Track parent-child relationships
@@ -160,6 +193,8 @@ class CommentsNotifier extends _$CommentsNotifier {
       Future.delayed(const Duration(seconds: 3), () {
         if (!hasReceivedFirstEvent && !completer.isCompleted) {
           // No comments received after waiting - show empty state
+          Log.warning('⚠️ No comment events received after 3 seconds for $_rootEventId',
+              name: 'CommentsNotifier', category: LogCategory.ui);
           state = state.copyWith(
             topLevelComments: [],
             isLoading: false,
@@ -169,6 +204,8 @@ class CommentsNotifier extends _$CommentsNotifier {
         } else if (!completer.isCompleted) {
           // Comments received - complete to unblock function
           // Subscription continues listening for real-time updates
+          Log.debug('✅ Received ${commentMap.length} comments so far',
+              name: 'CommentsNotifier', category: LogCategory.ui);
           completer.complete();
         }
       });
@@ -345,7 +382,7 @@ class CommentsNotifier extends _$CommentsNotifier {
         commentCache: updatedCache,
       );
 
-      // Use the root author pubkey passed to the provider
+      // Use the root author pubkey and d-tag passed to the provider
       final socialService = ref.read(socialServiceProvider);
 
       // Post the actual comment
@@ -353,6 +390,7 @@ class CommentsNotifier extends _$CommentsNotifier {
         content: content,
         rootEventId: _rootEventId,
         rootEventAuthorPubkey: _rootAuthorPubkey,
+        rootDTag: _rootDTag,
         replyToEventId: replyToEventId,
         replyToAuthorPubkey: replyToAuthorPubkey,
       );

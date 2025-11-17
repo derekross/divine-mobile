@@ -327,6 +327,7 @@ class NostrService implements INostrService {
     final filterJsonList = filters.map((f) => f.toJson()).toList();
 
     UnifiedLogger.debug('Creating subscription $id with ${filterJsonList.length} filters', name: 'NostrService');
+    UnifiedLogger.debug('📋 Filter JSON: ${filterJsonList.map((f) => f.toString()).join(", ")}', name: 'NostrService');
 
     // Subscribe via relay pool
     final subscriptionId = _relayPool!.subscribe(
@@ -406,6 +407,133 @@ class NostrService implements INostrService {
 
     // Call onEose if provided (note: relay pool doesn't have EOSE callback in subscribe)
     // We'll need to handle this differently or via query method
+    if (onEose != null) {
+      Timer(const Duration(seconds: 2), () {
+        try {
+          onEose();
+        } catch (e) {
+          UnifiedLogger.error('Error in onEose callback: $e', name: 'NostrService');
+        }
+      });
+    }
+
+    return controller.stream;
+  }
+
+  /// Subscribe to events using custom filter JSON (bypasses Filter class)
+  /// This allows querying with custom tags like #a for addressable events
+  Stream<Event> subscribeToEventsWithCustomJson({
+    required List<Map<String, dynamic>> filtersJson,
+    String? subscriptionId,
+    bool bypassLimits = false,
+    void Function()? onEose,
+  }) {
+    if (_isDisposed) throw StateError('NostrService is disposed');
+    if (!_isInitialized) throw StateError('NostrService not initialized');
+    if (_relayPool == null) {
+      throw StateError('RelayPool not initialized');
+    }
+
+    // Generate subscription ID from filter JSON
+    final filterHash = filtersJson.map((f) => f.toString()).join('|').hashCode.toRadixString(16);
+    final id = subscriptionId ?? 'sub_custom_$filterHash';
+
+    if (_subscriptions.containsKey(id) && !_subscriptions[id]!.isClosed) {
+      UnifiedLogger.info('🔄 Reusing existing subscription $id with identical filters', name: 'NostrService');
+      return _subscriptions[id]!.stream;
+    }
+
+    final controller = StreamController<Event>.broadcast();
+    final seenEventIds = <String>{};
+    final replaceableEvents = <String, (String, int)>{};
+
+    _subscriptions[id] = controller;
+    UnifiedLogger.debug('Total active subscriptions: ${_subscriptions.length}', name: 'NostrService');
+
+    UnifiedLogger.info('Creating custom subscription $id with ${filtersJson.length} filters', name: 'NostrService');
+    UnifiedLogger.info('📋 Custom Filter JSON: ${filtersJson.map((f) => f.toString()).join(", ")}', name: 'NostrService');
+
+    // Subscribe via relay pool with raw JSON
+    UnifiedLogger.info('🔌 Calling _relayPool.subscribe() with custom filter...', name: 'NostrService');
+    final subId = _relayPool!.subscribe(
+      filtersJson,
+      (event) {
+        UnifiedLogger.info('📨 Custom subscription $id received event ${event.id} (kind ${event.kind})', name: 'NostrService');
+
+        // Deduplication logic
+        if (seenEventIds.contains(event.id)) {
+          RelayEventLogBatcher.batchDuplicateEvent(
+            eventId: event.id,
+            subscriptionId: id,
+          );
+          return;
+        }
+
+        // Handle replaceable events
+        final isReplaceable = event.kind == 0 ||
+            event.kind == 3 ||
+            (event.kind >= 10000 && event.kind < 20000) ||
+            (event.kind >= 30000 && event.kind < 40000);
+
+        if (isReplaceable) {
+          String replaceKey = '${event.kind}:${event.pubkey}';
+
+          if (event.kind >= 30000 && event.kind < 40000) {
+            final dTag = event.tags.firstWhere(
+              (tag) => tag.isNotEmpty && tag[0] == 'd',
+              orElse: () => <String>[],
+            );
+            if (dTag.isNotEmpty && dTag.length > 1) {
+              replaceKey += ':${dTag[1]}';
+            }
+          }
+
+          if (replaceableEvents.containsKey(replaceKey)) {
+            final (oldEventId, oldTimestamp) = replaceableEvents[replaceKey]!;
+
+            if (event.createdAt > oldTimestamp) {
+              UnifiedLogger.debug('Replacing old ${event.kind} event (ts:$oldTimestamp) with newer (ts:${event.createdAt})', name: 'NostrService');
+              replaceableEvents[replaceKey] = (event.id, event.createdAt);
+              seenEventIds.remove(oldEventId);
+            } else {
+              UnifiedLogger.debug('Ignoring older ${event.kind} event (ts:${event.createdAt}) vs current (ts:$oldTimestamp)', name: 'NostrService');
+              return;
+            }
+          } else {
+            replaceableEvents[replaceKey] = (event.id, event.createdAt);
+          }
+        }
+
+        seenEventIds.add(event.id);
+
+        if (!controller.isClosed) {
+          controller.add(event);
+        }
+      },
+      id: id,
+      sendAfterAuth: true,
+    );
+
+    UnifiedLogger.info('✅ Subscription created with subId: $subId', name: 'NostrService');
+
+    // Handle controller disposal
+    controller.onCancel = () {
+      UnifiedLogger.debug('Stream cancelled for subscription $id', name: 'NostrService');
+      _subscriptions.remove(id);
+
+      Future.delayed(const Duration(seconds: 2), () async {
+        try {
+          _relayPool!.unsubscribe(subId);
+          if (!controller.isClosed) {
+            await controller.close();
+          }
+        } catch (e) {
+          UnifiedLogger.error('Error during subscription cleanup: $e', name: 'NostrService');
+        }
+      });
+    };
+
+    // Call onEose if provided
     if (onEose != null) {
       Timer(const Duration(seconds: 2), () {
         try {
@@ -799,6 +927,28 @@ class NostrService implements INostrService {
       limit: 1,
     );
     return events.isNotEmpty ? events.first : null;
+  }
+
+  @override
+  Future<List<Event>> queryEventsWithCustomJson({
+    required List<Map<String, dynamic>> filtersJson,
+  }) async {
+    if (_isDisposed) throw StateError('NostrService is disposed');
+    if (!_isInitialized) throw StateError('NostrService not initialized');
+    if (_nostr == null) {
+      throw StateError('Nostr not initialized');
+    }
+
+    UnifiedLogger.info('Querying events with custom JSON: ${filtersJson.map((f) => f.toString()).join(", ")}', name: 'NostrService');
+
+    try {
+      final events = await _nostr!.queryEvents(filtersJson);
+      UnifiedLogger.info('✅ Query returned ${events.length} events', name: 'NostrService');
+      return events;
+    } catch (e) {
+      UnifiedLogger.error('❌ Error querying events with custom JSON: $e', name: 'NostrService');
+      return [];
+    }
   }
 
   // Private helper methods
