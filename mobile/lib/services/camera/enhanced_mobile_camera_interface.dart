@@ -459,8 +459,18 @@ class _EnhancedCameraPreviewState extends State<EnhancedCameraPreview> {
 
     return Stack(
       children: [
-        // Camera preview
-        CameraPreview(widget.controller),
+        // Camera preview with proper sizing for portrait orientation
+        // CRITICAL: Swap width/height to display camera sensor correctly in portrait
+        SizedBox.expand(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: widget.controller.value.previewSize!.height,
+              height: widget.controller.value.previewSize!.width,
+              child: CameraPreview(widget.controller),
+            ),
+          ),
+        ),
 
         // Gesture detector for zoom and focus
         Positioned.fill(
