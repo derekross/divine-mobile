@@ -10,6 +10,7 @@ import 'package:openvine/providers/deep_link_provider.dart';
 import 'package:openvine/providers/social_providers.dart' as social_providers;
 import 'package:openvine/screens/web_auth_screen.dart';
 import 'package:openvine/services/auth_service.dart';
+import 'package:openvine/services/back_button_handler.dart';
 import 'package:openvine/services/background_activity_manager.dart';
 import 'package:openvine/services/crash_reporting_service.dart';
 import 'package:openvine/services/deep_link_service.dart';
@@ -19,7 +20,9 @@ import 'package:openvine/services/zendesk_support_service.dart';
 import 'package:openvine/config/zendesk_config.dart';
 import 'package:openvine/database/app_database.dart';
 import 'package:openvine/router/app_router.dart';
+import 'package:openvine/router/page_context_provider.dart';
 import 'package:openvine/router/route_normalization_provider.dart';
+import 'package:openvine/router/route_utils.dart';
 import 'package:openvine/services/logging_config_service.dart';
 import 'package:openvine/services/seed_data_preload_service.dart';
 import 'package:openvine/services/seed_media_preload_service.dart';
@@ -31,6 +34,7 @@ import 'package:openvine/utils/log_message_batcher.dart';
 import 'package:openvine/widgets/app_lifecycle_handler.dart';
 import 'package:openvine/widgets/geo_blocking_gate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openvine/features/feature_flags/providers/feature_flag_providers.dart';
 import 'dart:io' if (dart.library.html) 'package:openvine/utils/platform_io_web.dart' as io;
 import 'package:openvine/network/vine_cdn_http_overrides.dart' if (dart.library.html) 'package:openvine/utils/platform_io_web.dart';
@@ -587,12 +591,85 @@ class _DivineAppState extends ConsumerState<DivineApp> {
 
     const bool crashProbe = bool.fromEnvironment('CRASHLYTICS_PROBE', defaultValue: false);
 
-    final app = MaterialApp.router(
-      title: 'divine',
-      debugShowCheckedModeBanner: false,
-      theme: VineTheme.theme,
-      routerConfig: ref.read(goRouterProvider),
-    );
+    final router = ref.read(goRouterProvider);
+
+    // Initialize back button handler (Android only - uses platform channel)
+    if (!kIsWeb && io.Platform.isAndroid) {
+      BackButtonHandler.initialize(router, ref);
+    }
+
+    // Helper function to handle back navigation (iOS/macOS/Windows use PopScope)
+    Future<void> handleBackNavigation(GoRouter router, WidgetRef ref) async {
+      // Get current route context
+      final ctxAsync = ref.read(pageContextProvider);
+      final ctx = ctxAsync.value;
+      if (ctx == null) {
+        return;
+      }
+
+      // Handle back navigation based on context
+      if (ctx.videoIndex != null) {
+        // In feed mode - go to grid mode
+        final gridCtx = RouteContext(
+          type: ctx.type,
+          hashtag: ctx.hashtag,
+          searchTerm: ctx.searchTerm,
+          npub: ctx.npub,
+          videoIndex: null,
+        );
+        final newRoute = buildRoute(gridCtx);
+        router.go(newRoute);
+        return;
+      }
+
+      // In grid mode or other contexts
+      switch (ctx.type) {
+        case RouteType.hashtag:
+        case RouteType.search:
+          router.go('/explore');
+          return;
+
+        case RouteType.profile:
+          if (ctx.npub != 'me') {
+            router.go('/home/0');
+            return;
+          }
+          break;
+
+        case RouteType.explore:
+        case RouteType.notifications:
+          router.go('/home/0');
+          return;
+
+        case RouteType.home:
+          return;
+
+        default:
+          break;
+      }
+    }
+
+    // On iOS/macOS/Windows, use PopScope. On Android, platform channel handles it
+    final app = (!kIsWeb && io.Platform.isAndroid)
+      ? MaterialApp.router(
+          title: 'divine',
+          debugShowCheckedModeBanner: false,
+          theme: VineTheme.theme,
+          routerConfig: router,
+        )
+      : PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) async {
+            if (didPop) return;
+            await handleBackNavigation(router, ref);
+          },
+          child: MaterialApp.router(
+            title: 'divine',
+            debugShowCheckedModeBanner: false,
+            theme: VineTheme.theme,
+            routerConfig: router,
+          ),
+        );
 
     // Wrap with geo-blocking check first, then lifecycle handler
     Widget wrapped = GeoBlockingGate(
