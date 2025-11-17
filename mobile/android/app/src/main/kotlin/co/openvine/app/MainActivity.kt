@@ -1,7 +1,9 @@
 package co.openvine.app
 
 import android.net.Uri
+import android.os.Build
 import android.util.Log
+import android.window.OnBackInvokedCallback
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -17,6 +19,13 @@ import zendesk.support.requestlist.RequestListConfiguration
 import zendesk.support.request.RequestConfiguration
 
 class MainActivity : FlutterActivity() {
+    companion object {
+        private const val NAVIGATION_CHANNEL = "org.openvine/navigation"
+        private const val NAV_TAG = "OpenVineNavigation"
+    }
+
+    private var navigationChannel: MethodChannel? = null
+    private var backCallback: OnBackInvokedCallback? = null
     private val PROOFMODE_CHANNEL = "org.openvine/proofmode"
     private val ZENDESK_CHANNEL = "com.openvine/zendesk_support"
     private val PROOFMODE_TAG = "OpenVineProofMode"
@@ -46,6 +55,86 @@ class MainActivity : FlutterActivity() {
 
         // Set up Zendesk platform channel
         setupZendeskChannel(flutterEngine)
+
+        // Set up navigation channel for back button handling
+        setupNavigationChannel(flutterEngine)
+    }
+
+    override fun onBackPressed() {
+        Log.d(NAV_TAG, "onBackPressed() called")
+
+        // Notify Flutter about back button press via MethodChannel
+        navigationChannel?.invokeMethod("onBackPressed", null, object : MethodChannel.Result {
+            override fun success(result: Any?) {
+                val handled = result as? Boolean ?: false
+                Log.d(NAV_TAG, "Flutter handled back: $handled")
+
+                if (!handled) {
+                    // Flutter didn't handle it, use default behavior (exit app)
+                    Log.d(NAV_TAG, "Flutter didn't handle back, calling super.onBackPressed()")
+                    super@MainActivity.onBackPressed()
+                }
+            }
+
+            override fun error(error: String, message: String?, details: Any?) {
+                Log.e(NAV_TAG, "Error from Flutter: $error - $message")
+                // On error, use default behavior
+                super@MainActivity.onBackPressed()
+            }
+
+            override fun notImplemented() {
+                Log.w(NAV_TAG, "Back handling not implemented in Flutter")
+                // If not implemented, use default behavior
+                super@MainActivity.onBackPressed()
+            }
+        })
+    }
+
+    private fun setupNavigationChannel(flutterEngine: FlutterEngine) {
+        navigationChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NAVIGATION_CHANNEL)
+
+        // Register OnBackInvokedCallback for Android 13+ (API 33+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            backCallback = OnBackInvokedCallback {
+                handleBackPress()
+            }
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                backCallback!!
+            )
+        }
+    }
+
+    private fun handleBackPress() {
+        // Notify Flutter about back button press via MethodChannel
+        navigationChannel?.invokeMethod("onBackPressed", null, object : MethodChannel.Result {
+            override fun success(result: Any?) {
+                val handled = result as? Boolean ?: false
+
+                if (!handled) {
+                    // Flutter didn't handle it, finish activity (exit app)
+                    finish()
+                }
+            }
+
+            override fun error(error: String, message: String?, details: Any?) {
+                // On error, finish activity
+                finish()
+            }
+
+            override fun notImplemented() {
+                // If not implemented, finish activity
+                finish()
+            }
+        })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Unregister callback when activity is destroyed
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && backCallback != null) {
+            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback!!)
+        }
     }
 
     private fun setupProofModeChannel(flutterEngine: FlutterEngine) {

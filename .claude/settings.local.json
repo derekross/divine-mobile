@@ -12,7 +12,11 @@
       "Bash(export PATH=\"$HOME/flutter/bin:$PATH\")",
       "Bash(flutter pub:*)",
       "Bash(flutter install:*)",
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git push:*)",
+      "Bash(adb uninstall:*)"
     ],
     "deny": [],
     "ask": []
