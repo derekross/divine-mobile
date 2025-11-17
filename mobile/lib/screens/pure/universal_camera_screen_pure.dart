@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:camera/camera.dart' show FlashMode;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openvine/models/aspect_ratio.dart' as vine;
@@ -48,12 +49,27 @@ class _UniversalCameraScreenPureState
   TimerDuration _timerDuration = TimerDuration.off;
   int? _countdownValue;
 
+  // Track current device orientation for debugging
+  DeviceOrientation? _currentOrientation;
+
   @override
   void initState() {
     super.initState();
 
     // Add app lifecycle observer to detect when user returns from Settings
     WidgetsBinding.instance.addObserver(this);
+
+    // Log initial orientation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final orientation = MediaQuery.of(context).orientation;
+      _currentOrientation = orientation == Orientation.portrait
+          ? DeviceOrientation.portraitUp
+          : DeviceOrientation.landscapeLeft;
+      Log.info(
+        '📱 [ORIENTATION] Camera screen initial orientation: $_currentOrientation, MediaQuery: $orientation',
+        category: LogCategory.video,
+      );
+    });
 
     _initializeServices();
 
@@ -369,6 +385,24 @@ class _UniversalCameraScreenPureState
 
   @override
   Widget build(BuildContext context) {
+    // Debug: Track orientation changes
+    final mediaQueryOrientation = MediaQuery.of(context).orientation;
+    final newOrientation = mediaQueryOrientation == Orientation.portrait
+        ? DeviceOrientation.portraitUp
+        : DeviceOrientation.landscapeLeft;
+
+    if (_currentOrientation != newOrientation) {
+      _currentOrientation = newOrientation;
+      Log.warning(
+        '📱 [ORIENTATION] Device orientation changed! MediaQuery: $mediaQueryOrientation, DeviceOrientation: $newOrientation',
+        category: LogCategory.video,
+      );
+      Log.warning(
+        '📱 [ORIENTATION] MediaQuery size: ${MediaQuery.of(context).size}',
+        category: LogCategory.video,
+      );
+    }
+
     if (_permissionDenied) {
       return _buildPermissionScreen();
     }

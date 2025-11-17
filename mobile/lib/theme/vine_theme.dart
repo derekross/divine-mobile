@@ -28,6 +28,7 @@ class VineTheme {
   static const Color commentBlue = Color(0xFF3182CE);
 
   static ThemeData get theme => ThemeData(
+        brightness: Brightness.dark,
         primarySwatch: _createMaterialColor(vineGreen),
         primaryColor: vineGreen,
         scaffoldBackgroundColor: backgroundColor,

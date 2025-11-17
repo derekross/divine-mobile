@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:openvine/services/vine_recording_controller.dart';
 import 'package:openvine/utils/unified_logger.dart';
@@ -76,6 +77,11 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
 
       await _controller!.initialize();
       Log.info('Camera controller initialized successfully',
+          name: 'EnhancedMobileCamera', category: LogCategory.system);
+
+      // Lock camera orientation to portrait up to prevent preview rotation
+      await _controller!.lockCaptureOrientation(DeviceOrientation.portraitUp);
+      Log.info('Camera orientation locked to portrait up',
           name: 'EnhancedMobileCamera', category: LogCategory.system);
 
       await _controller!.prepareForVideoRecording();
@@ -244,8 +250,13 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
     try {
       _currentCameraIndex =
           (_currentCameraIndex + 1) % _availableCameras.length;
-      await _initializeCurrentCamera();
+
+      // CRITICAL: Dispose old controller FIRST before initializing new one
+      // Android only allows one camera open at a time
       await oldController?.dispose();
+
+      // Now initialize the new camera
+      await _initializeCurrentCamera();
 
       Log.info('✅ Successfully switched to camera $_currentCameraIndex',
           name: 'EnhancedMobileCamera', category: LogCategory.system);
@@ -307,6 +318,30 @@ class EnhancedMobileCameraInterface extends CameraPlatformInterface {
 
   @override
   bool get canSwitchCamera => _availableCameras.length > 1;
+
+  /// Check if currently using front camera
+  bool get isFrontCamera {
+    if (_availableCameras.isEmpty || _currentCameraIndex >= _availableCameras.length) {
+      return false;
+    }
+    return _availableCameras[_currentCameraIndex].lensDirection == CameraLensDirection.front;
+  }
+
+  /// Set flash mode directly
+  Future<void> setFlashMode(FlashMode mode) async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    try {
+      _currentFlashMode = mode;
+      await _controller!.setFlashMode(mode);
+
+      Log.info('Flash mode set to $mode',
+          name: 'EnhancedMobileCamera', category: LogCategory.system);
+    } catch (e) {
+      Log.error('Failed to set flash mode: $e',
+          name: 'EnhancedMobileCamera', category: LogCategory.system);
+    }
+  }
 
   @override
   void dispose() {
@@ -409,6 +444,19 @@ class _EnhancedCameraPreviewState extends State<EnhancedCameraPreview> {
 
   @override
   Widget build(BuildContext context) {
+    // Debug: Log camera preview rebuild and orientation
+    final mediaQueryOrientation = MediaQuery.of(context).orientation;
+    final cameraValue = widget.controller.value;
+    Log.warning(
+      '📹 [CAMERA PREVIEW] Building camera preview - MediaQuery: $mediaQueryOrientation, '
+      'Camera initialized: ${cameraValue.isInitialized}, '
+      'Preview size: ${cameraValue.previewSize}, '
+      'Device orientation: ${cameraValue.deviceOrientation}, '
+      'Locked capture orientation: ${cameraValue.lockedCaptureOrientation}',
+      name: 'EnhancedCameraPreview',
+      category: LogCategory.system,
+    );
+
     return Stack(
       children: [
         // Camera preview
