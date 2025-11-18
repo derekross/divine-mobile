@@ -561,6 +561,9 @@ class NostrService implements INostrService {
       throw StateError('Nostr or RelayPool not initialized');
     }
 
+    // Ensure we have connected relays before broadcasting
+    await ensureConnected();
+
     UnifiedLogger.info('🚀 Broadcasting event ${event.id} (kind ${event.kind})', name: 'NostrService');
     UnifiedLogger.info('📊 Relay Status:', name: 'NostrService');
     UnifiedLogger.info('   - Configured relays: ${_configuredRelays.join(", ")}', name: 'NostrService');
@@ -756,6 +759,29 @@ class NostrService implements INostrService {
 
     UnifiedLogger.info('🔄 Reconnecting all relays...', name: 'NostrService');
     _relayPool!.reconnect();
+  }
+
+  /// Ensure we have at least one connected relay before performing operations
+  /// Automatically attempts reconnection if no relays are connected
+  Future<void> ensureConnected() async {
+    if (!_isInitialized || _relayPool == null) {
+      UnifiedLogger.warning('⚠️ ensureConnected: NostrService not initialized', name: 'NostrService');
+      return;
+    }
+
+    if (connectedRelays.isEmpty) {
+      UnifiedLogger.warning('⚠️ No relays connected, attempting reconnection...', name: 'NostrService');
+      await reconnectAll();
+
+      // Give relays a moment to connect
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (connectedRelays.isEmpty) {
+        UnifiedLogger.error('❌ Still no relays connected after reconnection attempt', name: 'NostrService');
+      } else {
+        UnifiedLogger.info('✅ Successfully reconnected ${connectedRelays.length} relay(s)', name: 'NostrService');
+      }
+    }
   }
 
   @override
