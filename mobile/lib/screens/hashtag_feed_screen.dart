@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/models/video_event.dart';
 import 'package:openvine/router/nav_extensions.dart';
-import 'package:openvine/services/video_event_service.dart';
+import 'package:openvine/services/custom_hashtag_fetcher.dart';
 import 'package:openvine/theme/vine_theme.dart';
 import 'package:openvine/utils/unified_logger.dart';
 import 'package:openvine/widgets/composable_video_grid.dart';
@@ -23,53 +23,64 @@ class HashtagFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
+  List<VideoEvent> _videos = [];
+  bool _isLoading = true;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
-    // Subscribe to videos with this hashtag
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return; // Safety check: don't use ref if widget is disposed
+    _fetchHashtagVideos();
+  }
 
-      print('[HASHTAG] 🏷️  Subscribing to hashtag: ${widget.hashtag}');
-      final hashtagService = ref.read(hashtagServiceProvider);
-      hashtagService.subscribeToHashtagVideos([widget.hashtag]).then((_) {
-        if (!mounted) return; // Safety check before async callback
-        print('[HASHTAG] ✅ Successfully subscribed to hashtag: ${widget.hashtag}');
-      }).catchError((error) {
-        if (!mounted) return; // Safety check before async callback
-        print('[HASHTAG] ❌ Failed to subscribe to hashtag ${widget.hashtag}: $error');
-      });
+  Future<void> _fetchHashtagVideos() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
     });
+
+    try {
+      Log.info('[HASHTAG] 🏷️  Fetching videos for hashtag: ${widget.hashtag}',
+          category: LogCategory.video);
+
+      final videos = await CustomHashtagFetcher.fetchHashtagVideos(
+        hashtag: widget.hashtag,
+        limit: 100,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _videos = videos;
+        _isLoading = false;
+      });
+
+      Log.info('[HASHTAG] ✅ Successfully loaded ${videos.length} videos for #${widget.hashtag}',
+          category: LogCategory.video);
+    } catch (error) {
+      Log.error('[HASHTAG] ❌ Failed to fetch hashtag ${widget.hashtag}: $error',
+          category: LogCategory.video, error: error);
+
+      if (!mounted) return;
+
+      setState(() {
+        _error = error.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final body = Builder(
           builder: (context) {
-            print('[HASHTAG] 🔄 Building HashtagFeedScreen for #${widget.hashtag}');
-            final videoService = ref.watch(videoEventServiceProvider);
-            final hashtagService = ref.watch(hashtagServiceProvider);
-
-            // Get videos from the hashtag subscription
-            // The relay filters events with #t parameter, we trust that filtering
-            final videos = videoService.getVideos(SubscriptionType.hashtag)
+            // Sort videos by loops, then time
+            final videos = List<VideoEvent>.from(_videos)
               ..sort(VideoEvent.compareByLoopsThenTime);
 
-            print('[HASHTAG] 📊 Found ${videos.length} videos for #${widget.hashtag}');
-            if (videos.isNotEmpty) {
-              print('[HASHTAG] 📹 First 3 video IDs: ${videos.take(3).map((v) => v.id).join(', ')}');
-            }
-
-            // Use per-subscription loading state for hashtag feed
-            final isLoadingHashtag = videoService.isLoadingForSubscription(SubscriptionType.hashtag);
-            print('[HASHTAG] ⏳ Loading state: $isLoadingHashtag');
-
-            // Check if we have videos in different lists
-            final discoveryCount = videoService.getEventCount(SubscriptionType.discovery);
-            final hashtagCount = videoService.getEventCount(SubscriptionType.hashtag);
-            print('[HASHTAG] 📊 Discovery videos: $discoveryCount, Hashtag videos: $hashtagCount');
-
-            if (isLoadingHashtag && videos.isEmpty) {
+            if (_isLoading && videos.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -140,22 +151,22 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
                 onRefresh: () async {
                   Log.info('🔄 HashtagFeedScreen: Refreshing hashtag #${widget.hashtag}',
                       category: LogCategory.video);
-                  // Resubscribe to hashtag to fetch fresh data
-                  await hashtagService.subscribeToHashtagVideos([widget.hashtag]);
+                  // Refetch videos from relay
+                  await _fetchHashtagVideos();
                 },
               );
             }
 
             // Standalone mode: full-screen scrollable list
-            final isLoadingMore = isLoadingHashtag;
+            final isLoadingMore = _isLoading;
 
             return RefreshIndicator(
               semanticsLabel: 'searching for more videos',
               onRefresh: () async {
                 Log.info('🔄 HashtagFeedScreen: Refreshing hashtag #${widget.hashtag}',
                     category: LogCategory.video);
-                // Resubscribe to hashtag to fetch fresh data
-                await hashtagService.subscribeToHashtagVideos([widget.hashtag]);
+                // Refetch videos from relay
+                await _fetchHashtagVideos();
               },
               child: ListView.builder(
               // Add 1 for loading indicator if still loading

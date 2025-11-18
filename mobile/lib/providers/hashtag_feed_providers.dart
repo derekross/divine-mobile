@@ -141,8 +141,9 @@ class HashtagFeed extends _$HashtagFeed {
       );
     }
 
-    // Get videos for this hashtag and sort by popularity (same order as grid)
-    final videos = List<VideoEvent>.from(videoEventService.hashtagVideos(tag))
+    // Get videos for this hashtag from NIP-50 search results
+    // All videos in allHashtagVideos are already filtered by the relay
+    final videos = List<VideoEvent>.from(videoEventService.allHashtagVideos)
       ..sort(VideoEvent.compareByLoopsThenTime);
 
     Log.info('HashtagFeed: Loaded ${videos.length} videos for #$tag',

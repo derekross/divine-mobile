@@ -71,12 +71,27 @@ class VideoFilterBuilder {
   /// Build a filter with NIP-50 search support
   ///
   /// Returns a Filter with the search field set for NIP-50 sort modes
+  /// Supports hashtag-based search with optional sort modes
   Filter buildNIP50Filter({
     required Filter baseFilter,
-    required NIP50SortMode sortMode,
+    NIP50SortMode? sortMode,
+    String? hashtag,
   }) {
+    // Build search query
+    String? searchQuery;
+    if (hashtag != null && sortMode != null) {
+      // Combine hashtag and sort mode: "#funny sort:hot"
+      searchQuery = '#$hashtag ${sortMode.toSearchQuery()}';
+    } else if (hashtag != null) {
+      // Hashtag only: "#funny"
+      searchQuery = '#$hashtag';
+    } else if (sortMode != null) {
+      // Sort mode only: "sort:hot"
+      searchQuery = sortMode.toSearchQuery();
+    }
+
     UnifiedLogger.debug(
-      '🔍 VideoFilterBuilder.buildNIP50Filter: sortMode=${sortMode.mode}',
+      '🔍 VideoFilterBuilder.buildNIP50Filter: searchQuery="$searchQuery"',
       name: 'VideoFilterBuilder',
     );
 
@@ -87,13 +102,13 @@ class VideoFilterBuilder {
       kinds: baseFilter.kinds,
       e: baseFilter.e,
       p: baseFilter.p,
-      t: baseFilter.t,
+      t: null, // Don't use 't' filter when using NIP-50 search for hashtags
       h: baseFilter.h,
       d: baseFilter.d,
       since: baseFilter.since,
       until: baseFilter.until,
       limit: baseFilter.limit,
-      search: sortMode.toSearchQuery(), // Add NIP-50 search query
+      search: searchQuery, // Add NIP-50 search query
     );
   }
 
