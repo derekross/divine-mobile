@@ -19,7 +19,14 @@
       "Bash(adb uninstall:*)",
       "Bash(git pull:*)",
       "Bash(/home/raven/flutter/bin/flutter analyze:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(adb logcat:*)",
+      "Bash(dart run build_runner build:*)",
+      "Bash(tee:*)",
+      "Bash(adb install:*)",
+      "Bash(nak req:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

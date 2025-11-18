@@ -256,6 +256,7 @@ class MockSocialService extends _i1.Mock implements _i2.SocialService {
     required String? content,
     required String? rootEventId,
     required String? rootEventAuthorPubkey,
+    required String? rootDTag,
     String? replyToEventId,
     String? replyToAuthorPubkey,
   }) =>
@@ -264,6 +265,7 @@ class MockSocialService extends _i1.Mock implements _i2.SocialService {
               #content: content,
               #rootEventId: rootEventId,
               #rootEventAuthorPubkey: rootEventAuthorPubkey,
+              #rootDTag: rootDTag,
               #replyToEventId: replyToEventId,
               #replyToAuthorPubkey: replyToAuthorPubkey,
             }),
@@ -273,9 +275,17 @@ class MockSocialService extends _i1.Mock implements _i2.SocialService {
           as _i3.Future<void>);
 
   @override
-  _i3.Stream<_i4.Event> fetchCommentsForEvent(String? rootEventId) =>
+  _i3.Stream<_i4.Event> fetchCommentsForEvent(
+    String? rootEventId,
+    String? rootAuthorPubkey,
+    String? rootDTag,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#fetchCommentsForEvent, [rootEventId]),
+            Invocation.method(#fetchCommentsForEvent, [
+              rootEventId,
+              rootAuthorPubkey,
+              rootDTag,
+            ]),
             returnValue: _i3.Stream<_i4.Event>.empty(),
           )
           as _i3.Stream<_i4.Event>);
@@ -329,6 +339,30 @@ class MockSocialService extends _i1.Mock implements _i2.SocialService {
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
+
+  @override
+  _i3.Future<int> getLikeCount(String? eventId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLikeCount, [eventId]),
+            returnValue: _i3.Future<int>.value(0),
+          )
+          as _i3.Future<int>);
+
+  @override
+  _i3.Future<int> getCommentCountForVideo(
+    String? eventId,
+    String? authorPubkey,
+    String? dTag,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getCommentCountForVideo, [
+              eventId,
+              authorPubkey,
+              dTag,
+            ]),
+            returnValue: _i3.Future<int>.value(0),
+          )
+          as _i3.Future<int>);
 }
 
 /// A class which mocks [VideoEventService].
@@ -549,6 +583,7 @@ class MockVideoEventService extends _i1.Mock implements _i6.VideoEventService {
     bool? replace = true,
     bool? includeReposts = false,
     _i9.VideoSortField? sortBy,
+    _i9.NIP50SortMode? nip50Sort,
     bool? force = false,
   }) =>
       (super.noSuchMethod(
@@ -563,6 +598,7 @@ class MockVideoEventService extends _i1.Mock implements _i6.VideoEventService {
               #replace: replace,
               #includeReposts: includeReposts,
               #sortBy: sortBy,
+              #nip50Sort: nip50Sort,
               #force: force,
             }),
             returnValue: _i3.Future<void>.value(),
@@ -639,12 +675,14 @@ class MockVideoEventService extends _i1.Mock implements _i6.VideoEventService {
   _i3.Future<void> subscribeToDiscovery({
     int? limit = 100,
     _i9.VideoSortField? sortBy,
+    _i9.NIP50SortMode? nip50Sort,
     bool? force = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#subscribeToDiscovery, [], {
               #limit: limit,
               #sortBy: sortBy,
+              #nip50Sort: nip50Sort,
               #force: force,
             }),
             returnValue: _i3.Future<void>.value(),

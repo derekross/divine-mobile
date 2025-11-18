@@ -188,6 +188,24 @@ class MockINostrService extends _i1.Mock implements _i3.INostrService {
           as _i4.Stream<_i6.Event>);
 
   @override
+  _i4.Stream<_i6.Event> subscribeToEventsWithCustomJson({
+    required List<Map<String, dynamic>>? filtersJson,
+    String? subscriptionId,
+    bool? bypassLimits = false,
+    void Function()? onEose,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#subscribeToEventsWithCustomJson, [], {
+              #filtersJson: filtersJson,
+              #subscriptionId: subscriptionId,
+              #bypassLimits: bypassLimits,
+              #onEose: onEose,
+            }),
+            returnValue: _i4.Stream<_i6.Event>.empty(),
+          )
+          as _i4.Stream<_i6.Event>);
+
+  @override
   _i4.Future<_i3.NostrBroadcastResult> broadcastEvent(_i6.Event? event) =>
       (super.noSuchMethod(
             Invocation.method(#broadcastEvent, [event]),
@@ -302,6 +320,18 @@ class MockINostrService extends _i1.Mock implements _i3.INostrService {
             returnValue: _i4.Future<_i6.Event?>.value(),
           )
           as _i4.Future<_i6.Event?>);
+
+  @override
+  _i4.Future<List<_i6.Event>> queryEventsWithCustomJson({
+    required List<Map<String, dynamic>>? filtersJson,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#queryEventsWithCustomJson, [], {
+              #filtersJson: filtersJson,
+            }),
+            returnValue: _i4.Future<List<_i6.Event>>.value(<_i6.Event>[]),
+          )
+          as _i4.Future<List<_i6.Event>>);
 
   @override
   _i4.Stream<_i6.Event> searchVideos(
@@ -557,6 +587,7 @@ class MockVideoEventService extends _i1.Mock implements _i9.VideoEventService {
     bool? replace = true,
     bool? includeReposts = false,
     _i12.VideoSortField? sortBy,
+    _i12.NIP50SortMode? nip50Sort,
     bool? force = false,
   }) =>
       (super.noSuchMethod(
@@ -571,6 +602,7 @@ class MockVideoEventService extends _i1.Mock implements _i9.VideoEventService {
               #replace: replace,
               #includeReposts: includeReposts,
               #sortBy: sortBy,
+              #nip50Sort: nip50Sort,
               #force: force,
             }),
             returnValue: _i4.Future<void>.value(),
@@ -647,12 +679,14 @@ class MockVideoEventService extends _i1.Mock implements _i9.VideoEventService {
   _i4.Future<void> subscribeToDiscovery({
     int? limit = 100,
     _i12.VideoSortField? sortBy,
+    _i12.NIP50SortMode? nip50Sort,
     bool? force = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#subscribeToDiscovery, [], {
               #limit: limit,
               #sortBy: sortBy,
+              #nip50Sort: nip50Sort,
               #force: force,
             }),
             returnValue: _i4.Future<void>.value(),

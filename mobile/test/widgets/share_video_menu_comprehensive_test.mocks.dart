@@ -1015,6 +1015,7 @@ class MockSocialService extends _i1.Mock implements _i12.SocialService {
     required String? content,
     required String? rootEventId,
     required String? rootEventAuthorPubkey,
+    required String? rootDTag,
     String? replyToEventId,
     String? replyToAuthorPubkey,
   }) =>
@@ -1023,6 +1024,7 @@ class MockSocialService extends _i1.Mock implements _i12.SocialService {
               #content: content,
               #rootEventId: rootEventId,
               #rootEventAuthorPubkey: rootEventAuthorPubkey,
+              #rootDTag: rootDTag,
               #replyToEventId: replyToEventId,
               #replyToAuthorPubkey: replyToAuthorPubkey,
             }),
@@ -1032,9 +1034,17 @@ class MockSocialService extends _i1.Mock implements _i12.SocialService {
           as _i7.Future<void>);
 
   @override
-  _i7.Stream<_i9.Event> fetchCommentsForEvent(String? rootEventId) =>
+  _i7.Stream<_i9.Event> fetchCommentsForEvent(
+    String? rootEventId,
+    String? rootAuthorPubkey,
+    String? rootDTag,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#fetchCommentsForEvent, [rootEventId]),
+            Invocation.method(#fetchCommentsForEvent, [
+              rootEventId,
+              rootAuthorPubkey,
+              rootDTag,
+            ]),
             returnValue: _i7.Stream<_i9.Event>.empty(),
             returnValueForMissingStub: _i7.Stream<_i9.Event>.empty(),
           )
@@ -1090,6 +1100,32 @@ class MockSocialService extends _i1.Mock implements _i12.SocialService {
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
+
+  @override
+  _i7.Future<int> getLikeCount(String? eventId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLikeCount, [eventId]),
+            returnValue: _i7.Future<int>.value(0),
+            returnValueForMissingStub: _i7.Future<int>.value(0),
+          )
+          as _i7.Future<int>);
+
+  @override
+  _i7.Future<int> getCommentCountForVideo(
+    String? eventId,
+    String? authorPubkey,
+    String? dTag,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getCommentCountForVideo, [
+              eventId,
+              authorPubkey,
+              dTag,
+            ]),
+            returnValue: _i7.Future<int>.value(0),
+            returnValueForMissingStub: _i7.Future<int>.value(0),
+          )
+          as _i7.Future<int>);
 }
 
 /// A class which mocks [VideoSharingService].

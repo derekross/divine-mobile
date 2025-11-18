@@ -348,7 +348,6 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              controller.dispose();
               Navigator.of(dialogContext).pop();
             },
             child: Text(
@@ -362,7 +361,6 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
               if (url.isNotEmpty) {
                 relayUrl = url;
               }
-              controller.dispose();
               Navigator.of(dialogContext).pop();
             },
             child: const Text(

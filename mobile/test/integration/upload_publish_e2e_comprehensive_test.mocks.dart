@@ -554,6 +554,24 @@ class MockINostrService extends _i1.Mock implements _i3.INostrService {
           as _i7.Stream<_i10.Event>);
 
   @override
+  _i7.Stream<_i10.Event> subscribeToEventsWithCustomJson({
+    required List<Map<String, dynamic>>? filtersJson,
+    String? subscriptionId,
+    bool? bypassLimits = false,
+    void Function()? onEose,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#subscribeToEventsWithCustomJson, [], {
+              #filtersJson: filtersJson,
+              #subscriptionId: subscriptionId,
+              #bypassLimits: bypassLimits,
+              #onEose: onEose,
+            }),
+            returnValue: _i7.Stream<_i10.Event>.empty(),
+          )
+          as _i7.Stream<_i10.Event>);
+
+  @override
   _i7.Future<_i3.NostrBroadcastResult> broadcastEvent(_i10.Event? event) =>
       (super.noSuchMethod(
             Invocation.method(#broadcastEvent, [event]),
@@ -668,6 +686,18 @@ class MockINostrService extends _i1.Mock implements _i3.INostrService {
             returnValue: _i7.Future<_i10.Event?>.value(),
           )
           as _i7.Future<_i10.Event?>);
+
+  @override
+  _i7.Future<List<_i10.Event>> queryEventsWithCustomJson({
+    required List<Map<String, dynamic>>? filtersJson,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#queryEventsWithCustomJson, [], {
+              #filtersJson: filtersJson,
+            }),
+            returnValue: _i7.Future<List<_i10.Event>>.value(<_i10.Event>[]),
+          )
+          as _i7.Future<List<_i10.Event>>);
 
   @override
   _i7.Stream<_i10.Event> searchVideos(

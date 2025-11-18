@@ -276,6 +276,7 @@ class MockSocialService extends _i1.Mock implements _i5.SocialService {
     required String? content,
     required String? rootEventId,
     required String? rootEventAuthorPubkey,
+    required String? rootDTag,
     String? replyToEventId,
     String? replyToAuthorPubkey,
   }) =>
@@ -284,6 +285,7 @@ class MockSocialService extends _i1.Mock implements _i5.SocialService {
               #content: content,
               #rootEventId: rootEventId,
               #rootEventAuthorPubkey: rootEventAuthorPubkey,
+              #rootDTag: rootDTag,
               #replyToEventId: replyToEventId,
               #replyToAuthorPubkey: replyToAuthorPubkey,
             }),
@@ -293,9 +295,17 @@ class MockSocialService extends _i1.Mock implements _i5.SocialService {
           as _i6.Future<void>);
 
   @override
-  _i6.Stream<_i7.Event> fetchCommentsForEvent(String? rootEventId) =>
+  _i6.Stream<_i7.Event> fetchCommentsForEvent(
+    String? rootEventId,
+    String? rootAuthorPubkey,
+    String? rootDTag,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#fetchCommentsForEvent, [rootEventId]),
+            Invocation.method(#fetchCommentsForEvent, [
+              rootEventId,
+              rootAuthorPubkey,
+              rootDTag,
+            ]),
             returnValue: _i6.Stream<_i7.Event>.empty(),
           )
           as _i6.Stream<_i7.Event>);
@@ -349,6 +359,30 @@ class MockSocialService extends _i1.Mock implements _i5.SocialService {
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
+
+  @override
+  _i6.Future<int> getLikeCount(String? eventId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLikeCount, [eventId]),
+            returnValue: _i6.Future<int>.value(0),
+          )
+          as _i6.Future<int>);
+
+  @override
+  _i6.Future<int> getCommentCountForVideo(
+    String? eventId,
+    String? authorPubkey,
+    String? dTag,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getCommentCountForVideo, [
+              eventId,
+              authorPubkey,
+              dTag,
+            ]),
+            returnValue: _i6.Future<int>.value(0),
+          )
+          as _i6.Future<int>);
 }
 
 /// A class which mocks [AuthService].
@@ -681,6 +715,24 @@ class MockINostrService extends _i1.Mock implements _i4.INostrService {
           as _i6.Stream<_i7.Event>);
 
   @override
+  _i6.Stream<_i7.Event> subscribeToEventsWithCustomJson({
+    required List<Map<String, dynamic>>? filtersJson,
+    String? subscriptionId,
+    bool? bypassLimits = false,
+    void Function()? onEose,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#subscribeToEventsWithCustomJson, [], {
+              #filtersJson: filtersJson,
+              #subscriptionId: subscriptionId,
+              #bypassLimits: bypassLimits,
+              #onEose: onEose,
+            }),
+            returnValue: _i6.Stream<_i7.Event>.empty(),
+          )
+          as _i6.Stream<_i7.Event>);
+
+  @override
   _i6.Future<_i4.NostrBroadcastResult> broadcastEvent(_i7.Event? event) =>
       (super.noSuchMethod(
             Invocation.method(#broadcastEvent, [event]),
@@ -795,6 +847,18 @@ class MockINostrService extends _i1.Mock implements _i4.INostrService {
             returnValue: _i6.Future<_i7.Event?>.value(),
           )
           as _i6.Future<_i7.Event?>);
+
+  @override
+  _i6.Future<List<_i7.Event>> queryEventsWithCustomJson({
+    required List<Map<String, dynamic>>? filtersJson,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#queryEventsWithCustomJson, [], {
+              #filtersJson: filtersJson,
+            }),
+            returnValue: _i6.Future<List<_i7.Event>>.value(<_i7.Event>[]),
+          )
+          as _i6.Future<List<_i7.Event>>);
 
   @override
   _i6.Stream<_i7.Event> searchVideos(

@@ -4,13 +4,14 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
-import 'dart:ui' as _i5;
+import 'dart:ui' as _i6;
 
+import 'package:camera/camera.dart' as _i5;
 import 'package:flutter/material.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:openvine/services/camera/enhanced_mobile_camera_interface.dart'
     as _i3;
-import 'package:openvine/services/vine_recording_controller.dart' as _i6;
+import 'package:openvine/services/vine_recording_controller.dart' as _i7;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -63,6 +64,15 @@ class MockEnhancedMobileCameraInterface extends _i1.Mock
           as bool);
 
   @override
+  bool get isFrontCamera =>
+      (super.noSuchMethod(
+            Invocation.getter(#isFrontCamera),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
   _i4.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
@@ -99,6 +109,15 @@ class MockEnhancedMobileCameraInterface extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setFlashMode(_i5.FlashMode? mode) =>
+      (super.noSuchMethod(
+            Invocation.method(#setFlashMode, [mode]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   void dispose() => super.noSuchMethod(
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
@@ -114,7 +133,7 @@ class MockEnhancedMobileCameraInterface extends _i1.Mock
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> setFocusPoint(_i5.Offset? point) =>
+  _i4.Future<void> setFocusPoint(_i6.Offset? point) =>
       (super.noSuchMethod(
             Invocation.method(#setFocusPoint, [point]),
             returnValue: _i4.Future<void>.value(),
@@ -136,7 +155,7 @@ class MockEnhancedMobileCameraInterface extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockCameraPlatformInterface extends _i1.Mock
-    implements _i6.CameraPlatformInterface {
+    implements _i7.CameraPlatformInterface {
   @override
   _i2.Widget get previewWidget =>
       (super.noSuchMethod(

@@ -13,7 +13,6 @@ import 'package:openvine/models/nip94_metadata.dart' as _i9;
 import 'package:openvine/services/nostr_key_manager.dart' as _i2;
 import 'package:openvine/services/nostr_service.dart' as _i4;
 import 'package:openvine/services/nostr_service_interface.dart' as _i3;
-import 'package:openvine/services/p2p_discovery_service.dart' as _i10;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -146,6 +145,17 @@ class MockNostrService extends _i1.Mock implements _i4.NostrService {
           as String);
 
   @override
+  String get serviceName =>
+      (super.noSuchMethod(
+            Invocation.getter(#serviceName),
+            returnValue: _i6.dummyValue<String>(
+              this,
+              Invocation.getter(#serviceName),
+            ),
+          )
+          as String);
+
+  @override
   _i5.Future<void> initialize({
     List<String>? customRelays,
     bool? enableP2P = true,
@@ -183,6 +193,24 @@ class MockNostrService extends _i1.Mock implements _i4.NostrService {
       (super.noSuchMethod(
             Invocation.method(#subscribeToEvents, [], {
               #filters: filters,
+              #bypassLimits: bypassLimits,
+              #onEose: onEose,
+            }),
+            returnValue: _i5.Stream<_i7.Event>.empty(),
+          )
+          as _i5.Stream<_i7.Event>);
+
+  @override
+  _i5.Stream<_i7.Event> subscribeToEventsWithCustomJson({
+    required List<Map<String, dynamic>>? filtersJson,
+    String? subscriptionId,
+    bool? bypassLimits = false,
+    void Function()? onEose,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#subscribeToEventsWithCustomJson, [], {
+              #filtersJson: filtersJson,
+              #subscriptionId: subscriptionId,
               #bypassLimits: bypassLimits,
               #onEose: onEose,
             }),
@@ -272,6 +300,15 @@ class MockNostrService extends _i1.Mock implements _i4.NostrService {
           as _i5.Future<void>);
 
   @override
+  _i5.Future<void> ensureConnected() =>
+      (super.noSuchMethod(
+            Invocation.method(#ensureConnected, []),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
   _i5.Future<void> closeAllSubscriptions() =>
       (super.noSuchMethod(
             Invocation.method(#closeAllSubscriptions, []),
@@ -305,85 +342,6 @@ class MockNostrService extends _i1.Mock implements _i4.NostrService {
             returnValue: _i5.Future<Map<String, dynamic>?>.value(),
           )
           as _i5.Future<Map<String, dynamic>?>);
-
-  @override
-  _i5.Future<bool> startP2PDiscovery() =>
-      (super.noSuchMethod(
-            Invocation.method(#startP2PDiscovery, []),
-            returnValue: _i5.Future<bool>.value(false),
-          )
-          as _i5.Future<bool>);
-
-  @override
-  _i5.Future<void> stopP2PDiscovery() =>
-      (super.noSuchMethod(
-            Invocation.method(#stopP2PDiscovery, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<bool> startP2PAdvertising() =>
-      (super.noSuchMethod(
-            Invocation.method(#startP2PAdvertising, []),
-            returnValue: _i5.Future<bool>.value(false),
-          )
-          as _i5.Future<bool>);
-
-  @override
-  _i5.Future<void> stopP2PAdvertising() =>
-      (super.noSuchMethod(
-            Invocation.method(#stopP2PAdvertising, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  List<_i10.P2PPeer> getP2PPeers() =>
-      (super.noSuchMethod(
-            Invocation.method(#getP2PPeers, []),
-            returnValue: <_i10.P2PPeer>[],
-          )
-          as List<_i10.P2PPeer>);
-
-  @override
-  _i5.Future<bool> connectToP2PPeer(_i10.P2PPeer? peer) =>
-      (super.noSuchMethod(
-            Invocation.method(#connectToP2PPeer, [peer]),
-            returnValue: _i5.Future<bool>.value(false),
-          )
-          as _i5.Future<bool>);
-
-  @override
-  _i5.Future<void> syncWithP2PPeers() =>
-      (super.noSuchMethod(
-            Invocation.method(#syncWithP2PPeers, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> startAutoP2PSync({
-    Duration? interval = const Duration(minutes: 5),
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#startAutoP2PSync, [], {#interval: interval}),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> stopAutoP2PSync() =>
-      (super.noSuchMethod(
-            Invocation.method(#stopAutoP2PSync, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
 
   @override
   _i5.Future<void> dispose() =>
@@ -421,20 +379,38 @@ class MockNostrService extends _i1.Mock implements _i4.NostrService {
           as _i5.Future<_i7.Event?>);
 
   @override
-  _i5.Future<void> discoverUserRelays(String? pubkey) =>
+  _i5.Future<List<_i7.Event>> queryEventsWithCustomJson({
+    required List<Map<String, dynamic>>? filtersJson,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#discoverUserRelays, [pubkey]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            Invocation.method(#queryEventsWithCustomJson, [], {
+              #filtersJson: filtersJson,
+            }),
+            returnValue: _i5.Future<List<_i7.Event>>.value(<_i7.Event>[]),
           )
-          as _i5.Future<void>);
+          as _i5.Future<List<_i7.Event>>);
 
   @override
-  _i5.Future<void> discoverRelaysFromEventHints(String? pubkey) =>
-      (super.noSuchMethod(
-            Invocation.method(#discoverRelaysFromEventHints, [pubkey]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+  void onAppBackgrounded() => super.noSuchMethod(
+    Invocation.method(#onAppBackgrounded, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onExtendedBackground() => super.noSuchMethod(
+    Invocation.method(#onExtendedBackground, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onAppResumed() => super.noSuchMethod(
+    Invocation.method(#onAppResumed, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onPeriodicCleanup() => super.noSuchMethod(
+    Invocation.method(#onPeriodicCleanup, []),
+    returnValueForMissingStub: null,
+  );
 }

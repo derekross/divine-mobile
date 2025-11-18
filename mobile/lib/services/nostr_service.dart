@@ -60,6 +60,9 @@ class NostrService implements INostrService, BackgroundAwareService {
       return;
     }
 
+    // CRITICAL: Set flag immediately to prevent race condition if initialize() is called twice
+    _isInitialized = true;
+
     UnifiedLogger.info('🚀 initialize() called - starting NostrService initialization', name: 'NostrService');
     UnifiedLogger.info('   customRelays parameter: ${customRelays ?? "null (will use default)"}', name: 'NostrService');
 
@@ -193,7 +196,6 @@ class NostrService implements INostrService, BackgroundAwareService {
         );
       }
 
-      _isInitialized = true;
       _onInitialized?.call();
       UnifiedLogger.info('✅ NostrService initialization complete with $connectedCount/${_configuredRelays.length} relays', name: 'NostrService');
 
@@ -688,7 +690,13 @@ class NostrService implements INostrService, BackgroundAwareService {
     UnifiedLogger.info('🔌 Disconnecting all relays to force clean reconnection...', name: 'NostrService');
     for (final relay in _relays.values) {
       try {
-        await relay.disconnect();
+        // Add timeout to prevent hanging on disconnect
+        await relay.disconnect().timeout(
+          const Duration(milliseconds: 500),
+          onTimeout: () {
+            UnifiedLogger.debug('Disconnect timeout for relay', name: 'NostrService');
+          },
+        );
       } catch (e) {
         UnifiedLogger.debug('Error disconnecting relay: $e', name: 'NostrService');
       }
@@ -697,23 +705,53 @@ class NostrService implements INostrService, BackgroundAwareService {
     // Small delay to let disconnections complete
     await Future.delayed(const Duration(milliseconds: 100));
 
-    // Now use SDK's built-in reconnect() which calls relay.connect() on all relays
-    UnifiedLogger.info('🔌 Reconnecting all relays...', name: 'NostrService');
-    _relayPool!.reconnect();
+    // Remove all relays from pool
+    UnifiedLogger.info('🗑️ Removing all relays from pool...', name: 'NostrService');
+    final relaysToReconnect = List<String>.from(_configuredRelays);
+    for (final relayUrl in relaysToReconnect) {
+      try {
+        _relayPool!.remove(relayUrl);
+      } catch (e) {
+        UnifiedLogger.debug('Error removing relay from pool: $e', name: 'NostrService');
+      }
+    }
+    _relays.clear();
 
-    // Poll for connection establishment with exponential backoff
-    // Start with 100ms, double each time, up to 2 seconds max
-    int pollDelay = 100;
-    int totalWaited = 0;
-    const maxWait = 5000; // 5 seconds total
+    // Re-add all relays (same approach as initialization)
+    UnifiedLogger.info('🔌 Re-adding ${relaysToReconnect.length} relay(s) to pool...', name: 'NostrService');
     final connectStart = DateTime.now();
 
-    while (connectedRelays.isEmpty && totalWaited < maxWait) {
-      await Future.delayed(Duration(milliseconds: pollDelay));
-      totalWaited += pollDelay;
+    for (final relayUrl in relaysToReconnect) {
+      try {
+        // Create fresh relay instance
+        final relay = RelayBase(relayUrl, RelayStatus(relayUrl));
+        _relays[relayUrl] = relay;
 
-      // Exponential backoff: 100ms -> 200ms -> 400ms -> 800ms -> 1600ms -> 2000ms (capped)
-      pollDelay = (pollDelay * 2).clamp(100, 2000);
+        // Configure auth if needed
+        if (relayUrl.contains('vine.hol.is')) {
+          relay.relayStatus.alwaysAuth = true;
+        }
+
+        // Add to relay pool - this actually connects
+        final success = await _relayPool!.add(relay).timeout(
+          const Duration(seconds: 3),
+          onTimeout: () {
+            UnifiedLogger.warning('⏰ Timeout adding relay: $relayUrl', name: 'NostrService');
+            return false;
+          },
+        );
+
+        if (success && relay.relayStatus.connected == ClientConneccted.CONNECTED) {
+          _relayAuthStates[relayUrl] = true;
+          UnifiedLogger.info('✅ Reconnected to relay: $relayUrl', name: 'NostrService');
+        } else {
+          _relayAuthStates[relayUrl] = false;
+          UnifiedLogger.warning('⚠️ Failed to reconnect to relay: $relayUrl', name: 'NostrService');
+        }
+      } catch (e) {
+        UnifiedLogger.error('❌ Error reconnecting to relay $relayUrl: $e', name: 'NostrService');
+        _relayAuthStates[relayUrl] = false;
+      }
     }
 
     final connectDuration = DateTime.now().difference(connectStart);

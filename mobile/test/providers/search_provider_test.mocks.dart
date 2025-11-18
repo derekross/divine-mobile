@@ -279,6 +279,7 @@ class MockVideoEventService extends _i1.Mock implements _i2.VideoEventService {
     bool? replace = true,
     bool? includeReposts = false,
     _i7.VideoSortField? sortBy,
+    _i7.NIP50SortMode? nip50Sort,
     bool? force = false,
   }) =>
       (super.noSuchMethod(
@@ -293,6 +294,7 @@ class MockVideoEventService extends _i1.Mock implements _i2.VideoEventService {
               #replace: replace,
               #includeReposts: includeReposts,
               #sortBy: sortBy,
+              #nip50Sort: nip50Sort,
               #force: force,
             }),
             returnValue: _i6.Future<void>.value(),
@@ -369,12 +371,14 @@ class MockVideoEventService extends _i1.Mock implements _i2.VideoEventService {
   _i6.Future<void> subscribeToDiscovery({
     int? limit = 100,
     _i7.VideoSortField? sortBy,
+    _i7.NIP50SortMode? nip50Sort,
     bool? force = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#subscribeToDiscovery, [], {
               #limit: limit,
               #sortBy: sortBy,
+              #nip50Sort: nip50Sort,
               #force: force,
             }),
             returnValue: _i6.Future<void>.value(),

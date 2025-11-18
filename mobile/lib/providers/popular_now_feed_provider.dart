@@ -1,5 +1,6 @@
 // ABOUTME: PopularNow feed provider showing newest videos using VideoFeedBuilder helper
 // ABOUTME: Subscribes to SubscriptionType.popularNow and sorts by timestamp (newest first)
+// ABOUTME: Auto-refreshes every 30 seconds to match web version behavior
 
 import 'dart:async';
 
@@ -19,12 +20,13 @@ part 'popular_now_feed_provider.g.dart';
 /// PopularNow feed provider - shows newest videos (sorted by creation time)
 ///
 /// Rebuilds when:
-/// - Poll interval elapses (uses same auto-refresh as home feed)
+/// - Auto-refresh every 30 seconds (matching web version)
 /// - User pulls to refresh
 /// - VideoEventService updates with new videos
 @Riverpod(keepAlive: true) // Keep alive to prevent state loss on tab switches
 class PopularNowFeed extends _$PopularNowFeed {
   VideoFeedBuilder? _builder;
+  Timer? _autoRefreshTimer;
 
   @override
   Future<VideoFeedState> build() async {
@@ -38,13 +40,15 @@ class PopularNowFeed extends _$PopularNowFeed {
     _builder = VideoFeedBuilder(videoEventService);
 
     // Configure feed for popularNow subscription type
+    // IMPORTANT: NO NIP-50 search - just chronological sorting to match web version
     final config = VideoFeedConfig(
       subscriptionType: SubscriptionType.popularNow,
       subscribe: (service) async {
         await service.subscribeToVideoFeed(
           subscriptionType: SubscriptionType.popularNow,
           limit: 100,
-          sortBy: VideoSortField.createdAt, // Newest videos first
+          // NO sortBy or nip50Sort - just get videos chronologically
+          // This matches the web version's 'recent' feed behavior
         );
       },
       getVideos: (service) => service.popularNowVideos,
@@ -53,6 +57,7 @@ class PopularNowFeed extends _$PopularNowFeed {
         return videos.where((v) => v.isSupportedOnCurrentPlatform).toList();
       },
       sortVideos: (videos) {
+        // Client-side chronological sort (newest first) to match web version
         final sorted = List<VideoEvent>.from(videos);
         sorted.sort((a, b) {
           final timeCompare = b.timestamp.compareTo(a.timestamp);
@@ -86,8 +91,23 @@ class PopularNowFeed extends _$PopularNowFeed {
       },
     );
 
+    // Set up 30-second auto-refresh to match web version
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (ref.mounted) {
+        Log.info(
+          '🔄 PopularNowFeed: Auto-refreshing (30 sec interval)',
+          name: 'PopularNowFeedProvider',
+          category: LogCategory.video,
+        );
+        refresh();
+      }
+    });
+
     // Clean up on dispose
     ref.onDispose(() {
+      _autoRefreshTimer?.cancel();
+      _autoRefreshTimer = null;
       _builder?.cleanup();
       _builder = null;
       Log.info(
@@ -181,10 +201,11 @@ class PopularNowFeed extends _$PopularNowFeed {
     await videoEventService.unsubscribeFromVideoFeed();
 
     // Force new subscription to get fresh data from relay
+    // NO NIP-50 search - just chronological to match web version
     await videoEventService.subscribeToVideoFeed(
       subscriptionType: SubscriptionType.popularNow,
       limit: 100,
-      sortBy: VideoSortField.createdAt,
+      // NO sortBy or nip50Sort - just get videos chronologically
       force: true, // Force refresh bypasses duplicate detection
     );
 

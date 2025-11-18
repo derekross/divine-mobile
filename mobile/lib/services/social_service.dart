@@ -977,13 +977,21 @@ class SocialService {
       }
 
       // 2. ✅ Get followers count with immediate completion
+      final followersFilter = Filter(
+        kinds: [3],
+        p: [pubkey], // Events that mention this pubkey in p tags
+      );
+
+      // Log the filter JSON to verify serialization
+      final filterJson = followersFilter.toJson();
+      Log.info(
+        '🔍 Followers query filter JSON: $filterJson',
+        name: 'SocialService',
+        category: LogCategory.system,
+      );
+
       final followersEventStream = _nostrService.subscribeToEvents(
-        filters: [
-          Filter(
-            kinds: [3],
-            p: [pubkey], // Events that mention this pubkey in p tags
-          ),
-        ],
+        filters: [followersFilter],
       );
 
       // Use exhaustive mode to collect all followers
@@ -1001,6 +1009,24 @@ class SocialService {
         eventStream: followersEventStream,
         config: config,
         onEvent: (event) {
+          // CRITICAL: Client-side filtering required because relay doesn't support #p filter
+          // Check if this event's p tags actually contain the target pubkey
+          final hasPubkeyInTags = event.tags.any((tag) =>
+            tag.length > 1 && tag[0] == 'p' && tag[1] == pubkey
+          );
+
+          if (!hasPubkeyInTags) {
+            // This event doesn't actually mention our pubkey - relay ignored #p filter
+            Log.debug(
+              '🚫 Skipping event that doesn\'t contain target pubkey in p tags: '
+              'author=${event.pubkey.substring(0, 8)}, '
+              'eventId=${event.id.substring(0, 8)}',
+              name: 'SocialService',
+              category: LogCategory.system,
+            );
+            return;
+          }
+
           // Each unique author who has this pubkey in their contact list is a follower
           final isNew = !followerPubkeys.contains(event.pubkey);
           followerPubkeys.add(event.pubkey);

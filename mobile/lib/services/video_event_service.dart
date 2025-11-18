@@ -2068,12 +2068,20 @@ class VideoEventService extends ChangeNotifier {
     Log.verbose('Creating new subscription with expanded timeframe...',
         name: 'VideoEventService', category: LogCategory.video);
 
-    // Subscribe with proper filter
+    // Subscribe with NIP-50 hot search for popular/trending content
+    final baseFilter = Filter(
+      kinds: NIP71VideoKinds.getAllVideoKinds(),
+      limit: 100,
+    );
+
+    // Use NIP-50 search with "hot" sorting for discovery feed
     final filters = <Filter>[
-      Filter(
-        kinds: NIP71VideoKinds.getAllVideoKinds(),
-        limit: 100,
-      ),
+      _videoFilterBuilder != null
+          ? _videoFilterBuilder!.buildNIP50Filter(
+              baseFilter: baseFilter,
+              sortMode: NIP50SortMode.hot,
+            )
+          : baseFilter,
     ];
 
     int newEventCount = 0;
