@@ -758,7 +758,9 @@ class NostrService implements INostrService {
     if (!_isInitialized || _relayPool == null) return;
 
     UnifiedLogger.info('🔄 Reconnecting all relays...', name: 'NostrService');
-    _relayPool!.reconnect();
+
+    // Use retryInitialization() which actually waits for connections
+    await retryInitialization();
   }
 
   /// Ensure we have at least one connected relay before performing operations
