@@ -242,6 +242,19 @@ class _VineCameraScreenState extends State<VineCameraScreen> {
             name: 'VineCameraScreen', category: LogCategory.system);
       }
     } catch (e, stackTrace) {
+      // Handle "No video is recording" gracefully - this can happen if camera was switched during recording
+      if (e.toString().contains('No video is recording')) {
+        Log.info('📹 Recording already stopped (likely due to camera switch)',
+            name: 'VineCameraScreen', category: LogCategory.system);
+        if (mounted) {
+          setState(() {
+            _isRecording = false;
+          });
+        }
+        return;
+      }
+
+      // Log other errors
       Log.error('📹 ❌ Failed to stop recording: $e',
           name: 'VineCameraScreen', category: LogCategory.system);
       Log.debug('Stack trace: $stackTrace',
@@ -316,6 +329,22 @@ class _VineCameraScreenState extends State<VineCameraScreen> {
     }
 
     try {
+      // If recording, stop it first before switching cameras
+      // Disposing the controller will stop recording, so we track this state
+      final wasRecording = _isRecording;
+
+      if (wasRecording) {
+        Log.info('📹 Stopping recording before camera switch...',
+            name: 'VineCameraScreen', category: LogCategory.system);
+        try {
+          await _controller!.stopVideoRecording();
+        } catch (e) {
+          Log.warning('📹 Recording already stopped during camera switch: $e',
+              name: 'VineCameraScreen', category: LogCategory.system);
+        }
+        _isRecording = false;
+      }
+
       setState(() {
         _isSwitchingCamera = true;
       });
