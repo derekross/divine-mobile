@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import AVFoundation
 import LibProofMode
 import ZendeskCoreSDK
 import SupportSDK
@@ -18,6 +19,9 @@ import SupportProvidersSDK
 
     // Set up Zendesk platform channel
     setupZendeskChannel()
+
+    // Set up Camera Zoom Detector platform channel
+    setupCameraZoomDetectorChannel()
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
@@ -276,5 +280,98 @@ import SupportProvidersSDK
     }
 
     NSLog("✅ Zendesk: Platform channel registered")
+  }
+
+  private func setupCameraZoomDetectorChannel() {
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      NSLog("❌ CameraZoomDetector: Could not get FlutterViewController")
+      return
+    }
+
+    let channel = FlutterMethodChannel(
+      name: "com.openvine/camera_zoom_detector",
+      binaryMessenger: controller.binaryMessenger
+    )
+
+    channel.setMethodCallHandler { (call, result) in
+      switch call.method {
+      case "getPhysicalCameras":
+        NSLog("📷 CameraZoomDetector: Getting physical cameras...")
+
+        guard #available(iOS 10.0, *) else {
+          result([])
+          return
+        }
+
+        let discoverySession = AVCaptureDevice.DiscoverySession(
+          deviceTypes: [
+            .builtInWideAngleCamera,
+            .builtInUltraWideCamera,
+            .builtInTelephotoCamera,
+            .builtInDualCamera,
+            .builtInDualWideCamera,
+            .builtInTripleCamera
+          ].compactMap { $0 },
+          mediaType: .video,
+          position: .unspecified
+        )
+
+        var cameras: [[String: Any]] = []
+
+        for device in discoverySession.devices {
+          let isBackCamera = device.position == .back
+          let isFrontCamera = device.position == .front
+
+          // Determine camera type based on device type
+          var cameraType = "wide"
+          if device.deviceType == .builtInUltraWideCamera {
+            cameraType = "ultrawide"
+          } else if device.deviceType == .builtInTelephotoCamera {
+            cameraType = "telephoto"
+          } else if isFrontCamera {
+            cameraType = "front"
+          }
+
+          // Get zoom factor - for multi-camera devices, this is relative to wide camera
+          // Wide camera = 1.0x, Ultrawide ≈ 0.5x, Telephoto = 2x or 3x or 5x depending on device
+          let zoomFactor: Double
+          if device.deviceType == .builtInUltraWideCamera {
+            // Ultrawide is typically 0.5x on all iPhones
+            zoomFactor = 0.5
+          } else if device.deviceType == .builtInTelephotoCamera {
+            // Query the actual zoom factor from the device
+            // Use minAvailableVideoZoomFactor as baseline for telephoto
+            if #available(iOS 13.0, *) {
+              // On iOS 13+, telephoto cameras report their actual optical zoom
+              // iPhone 13 Pro: 3.0x, iPhone 15 Pro Max: 5.0x, older: 2.0x
+              zoomFactor = device.minAvailableVideoZoomFactor
+            } else {
+              // Fallback for older iOS versions
+              zoomFactor = 2.0
+            }
+          } else {
+            // Wide angle camera is the baseline (1.0x)
+            zoomFactor = 1.0
+          }
+
+          cameras.append([
+            "type": cameraType,
+            "zoomFactor": zoomFactor,
+            "deviceId": device.uniqueID,
+            "displayName": device.localizedName
+          ])
+
+          NSLog("📷 Found camera: \(device.localizedName) - \(cameraType) - \(zoomFactor)x")
+        }
+
+        NSLog("📷 CameraZoomDetector: Found \(cameras.count) cameras")
+        result(cameras)
+
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
+    NSLog("✅ CameraZoomDetector: Platform channel registered")
   }
 }
