@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openvine/constants/app_constants.dart';
 import 'package:openvine/providers/app_providers.dart';
 import 'package:openvine/services/video_event_service.dart';
 import 'package:openvine/theme/vine_theme.dart';
@@ -76,6 +77,18 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () => _launchNostrWatch(),
+                  child: Text(
+                    'Find public relays at nostr.watch →',
+                    style: TextStyle(
+                      color: VineTheme.vineGreen,
+                      fontSize: 13,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -87,30 +100,49 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.cloud_off,
-                            color: Colors.grey[600], size: 64),
+                        Icon(Icons.error_outline,
+                            color: Colors.orange[700], size: 64),
                         const SizedBox(height: 16),
-                        Text(
-                          'No external relays configured',
-                          style:
-                              TextStyle(color: Colors.grey[400], fontSize: 16),
+                        const Text(
+                          'App Not Functional',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          'Add relays to sync your content',
-                          style:
-                              TextStyle(color: Colors.grey[600], fontSize: 14),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            'Divine requires at least one relay to load videos, post content, and sync data.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: Colors.grey[400], fontSize: 14),
+                          ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
                         ElevatedButton.icon(
-                          onPressed: () => _showAddRelayDialog(),
-                          icon: const Icon(Icons.add, color: Colors.white),
-                          label: const Text('Add Relay',
+                          onPressed: () => _restoreDefaultRelay(),
+                          icon:
+                              const Icon(Icons.restore, color: Colors.white),
+                          label: const Text('Restore Default Relay',
                               style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: VineTheme.vineGreen,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 12),
+                                horizontal: 24, vertical: 14),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: () => _showAddRelayDialog(),
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          label: const Text('Add Custom Relay',
+                              style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[700],
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 14),
                           ),
                         ),
                       ],
@@ -326,6 +358,18 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
               'Enter the WebSocket URL of the relay you want to add:',
               style: TextStyle(color: Colors.grey),
             ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _launchNostrWatch(),
+              child: Text(
+                'Browse public relays at nostr.watch',
+                style: TextStyle(
+                  color: VineTheme.vineGreen,
+                  fontSize: 13,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
@@ -406,6 +450,54 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
     } catch (e) {
       Log.error('Failed to add relay: $e', name: 'RelaySettingsScreen');
       _showError('Failed to add relay: ${e.toString()}');
+    }
+  }
+
+  Future<void> _restoreDefaultRelay() async {
+    try {
+      final nostrService = ref.read(nostrServiceProvider);
+      final defaultRelay = AppConstants.defaultRelayUrl;
+
+      final success = await nostrService.addRelay(defaultRelay);
+
+      if (success) {
+        ref.invalidate(nostrServiceProvider);
+
+        if (mounted) {
+          setState(() {});
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Restored default relay: $defaultRelay'),
+              backgroundColor: Colors.green[700],
+            ),
+          );
+        }
+
+        Log.info('Restored default relay', name: 'RelaySettingsScreen');
+      } else {
+        _showError(
+            'Failed to restore default relay. Please check your network connection.');
+      }
+    } catch (e) {
+      Log.error('Failed to restore default relay: $e',
+          name: 'RelaySettingsScreen');
+      _showError('Failed to restore default relay: ${e.toString()}');
+    }
+  }
+
+  Future<void> _launchNostrWatch() async {
+    final url = Uri.parse('https://nostr.watch');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        _showError('Could not open browser');
+      }
+    } catch (e) {
+      Log.error('Failed to launch nostr.watch: $e',
+          name: 'RelaySettingsScreen');
+      _showError('Failed to open link');
     }
   }
 
