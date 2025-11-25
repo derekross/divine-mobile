@@ -1,4 +1,4 @@
-// ABOUTME: JavaScript integration for Vine-inspired layout with OpenVine functionality
+// ABOUTME: JavaScript integration for Vine-inspired layout with diVine functionality
 // ABOUTME: Handles video playback, Nostr integration, and UI interactions
 
 // Constants

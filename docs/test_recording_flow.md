@@ -1,4 +1,4 @@
-# OpenVine Recording and Publishing Flow Test
+# diVine Recording and Publishing Flow Test
 
 ## Test Date: 2025-01-18
 
@@ -12,7 +12,7 @@
 ### Test Steps:
 
 1. **Record Video**:
-   - Open OpenVine app on macOS
+   - Open diVine app on macOS
    - Click camera tab (center button)
    - Grant camera permission if prompted
    - Hold record button for 3-6 seconds

@@ -8,6 +8,7 @@
     "start": "node crawler.js",
     "dev": "node --watch crawler.js"
   },
+  "license": "MPL-2.0",
   "dependencies": {
     "nostr-tools": "^1.17.0",
     "ws": "^8.14.2",

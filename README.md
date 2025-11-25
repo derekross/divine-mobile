@@ -119,7 +119,7 @@ wrangler dev
 
 ## API Endpoints
 
-OpenVine uses two separate Cloudflare Workers with distinct domains for different purposes:
+diVine uses two separate Cloudflare Workers with distinct domains for different purposes:
 
 ### Main Backend API (`api.openvine.co`)
 
@@ -196,7 +196,7 @@ OpenVine uses two separate Cloudflare Workers with distinct domains for differen
 
 ## Bug Reporting
 
-OpenVine includes an encrypted bug reporting system that allows users to send diagnostic information directly to developers via NIP-17 private messages.
+diVine includes an encrypted bug reporting system that allows users to send diagnostic information directly to developers via NIP-17 private messages.
 
 ### How It Works
 
@@ -248,7 +248,7 @@ Reports include structured diagnostic data that helps with debugging and improvi
 We welcome contributions! Please see our **[Contributing Guide](CONTRIBUTING.md)** for detailed instructions on:
 
 - Setting up the development environment
-- Building Divine (OpenVine) from source
+- Building diVine from source
 - Setting up the Flutter Embedded Nostr Relay dependency
 - Running tests and code quality checks
 - Submitting pull requests
@@ -261,4 +261,6 @@ We welcome contributions! Please see our **[Contributing Guide](CONTRIBUTING.md)
 
 ## License
 
-ISC License
+Mozilla Public License 2.0
+
+This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.

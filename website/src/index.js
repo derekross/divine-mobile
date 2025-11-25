@@ -1,4 +1,4 @@
-// ABOUTME: Cloudflare Workers entry point for OpenVine website
+// ABOUTME: Cloudflare Workers entry point for diVine website
 // ABOUTME: Serves static HTML files and handles routing
 
 export default {

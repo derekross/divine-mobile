@@ -1,14 +1,14 @@
-# OpenVine Search Implementation Guide
+# diVine Search Implementation Guide
 
 ## Overview
 
-OpenVine implements comprehensive real-time search by connecting directly to Nostr relays and filtering events client-side. The search functionality queries for multiple event types including videos, playlists, and user profiles, providing instant results without requiring server-side infrastructure.
+diVine implements comprehensive real-time search by connecting directly to Nostr relays and filtering events client-side. The search functionality queries for multiple event types including videos, playlists, and user profiles, providing instant results without requiring server-side infrastructure.
 
 ## How It Works
 
 ### 1. Connection to Nostr Relay
 
-OpenVine connects to the `vine.hol.is` relay using WebSocket:
+diVine connects to the `vine.hol.is` relay using WebSocket:
 
 ```javascript
 const ws = new WebSocket('wss://vine.hol.is');
@@ -30,7 +30,7 @@ ws.send(JSON.stringify(['REQ', subscription.id, subscription]));
 
 ### 3. Client-Side Filtering
 
-Since vine.hol.is doesn't support NIP-50 (search capability), OpenVine filters events client-side by content type:
+Since vine.hol.is doesn't support NIP-50 (search capability), diVine filters events client-side by content type:
 
 ```javascript
 function processSearchEvent(event, searchQuery) {
@@ -380,7 +380,7 @@ async function signEvent(event, privateKeyHex) {
 ```json
 {
     "name": "vine.hol.is",
-    "description": "Groups relay for OpenVine",
+    "description": "Groups relay for diVine",
     "pubkey": "...",
     "contact": "...",
     "supported_nips": [1, 9, 11, 29, 40, 42, 70],

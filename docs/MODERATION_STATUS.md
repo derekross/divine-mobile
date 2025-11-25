@@ -1,4 +1,4 @@
-# OpenVine Moderation System - Complete Status Report
+# diVine Moderation System - Complete Status Report
 
 ## What's Done ✅
 
@@ -219,7 +219,7 @@ ModerationResult checkContent(Event event) {
 ### Phase 6: Default Moderators (MEDIUM PRIORITY)
 
 **Bootstrap Data:**
-- OpenVine official safety team profile
+- diVine official safety team profile
 - Community-recommended labelers
 - Default subscriptions for new users
 

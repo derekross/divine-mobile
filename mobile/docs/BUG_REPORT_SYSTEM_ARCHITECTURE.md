@@ -1,4 +1,4 @@
-# Bug Report System Architecture for OpenVine
+# Bug Report System Architecture for diVine
 
 **Version**: 1.0
 **Author**: Architecture Design
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This document defines the complete architecture for OpenVine's user-initiated bug report system. The system enables users to send comprehensive diagnostic reports for non-crash issues using **NIP-17 encrypted messages** to OpenVine support.
+This document defines the complete architecture for diVine's user-initiated bug report system. The system enables users to send comprehensive diagnostic reports for non-crash issues using **NIP-17 encrypted messages** to diVine support.
 
 **Key Features**:
 - Circular buffer log capture (recent 1000 entries, ~1MB max)
@@ -35,7 +35,7 @@ This document defines the complete architecture for OpenVine's user-initiated bu
 
 ### Current Error Handling Ecosystem
 
-OpenVine already has robust error tracking:
+diVine already has robust error tracking:
 - **UnifiedLogger**: Structured logging with categories (relay, video, ui, auth, storage, api, system)
 - **ErrorAnalyticsTracker**: Comprehensive error tracking to Firebase Analytics
 - **Firebase Crashlytics**: Automatic crash reporting
@@ -204,7 +204,7 @@ class BugReportData {
   String toFormattedReport() {
     final buffer = StringBuffer();
 
-    buffer.writeln('🐛 OpenVine Bug Report');
+    buffer.writeln('🐛 diVine Bug Report');
     buffer.writeln('═' * 50);
     buffer.writeln('Report ID: $reportId');
     buffer.writeln('Timestamp: ${timestamp.toIso8601String()}');
@@ -390,7 +390,7 @@ class NIP17MessageService {
 
 /// Configuration for bug report system
 class BugReportConfig {
-  /// OpenVine support pubkey for receiving bug reports
+  /// diVine support pubkey for receiving bug reports
   static const String supportPubkey =
       'YOUR_SUPPORT_PUBKEY_HERE'; // TODO: Set actual support pubkey
 
@@ -942,7 +942,7 @@ String _sanitizeString(String input) {
 **Security Considerations**:
 - Bug reports contain diagnostic data - ensure user consent
 - Gift wrap relays cannot see sender or recipient
-- Only OpenVine support team can decrypt reports
+- Only diVine support team can decrypt reports
 - Reports are not stored locally (only in relay network)
 
 ### 7.3 User Consent
@@ -1016,7 +1016,7 @@ AlertDialog(
 ### 8.2 Phase 7: Support Dashboard
 
 **Recipient Decryption Tool**:
-- Web dashboard for OpenVine support team
+- Web dashboard for diVine support team
 - Decrypt NIP-17 bug reports
 - View formatted diagnostics
 - Link to GitHub issues
@@ -1031,7 +1031,7 @@ AlertDialog(
 
 ## Summary
 
-This architecture provides a **comprehensive, privacy-preserving bug report system** for OpenVine using NIP-17 encrypted messages. The phased TDD implementation ensures quality, while the three-layer encryption guarantees user privacy.
+This architecture provides a **comprehensive, privacy-preserving bug report system** for diVine using NIP-17 encrypted messages. The phased TDD implementation ensures quality, while the three-layer encryption guarantees user privacy.
 
 **Key Deliverables**:
 1. ✅ LogCaptureService - Circular buffer for logs
