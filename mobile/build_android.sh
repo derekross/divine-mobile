@@ -67,6 +67,10 @@ echo -e "${YELLOW}Cleaning previous builds...${NC}"
 flutter clean
 flutter pub get
 
+# Generate code (Riverpod providers, Freezed models, etc.)
+echo -e "${YELLOW}Generating code with build_runner...${NC}"
+dart run build_runner build --delete-conflicting-outputs
+
 # Verify keystore exists for release builds
 if [ "$BUILD_TYPE" = "release" ]; then
   KEYSTORE_PATH="/Users/rabble/android-keys/openvine/upload-keystore.jks"
