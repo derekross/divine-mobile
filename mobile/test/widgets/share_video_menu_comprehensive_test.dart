@@ -189,7 +189,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Check for share options
-        expect(find.text('Send to Viner'), findsOneWidget);
+        expect(find.text('Send to diViner'), findsOneWidget);
         expect(find.text('Share'), findsOneWidget);
         expect(find.byIcon(Icons.person_add), findsOneWidget);
         expect(find.byIcon(Icons.share), findsWidgets);
@@ -234,8 +234,8 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Tap "Send to Viner"
-        await tester.tap(find.text('Send to Viner'));
+        // Tap "Send to diViner"
+        await tester.tap(find.text('Send to diViner'));
         await tester.pumpAndSettle();
 
         // Should show dialog or navigation to send interface

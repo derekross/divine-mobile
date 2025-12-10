@@ -377,7 +377,7 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
       // Send to user
       _buildActionTile(
         icon: Icons.person_add,
-        title: 'Send to Viner',
+        title: 'Send to diViner',
         subtitle: 'Share privately with another user',
         onTap: _showSendToUserDialog,
       ),
@@ -847,7 +847,24 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
   void _showSendToUserDialog() {
     showDialog(
       context: context,
-      builder: (context) => _SendToUserDialog(video: widget.video),
+      builder: (dialogContext) => _SendToUserDialog(
+        video: widget.video,
+        onSent: (displayName, success, error) {
+          // Close the share menu (bottom sheet)
+          Navigator.of(context).pop();
+
+          // Show result snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                success
+                    ? 'Video sent to ${displayName ?? 'user'}'
+                    : 'Failed to send video: $error',
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -1226,8 +1243,9 @@ class _ShareVideoMenuState extends ConsumerState<ShareVideoMenu> {
 
 /// Dialog for sending video to specific user
 class _SendToUserDialog extends ConsumerStatefulWidget {
-  const _SendToUserDialog({required this.video});
+  const _SendToUserDialog({required this.video, this.onSent});
   final VideoEvent video;
+  final void Function(String? displayName, bool success, String? error)? onSent;
 
   @override
   ConsumerState<_SendToUserDialog> createState() => _SendToUserDialogState();
@@ -1251,16 +1269,17 @@ class _SendToUserDialogState extends ConsumerState<_SendToUserDialog> {
   Widget build(BuildContext context) => AlertDialog(
     backgroundColor: VineTheme.cardBackground,
     title: const Text(
-      'Send to Viner',
+      'Send to diViner',
       style: TextStyle(color: VineTheme.whiteText),
     ),
     content: SizedBox(
       width: double.maxFinite,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _searchController,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _searchController,
             enableInteractiveSelection: true,
             style: const TextStyle(color: VineTheme.whiteText),
             decoration: const InputDecoration(
@@ -1358,6 +1377,7 @@ class _SendToUserDialogState extends ConsumerState<_SendToUserDialog> {
             ],
           ],
         ],
+      ),
       ),
     ),
     actions: [
@@ -1565,18 +1585,9 @@ class _SendToUserDialogState extends ConsumerState<_SendToUserDialog> {
       );
 
       if (mounted) {
-        Navigator.of(context).pop(); // Close dialog
-        Navigator.of(context).pop(); // Close share menu
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.success
-                  ? 'Video sent to ${user.displayName ?? 'user'}'
-                  : 'Failed to send video: ${result.error}',
-            ),
-          ),
-        );
+        // Close dialog first, then notify parent to close share menu
+        Navigator.of(context).pop();
+        widget.onSent?.call(user.displayName, result.success, result.error);
       }
     } catch (e) {
       Log.error(

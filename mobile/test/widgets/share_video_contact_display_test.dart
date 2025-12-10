@@ -92,8 +92,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap "Send to Viner" to open dialog
-      await tester.tap(find.text('Send to Viner'));
+      // Tap "Send to diViner" to open dialog
+      await tester.tap(find.text('Send to diViner'));
       await tester.pumpAndSettle();
 
       // Verify contact list loads
@@ -148,8 +148,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap "Send to Viner" to open dialog
-      await tester.tap(find.text('Send to Viner'));
+      // Tap "Send to diViner" to open dialog
+      await tester.tap(find.text('Send to diViner'));
       await tester.pumpAndSettle();
 
       // Verify contact list loads
@@ -190,8 +190,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap "Send to Viner" to open dialog
-      await tester.tap(find.text('Send to Viner'));
+      // Tap "Send to diViner" to open dialog
+      await tester.tap(find.text('Send to diViner'));
       await tester.pumpAndSettle();
 
       // CRITICAL: Even without profile data, verify npub is shown, not raw hex
